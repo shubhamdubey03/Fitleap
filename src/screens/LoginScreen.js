@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  Image,
   View,
   Text,
+  TextInput,
   StyleSheet,
   TouchableOpacity,
   StatusBar,
@@ -11,58 +11,56 @@ import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const LoginScreen = ({ navigation }) => {
+  const [passwordVisible, setPasswordVisible] = useState(false);
+
   return (
     <LinearGradient
-      colors={['#1a0033', '#3a005f', '#6a006a']}
+      colors={['#0f0029', '#2b0040', '#5a003c']}
       style={styles.container}
     >
       <StatusBar barStyle="light-content" />
 
-      <View style={styles.content}>
-        <Text style={styles.title}>Let’s You In</Text>
+      {/* Inputs */}
+      <View style={styles.inputContainer}>
+        {/* Email / Phone */}
+        <View style={styles.inputBox}>
+          <Ionicons name="mail-outline" size={20} color="#fff" />
+          <TextInput
+            placeholder="Email / Phone no."
+            placeholderTextColor="#ccc"
+            style={styles.input}
+          />
+        </View>
 
-        {/* Google Button */}
-        <TouchableOpacity style={styles.googleBtn}>
-          <View style={styles.googleCircle}>
-            <Image
-              source={require('../assets/images/google.png')}
-              style={styles.googleIcon}
-            />
-          </View>
-
-          <Text style={styles.btnText}>Continue With Google</Text>
-        </TouchableOpacity>
-        {/* College */}
-        <TouchableOpacity style={styles.optionBtn}>
-          <Text style={styles.optionText}>Continue As College Student</Text>
-        </TouchableOpacity>
-
-        {/* School */}
-        <TouchableOpacity style={styles.optionBtn}>
-          <Text style={styles.optionText}>Continue As School Student</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.orText}>Or</Text>
-
-        {/* Sign Up */}
-        <TouchableOpacity
-          style={styles.signupBtn}
-          onPress={() => navigation.navigate('SignUp')}
-        >
-          <Text style={styles.signupText}>Sign Up</Text>
-        </TouchableOpacity>
-
-        {/* Login */}
-        <View style={styles.loginContainer}>
-          <Text style={styles.loginText}>I already have an account</Text>
-
-          <TouchableOpacity style={styles.loginRow}>
-            <Image
-              source={require('../assets/images/arrow.png')}
-              style={styles.arrowIcon}
+        {/* Password */}
+        <View style={styles.inputBox}>
+          <Ionicons name="lock-closed-outline" size={20} color="#fff" />
+          <TextInput
+            placeholder="Password"
+            placeholderTextColor="#ccc"
+            style={styles.input}
+            secureTextEntry={!passwordVisible}
+          />
+          <TouchableOpacity
+            onPress={() => setPasswordVisible(!passwordVisible)}
+          >
+            <Ionicons
+              name={passwordVisible ? 'eye-outline' : 'eye-off-outline'}
+              size={20}
+              color="#fff"
             />
           </TouchableOpacity>
         </View>
+
+        {/* Login Button */}
+        <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('Profile')}>
+          <Text style={styles.loginText}>Login</Text>
+        </TouchableOpacity>
+
+        {/* Cancel */}
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.cancelText}>Cancel</Text>
+        </TouchableOpacity>
       </View>
     </LinearGradient>
   );
@@ -70,112 +68,42 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: 20,
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
+  inputContainer: {
+    marginTop: 220,
   },
-  title: {
-    color: '#fff',
-    fontSize: 34,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 40,
-  },
-  socialBtn: {
+  inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    padding: 14,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: 12,
-    marginBottom: 14,
+    paddingHorizontal: 15,
+    paddingVertical: 14,
+    marginBottom: 15,
   },
-  btnText: {
+  input: {
+    flex: 1,
     color: '#fff',
     marginLeft: 10,
-    fontSize: 16,
   },
-  optionBtn: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  optionText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 15,
-  },
-  orText: {
-    color: '#ddd',
-    textAlign: 'center',
-    marginVertical: 18,
-  },
-  signupBtn: {
-    backgroundColor: '#1b003d',
-    padding: 16,
+  loginButton: {
+    backgroundColor: '#14004d',
+    paddingVertical: 16,
     borderRadius: 14,
-    marginBottom: 16,
+    alignItems: 'center',
+    marginTop: 10,
   },
-  signupText: {
+  loginText: {
     color: '#fff',
-    textAlign: 'center',
     fontSize: 16,
     fontWeight: '600',
   },
-  arrowIcon: {
-    width: 18,
-    height: 18,
-    resizeMode: 'contain',
-    tintColor: '#fff',
-  },
-  loginContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
-
-  loginRow: {
-    backgroundColor: '#000',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  loginText: {
+  cancelText: {
     color: '#fff',
-    marginRight: 10,
     fontSize: 14,
-  },
-  googleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginBottom: 14,
-  },
-
-  googleCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-
-  googleIcon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-    tintColor: '#fff',
+    textAlign: 'center',
+    marginTop: 14,
   },
 });
 
