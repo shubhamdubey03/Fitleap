@@ -9,11 +9,20 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import Ionicons from '@react-native-vector-icons/ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import CountryPicker from 'react-native-country-picker-modal';
+import Svg, { Circle } from 'react-native-svg';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 
-const countries = [
-  { code: 'IN', name: 'India', flag: require('../assets/images/indian.png') },
-];
+
+// export const COUNTRIES = [
+//   { code: 'IN', name: 'India', dialCode: '+91', flag: '🇮🇳' },
+//   { code: 'US', name: 'United States', dialCode: '+1', flag: '🇺🇸' },
+//   { code: 'UK', name: 'United Kingdom', dialCode: '+44', flag: '🇬🇧' },
+//   { code: 'AU', name: 'Australia', dialCode: '+61', flag: '🇦🇺' },
+//   { code: 'CA', name: 'Canada', dialCode: '+1', flag: '🇨🇦' },
+// ];
 
 const roles = [
   { key: 'user', label: 'User' },
@@ -23,14 +32,102 @@ const roles = [
 
 const SignupScreen = ({ navigation }) => {
   const [secure, setSecure] = useState(true);
-
-  const [selectedCountry, setSelectedCountry] = useState(countries[0]);
+  const [countryCode, setCountryCode] = useState('IN');
+  const [callingCode, setCallingCode] = useState('91');
+  const [country, setCountry] = useState(null);
   const [countryVisible, setCountryVisible] = useState(false);
-
   const [selectedRole, setSelectedRole] = useState(roles[0]);
   const [roleVisible, setRoleVisible] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [avatar, setAvatar] = useState(null);
+
+
+const pickImage = () => {
+  launchImageLibrary(
+    {
+      mediaType: 'photo',
+      quality: 0.8,
+    },
+    (response) => {
+      if (response.didCancel) return;
+
+      if (response.errorCode) {
+        console.log('ImagePicker Error:', response.errorMessage);
+        return;
+      }
+
+      const imageUri = response.assets[0].uri;
+      setAvatar(imageUri);
+    }
+  );
+};
+  const handleSignup = async () => {
+  if (!email) {
+    alert('Email is required');
+    return;
+  }
+
+  if (!password) {
+    alert('Password is required');
+    return;
+  }
+
+  if (!phone) {
+    alert('Phone number is required');
+    return;
+  }
+
+  // if (!country) {
+  //   alert('Please select a country');
+  //   return;
+  // }
+
+  // if (!callingCode) {
+  //   alert('Country calling code is missing');
+  //   return;
+  // }
+
+  if (!selectedRole) {
+    alert('Please select a role');
+    return;
+  }
+
+  const dummyUser = {
+    email,
+    password,
+    phone,
+    role: selectedRole.label,
+    countryCode,
+    callingCode,
+  };
+
+    const existingUser = await AsyncStorage.getItem('DUMMY_USER');
+
+    if (existingUser) {
+      const storedUser = JSON.parse(existingUser);
+
+      if (storedUser.email === email) {
+        alert('Email already registered');
+        return; 
+      }
+    }
+
+
+  try {
+    await AsyncStorage.setItem('DUMMY_USER', JSON.stringify(dummyUser));
+    await AsyncStorage.setItem('IS_LOGGED_IN', 'false'); 
+    alert('Signup successful');
+    navigation.navigate('Login');
+  } catch (err) {
+    console.log(err);
+    alert('Something went wrong');
+  }
+};
 
   return (
+ 
     <LinearGradient
       colors={['#1a0033', '#3b014f', '#5a015a']}
       style={styles.container}
@@ -40,13 +137,16 @@ const SignupScreen = ({ navigation }) => {
 
       {/* Avatar */}
       <View style={styles.avatarWrapper}>
-        <Ionicons
-          name="camera-outline"
-          size={24}
-          color="#fff"
-          style={styles.cameraIcon}
-        />
-      </View>
+  {/* {avatar ? (
+    <Image source={{ uri: avatar }} style={styles.avatarImage} />
+  ) : (
+    <Ionicons name="person" size={40} color="#aaa" />
+  )} */}
+
+  <TouchableOpacity style={styles.cameraIcon} onPress={pickImage}>
+    <Ionicons name="camera-outline" size={20} color="#fff" />
+  </TouchableOpacity>
+</View>
 
       {/* Email */}
       <View style={styles.inputBox}>
@@ -60,6 +160,9 @@ const SignupScreen = ({ navigation }) => {
           placeholder="Email"
           placeholderTextColor="#ccc"
           style={styles.input}
+          value={email}
+          onChangeText={text => setEmail(text)}
+          autoCapitalize="none"
         />
       </View>
 
@@ -76,6 +179,8 @@ const SignupScreen = ({ navigation }) => {
           placeholderTextColor="#ccc"
           secureTextEntry={secure}
           style={styles.input}
+          value={password}
+          onChangeText={text => setPassword(text)}
         />
         <TouchableOpacity onPress={() => setSecure(!secure)}>
           <Ionicons
@@ -89,49 +194,48 @@ const SignupScreen = ({ navigation }) => {
       </View>
 
       {/* Phone Number */}
-      <View style={styles.inputBox}>
+      <View style={styles.phoneContainer}>
+        {/* Left section: Country picker with flag + code */}
+        <CountryPicker
+          countryCode={countryCode}
+          withFlag
+          withEmoji
+          withCallingCode
+          visible={countryVisible}
+          onSelect={selectedCountry => {
+            setCountryCode(selectedCountry.cca2);
+            setCallingCode(selectedCountry.callingCode?.[0]?? '');
+            setCountry(selectedCountry);
+            setCountryVisible(false);
+          }}
+          onClose={() => setCountryVisible(false)}
+        />
+
         <TouchableOpacity
-          style={styles.countryBox}
+          style={styles.leftIcons}
           onPress={() => setCountryVisible(true)}
+          activeOpacity={0.7}
         >
-          <Image source={selectedCountry.flag} style={styles.flag} />
-          <Image
-            source={require('../assets/images/down.png')}
-            style={styles.downIcon}
+          <Text style={styles.callingCode}>+{callingCode}</Text>
+
+          <Ionicons
+            name="chevron-down"
+            size={14}
+            color="#ccc"
+            style={{ marginLeft: 6 }}
           />
         </TouchableOpacity>
 
+        {/* Phone input */}
         <TextInput
           placeholder="Phone Number"
           placeholderTextColor="#ccc"
           keyboardType="phone-pad"
-          style={styles.input}
+          style={styles.phoneInput}
+          value={phone}
+          onChangeText={setPhone}
         />
       </View>
-
-      {/* Country Modal */}
-      <Modal transparent visible={countryVisible} animationType="fade">
-        <TouchableOpacity
-          style={styles.overlay}
-          onPress={() => setCountryVisible(false)}
-        >
-          <View style={styles.dropdown}>
-            {countries.map(item => (
-              <TouchableOpacity
-                key={item.code}
-                style={styles.countryRow}
-                onPress={() => {
-                  setSelectedCountry(item);
-                  setCountryVisible(false);
-                }}
-              >
-                <Image source={item.flag} style={styles.flag} />
-                <Text style={styles.countryText}>{item.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </TouchableOpacity>
-      </Modal>
 
       {/* Role Selection */}
       <View style={styles.inputBox}>
@@ -173,15 +277,12 @@ const SignupScreen = ({ navigation }) => {
       </Modal>
 
       {/* Next Button */}
-      <TouchableOpacity
-        style={styles.nextBtn}
-        onPress={() => navigation.navigate('Login')}
-      >
+      <TouchableOpacity style={styles.nextBtn} onPress={handleSignup}>
         <Text style={styles.nextText}>Next</Text>
       </TouchableOpacity>
 
       {/* Cancel */}
-      <TouchableOpacity onPress={() => navigation.goBack()}>
+      <TouchableOpacity onPress={() => navigation.replace('Home')}>
         <Text style={styles.cancel}>Cancel</Text>
       </TouchableOpacity>
     </LinearGradient>
@@ -245,7 +346,22 @@ const styles = StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
     marginTop: 18,
+    marginBottom: 10,
     opacity: 0.8,
+  },
+  loginBtn: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  loginText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '500',
   },
   cameraIcon: {
     width: 28,
@@ -297,6 +413,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 10,
   },
+  user: {
+    marginBottom: 10,
+  },
+  phoneContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginBottom: 15,
+  },
+
+  leftIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+
+  callingCode: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+
+  phoneInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 15,
+  },
+  avatarImage: {
+  width: '100%',
+  height: '100%',
+  borderRadius: 60,
+},
 });
 
 export default SignupScreen;

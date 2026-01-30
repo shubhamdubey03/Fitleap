@@ -8,10 +8,48 @@ import {
   StatusBar,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import Ionicons from '@react-native-vector-icons/ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const LoginScreen = ({ navigation }) => {
+const LoginScreen = ({ route, navigation }) => {
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [email, setEmail] = useState(route.params?.email || '');
+  const [password, setPassword] = useState(route.params?.password || '');
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      alert('Please fill all fields');
+      return;
+    }
+
+    const data = await AsyncStorage.getItem('DUMMY_USER');
+      await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
+
+
+    if (!data) {
+      alert('No user found, please signup');
+      return;
+    }
+
+    const user = JSON.parse(data);
+
+    if (email.toLowerCase() === user.email.toLowerCase() && password === user.password) {
+      alert('Login successful');
+      
+      // Navigate based on user role
+      if (user.role === 'User') {
+        navigation.replace('Dashboard');
+      } else if (user.role === 'Vendor') {
+        navigation.replace('VendorDashboard');
+      } else if (user.role === 'Coach') {
+        navigation.replace('CoachDashboard');
+      } else {
+        navigation.replace('Dashboard');
+      }
+    } else {
+      alert('Invalid credentials');
+    }
+  };
 
   return (
     <LinearGradient
@@ -29,6 +67,8 @@ const LoginScreen = ({ navigation }) => {
             placeholder="Email / Phone no."
             placeholderTextColor="#ccc"
             style={styles.input}
+            value={email}
+            onChangeText={setEmail}
           />
         </View>
 
@@ -40,6 +80,8 @@ const LoginScreen = ({ navigation }) => {
             placeholderTextColor="#ccc"
             style={styles.input}
             secureTextEntry={!passwordVisible}
+            value={password}
+            onChangeText={setPassword}
           />
           <TouchableOpacity
             onPress={() => setPasswordVisible(!passwordVisible)}
@@ -52,13 +94,13 @@ const LoginScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Login Button */}
-        <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('Profile')}>
+        
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Text style={styles.loginText}>Login</Text>
         </TouchableOpacity>
 
         {/* Cancel */}
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.replace('SignUp')}>
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
       </View>

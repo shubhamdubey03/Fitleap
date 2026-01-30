@@ -8,7 +8,7 @@ import {
   StatusBar,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import Ionicons from '@react-native-vector-icons/ionicons';
 
 const StudentLoginScreen = ({ navigation }) => {
   const [studentId, setStudentId] = useState('');

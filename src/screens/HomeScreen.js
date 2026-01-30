@@ -8,7 +8,7 @@ import {
   StatusBar,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+// import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const HomeScreen = ({ navigation }) => {
 
@@ -61,7 +61,7 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.loginContainer}>
           <Text style={styles.loginText}>I already have an account</Text>
 
-          <TouchableOpacity style={styles.loginRow}>
+          <TouchableOpacity style={styles.loginRow} onPress={() => navigation.navigate('Login')}>
             <Image
               source={require('../assets/images/arrow.png')}
               style={styles.arrowIcon}
