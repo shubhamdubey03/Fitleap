@@ -44,64 +44,64 @@ const SignupScreen = ({ navigation }) => {
   const [avatar, setAvatar] = useState(null);
 
 
-const pickImage = () => {
-  launchImageLibrary(
-    {
-      mediaType: 'photo',
-      quality: 0.8,
-    },
-    (response) => {
-      if (response.didCancel) return;
+  const pickImage = () => {
+    launchImageLibrary(
+      {
+        mediaType: 'photo',
+        quality: 0.8,
+      },
+      (response) => {
+        if (response.didCancel) return;
 
-      if (response.errorCode) {
-        console.log('ImagePicker Error:', response.errorMessage);
-        return;
+        if (response.errorCode) {
+          console.log('ImagePicker Error:', response.errorMessage);
+          return;
+        }
+
+        const imageUri = response.assets[0].uri;
+        setAvatar(imageUri);
       }
-
-      const imageUri = response.assets[0].uri;
-      setAvatar(imageUri);
-    }
-  );
-};
-  const handleSignup = async () => {
-  if (!email) {
-    alert('Email is required');
-    return;
-  }
-
-  if (!password) {
-    alert('Password is required');
-    return;
-  }
-
-  if (!phone) {
-    alert('Phone number is required');
-    return;
-  }
-
-  // if (!country) {
-  //   alert('Please select a country');
-  //   return;
-  // }
-
-  // if (!callingCode) {
-  //   alert('Country calling code is missing');
-  //   return;
-  // }
-
-  if (!selectedRole) {
-    alert('Please select a role');
-    return;
-  }
-
-  const dummyUser = {
-    email,
-    password,
-    phone,
-    role: selectedRole.label,
-    countryCode,
-    callingCode,
+    );
   };
+  const handleSignup = async () => {
+    if (!email) {
+      alert('Email is required');
+      return;
+    }
+
+    if (!password) {
+      alert('Password is required');
+      return;
+    }
+
+    if (!phone) {
+      alert('Phone number is required');
+      return;
+    }
+
+    // if (!country) {
+    //   alert('Please select a country');
+    //   return;
+    // }
+
+    // if (!callingCode) {
+    //   alert('Country calling code is missing');
+    //   return;
+    // }
+
+    if (!selectedRole) {
+      alert('Please select a role');
+      return;
+    }
+
+    const dummyUser = {
+      email,
+      password,
+      phone,
+      role: selectedRole.label,
+      countryCode,
+      callingCode,
+    };
 
     const existingUser = await AsyncStorage.getItem('DUMMY_USER');
 
@@ -110,24 +110,24 @@ const pickImage = () => {
 
       if (storedUser.email === email) {
         alert('Email already registered');
-        return; 
+        return;
       }
     }
 
 
-  try {
-    await AsyncStorage.setItem('DUMMY_USER', JSON.stringify(dummyUser));
-    await AsyncStorage.setItem('IS_LOGGED_IN', 'false'); 
-    alert('Signup successful');
-    navigation.navigate('Login');
-  } catch (err) {
-    console.log(err);
-    alert('Something went wrong');
-  }
-};
+    try {
+      await AsyncStorage.setItem('DUMMY_USER', JSON.stringify(dummyUser));
+      await AsyncStorage.setItem('IS_LOGGED_IN', 'false');
+      alert('Signup successful');
+      navigation.navigate('Login');
+    } catch (err) {
+      console.log(err);
+      alert('Something went wrong');
+    }
+  };
 
   return (
- 
+
     <LinearGradient
       colors={['#1a0033', '#3b014f', '#5a015a']}
       style={styles.container}
@@ -137,16 +137,16 @@ const pickImage = () => {
 
       {/* Avatar */}
       <View style={styles.avatarWrapper}>
-  {/* {avatar ? (
+        {/* {avatar ? (
     <Image source={{ uri: avatar }} style={styles.avatarImage} />
   ) : (
     <Ionicons name="person" size={40} color="#aaa" />
   )} */}
 
-  <TouchableOpacity style={styles.cameraIcon} onPress={pickImage}>
-    <Ionicons name="camera-outline" size={20} color="#fff" />
-  </TouchableOpacity>
-</View>
+        <TouchableOpacity style={styles.cameraIcon} onPress={pickImage}>
+          <Ionicons name="camera-outline" size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
 
       {/* Email */}
       <View style={styles.inputBox}>
@@ -204,7 +204,7 @@ const pickImage = () => {
           visible={countryVisible}
           onSelect={selectedCountry => {
             setCountryCode(selectedCountry.cca2);
-            setCallingCode(selectedCountry.callingCode?.[0]?? '');
+            setCallingCode(selectedCountry.callingCode?.[0] ?? '');
             setCountry(selectedCountry);
             setCountryVisible(false);
           }}
@@ -445,10 +445,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   avatarImage: {
-  width: '100%',
-  height: '100%',
-  borderRadius: 60,
-},
+    width: '100%',
+    height: '100%',
+    borderRadius: 60,
+  },
 });
 
 export default SignupScreen;

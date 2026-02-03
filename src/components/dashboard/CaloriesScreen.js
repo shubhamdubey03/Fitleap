@@ -22,9 +22,12 @@ const CaloriesScreen = ({ navigation }) => {
 
         <Text style={styles.headerTitle}>Calories</Text>
 
-        <View style={styles.coin}>
+        <TouchableOpacity
+          style={styles.coin}
+          onPress={() => navigation.navigate('YourCoins')}
+        >
           <Ionicons name="trophy" size={14} color="#fff" />
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Calories Progress */}
@@ -91,7 +94,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    
+
   },
 
   header: {

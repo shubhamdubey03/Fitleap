@@ -22,8 +22,9 @@ const LoginScreen = ({ route, navigation }) => {
       return;
     }
 
+
     const data = await AsyncStorage.getItem('DUMMY_USER');
-      await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
+    await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
 
 
     if (!data) {
@@ -35,17 +36,9 @@ const LoginScreen = ({ route, navigation }) => {
 
     if (email.toLowerCase() === user.email.toLowerCase() && password === user.password) {
       alert('Login successful');
-      
-      // Navigate based on user role
-      if (user.role === 'User') {
-        navigation.replace('Dashboard');
-      } else if (user.role === 'Vendor') {
-        navigation.replace('VendorDashboard');
-      } else if (user.role === 'Coach') {
-        navigation.replace('CoachDashboard');
-      } else {
-        navigation.replace('Dashboard');
-      }
+
+      // Navigate to Dashboard for all users
+      navigation.replace('Dashboard');
     } else {
       alert('Invalid credentials');
     }
@@ -94,7 +87,7 @@ const LoginScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
 
-        
+
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Text style={styles.loginText}>Login</Text>
         </TouchableOpacity>

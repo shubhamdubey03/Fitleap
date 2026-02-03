@@ -9,25 +9,18 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
-import ProfileSidebar from '../ProfileSidebar';
 import SafeProgressCircle from '../SafeProgressCircle';
 
 const DashboardScreen = ({ navigation }) => {
-  const [sidebarVisible, setSidebarVisible] = useState(false);
-  
+
   return (
     <LinearGradient colors={['#1a0033', '#4b0066']} style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Profile Sidebar */}
-        <ProfileSidebar
-          visible={sidebarVisible}
-          onClose={() => setSidebarVisible(false)}
-        />
 
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <TouchableOpacity onPress={() => setSidebarVisible(true)}>
+            <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
               <Image
                 source={{ uri: 'https://i.pravatar.cc/150?img=3' }}
                 style={styles.avatar}
@@ -58,33 +51,33 @@ const DashboardScreen = ({ navigation }) => {
 
           <View style={styles.statsContainer}>
             <View style={styles.statRow}>
-              <View style={{marginTop:14}}>
-              <Ionicons name="nutrition-outline" size={26} color="#2F80ED" />
+              <View style={{ marginTop: 14 }}>
+                <Ionicons name="nutrition-outline" size={26} color="#2F80ED" />
               </View>
               <View>
-              <Text style={[styles.stat,{textAlign:'center',color:'#7a7a7aff'}]}>Carbs</Text>
-              <Text style={styles.stat}> 89/140g</Text>
+                <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Carbs</Text>
+                <Text style={styles.stat}> 89/140g</Text>
               </View>
             </View>
             <View style={styles.statRow}>
-              <View style={{marginTop:14}}>
-              <Ionicons name="fish-outline" size={26} color="#FF6B3D" />
+              <View style={{ marginTop: 14 }}>
+                <Ionicons name="fish-outline" size={26} color="#FF6B3D" />
               </View>
               <View>
-              <Text style={[styles.stat,{textAlign:'center',color:'#7a7a7aff'}]}>Protein</Text>
-              <Text style={styles.stat}> 45/80g</Text>
+                <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Protein</Text>
+                <Text style={styles.stat}> 45/80g</Text>
               </View>
             </View>
             <View style={styles.statRow}>
-              <View style={{marginTop:14}}>
-              <Image
-                source={require('../../assets/images/flower.png')}
-                style={styles.flowerIcon}
-              />
+              <View style={{ marginTop: 14 }}>
+                <Image
+                  source={require('../../assets/images/flower.png')}
+                  style={styles.flowerIcon}
+                />
               </View>
               <View>
-              <Text style={[styles.stat,{textAlign:'center',color:'#7a7a7aff'}]}>Fiber</Text>
-              <Text style={styles.stat}> 20/50g</Text>
+                <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Fiber</Text>
+                <Text style={styles.stat}> 20/50g</Text>
               </View>
             </View>
           </View>
@@ -92,7 +85,11 @@ const DashboardScreen = ({ navigation }) => {
 
         {/* Middle Cards */}
         <View style={styles.row}>
-          <View style={styles.progressCircleWrapper}>
+          <TouchableOpacity
+            style={styles.progressCircleWrapper}
+            onPress={() => navigation.navigate('Exercise')}
+          >
+            <Text style={styles.cardTitle}>Exercise</Text>
             <SafeProgressCircle
               // percent={75}
               radius={55}
@@ -103,7 +100,7 @@ const DashboardScreen = ({ navigation }) => {
               <Text style={styles.stepsNumber}>5460</Text>
               <Text style={styles.stepsLabel}>Steps</Text>
             </SafeProgressCircle>
-          </View>
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.smallCard}
             onPress={() => navigation.navigate('Calories')}
@@ -114,13 +111,22 @@ const DashboardScreen = ({ navigation }) => {
         </View>
 
         {/* Coaching */}
-        <View style={styles.coachCard}>
+        {/* Coaching */}
+        <TouchableOpacity
+          style={styles.coachCard}
+          onPress={() => navigation.navigate('Exercise', { screen: 'Coaching' })}
+        >
           <Text style={styles.cardTitle}>Coaching</Text>
           <Text style={styles.coach}>Dr. Emily</Text>
-        </View>
+        </TouchableOpacity>
 
         {/* Daily Intake */}
-        <Text style={styles.section}>Daily Intake</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Recipes')}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={styles.section}>Daily Intake</Text>
+            <Ionicons name="chevron-forward" size={20} color="#fff" />
+          </View>
+        </TouchableOpacity>
         <View style={styles.intakeRow}>
           {['Carbs', 'Protein', 'Fat', 'Fiber'].map(item => {
             let iconName = 'nutrition-outline';
@@ -138,22 +144,27 @@ const DashboardScreen = ({ navigation }) => {
         </View>
 
         {/* Shop */}
-        <Text style={styles.section}>Shop Equipment's</Text>
-        <Image
-          source={{
-            uri: 'https://images.unsplash.com/photo-1599058917212-d750089bc07e',
-          }}
-          style={styles.shopImage}
-        />
+        <TouchableOpacity onPress={() => navigation.navigate('Marketplace')}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={styles.section}>Shop Equipment's</Text>
+            <Ionicons name="chevron-forward" size={20} color="#fff" />
+          </View>
+          <Image
+            source={{
+              uri: 'https://images.unsplash.com/photo-1599058917212-d750089bc07e',
+            }}
+            style={styles.shopImage}
+          />
+        </TouchableOpacity>
       </ScrollView>
     </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    padding: 16 
+  container: {
+    flex: 1,
+    padding: 16
   },
   header: {
     flexDirection: 'row',
@@ -162,28 +173,28 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 30,
   },
-  headerLeft: { 
-    flexDirection: 'row', 
-    alignItems: 'center' 
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center'
   },
-  avatar: { 
-    width: 45, 
-    height: 45, 
-    borderRadius: 22, 
-    marginRight: 10 
+  avatar: {
+    width: 45,
+    height: 45,
+    borderRadius: 22,
+    marginRight: 10
   },
-  hello: { 
-    color: '#ccc', 
-    fontSize: 12 
+  hello: {
+    color: '#ccc',
+    fontSize: 12
   },
-  title: { 
-    color: '#fff', 
-    fontSize: 18, 
-    fontWeight: 'bold' 
+  title: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold'
   },
-  headerIcons: { 
-    flexDirection: 'row', 
-    gap: 12 
+  headerIcons: {
+    flexDirection: 'row',
+    gap: 12
   },
   card: {
     backgroundColor: '#fff',
@@ -207,12 +218,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  percent: { 
-    fontSize: 22, 
+  percent: {
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#333'
   },
-  label: { 
+  label: {
     fontSize: 12,
     color: '#666'
   },
@@ -226,12 +237,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  stat: { 
-    fontSize: 14, 
+  stat: {
+    fontSize: 14,
     marginLeft: 6,
     color: '#333',
-  
-    
+
+
   },
   flowerIcon: {
     width: 26,
@@ -259,22 +270,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepsNumber: { 
-    fontSize: 16, 
-    color: '#FF6B3D', 
-    fontWeight: 'bold' 
+  stepsNumber: {
+    fontSize: 16,
+    color: '#FF6B3D',
+    fontWeight: 'bold'
   },
-  stepsLabel: { 
-    fontSize: 12, 
-    color: '#FF6B3D' 
+  stepsLabel: {
+    fontSize: 12,
+    color: '#FF6B3D'
   },
-  cardTitle: { 
-    fontWeight: 'bold', 
+  cardTitle: {
+    fontWeight: 'bold',
     marginBottom: 8,
     color: '#333'
   },
-  kcal: { 
-    fontSize: 18, 
+  kcal: {
+    fontSize: 18,
     color: '#ff6b00',
     fontWeight: 'bold'
   },
@@ -284,9 +295,9 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
   },
-  coach: { 
-    color: '#ff6b00', 
-    fontWeight: 'bold' 
+  coach: {
+    color: '#ff6b00',
+    fontWeight: 'bold'
   },
   section: {
     color: '#fff',
@@ -306,15 +317,15 @@ const styles = StyleSheet.create({
     width: '23%',
     alignItems: 'center',
   },
-  intakeText: { 
-    color: '#fff', 
+  intakeText: {
+    color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
     marginTop: 6,
     textAlign: 'center'
   },
-  intakeSub: { 
-    color: '#aaa', 
+  intakeSub: {
+    color: '#aaa',
     fontSize: 10,
     textAlign: 'center'
   },

@@ -15,9 +15,9 @@ import SignupScreen from './src/screens/SignupScreen';
 import CollegeStudentLogin from './src/screens/CollegeStudentLogin';
 import StudentLogin from './src/screens/StudentLogin';
 import LoginScreen from './src/screens/LoginScreen';
-import DashboardScreen from './src/components/dashboard/DashboardScreen';
-import VendorDashboard from './src/screens/VendorDashboard';
-import CoachDashboard from './src/screens/CoachDashboard';
+
+import BottomTabNavigator from './src/navigation/BottomTabNavigator';
+
 import CaloriesScreen from './src/components/dashboard/CaloriesScreen';
 import SettingsScreen from './src/components/setting/SettingsScreen';
 import FeedbackProgressScreen from './src/components/setting/FeedbackProgressScreen';
@@ -25,11 +25,21 @@ import EventsRewardsScreen from './src/components/setting/EventsRewardsScreen';
 import ReportIssueScreen from './src/components/setting/ReportIssueScreen';
 import HelpCenterScreen from './src/components/setting/HelpCenterScreen';
 import NotificationScreen from './src/components/dashboard/NotificationScreen';
+import RecipesScreen from './src/components/dashboard/RecipesScreen';
+import MealDetailsScreen from './src/components/dashboard/MealDetailsScreen';
+import YourCoinsScreen from './src/components/dashboard/YourCoinsScreen';
+import EditProfileScreen from './src/components/setting/EditProfileScreen';
+import ProgramsAndChallengesScreen from './src/screens/ProgramsAndChallengesScreen';
+import SubscriptionScreen from './src/components/setting/SubscriptionScreen';
+import InvoiceHistoryScreen from './src/components/setting/InvoiceHistoryScreen';
+import AddHabitScreen from './src/components/setting/AddHabitScreen';
+import PaymentsAndBillsScreen from './src/components/setting/PaymentsAndBillsScreen';
+
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-  const [initialRoute, setInitialRoute] =useState<string | null>(null);
+  const [initialRoute, setInitialRoute] = useState<string | null>(null);
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -39,12 +49,9 @@ export default function App() {
         if (isLoggedIn === 'true' && userData) {
           const user = JSON.parse(userData);
 
-          if (user.role === 'User') {
+
+          if (user.role) {
             setInitialRoute('Dashboard');
-          } else if (user.role === 'Vendor') {
-            setInitialRoute('VendorDashboard');
-          } else if (user.role === 'Coach') {
-            setInitialRoute('CoachDashboard');
           } else {
             setInitialRoute('Home');
           }
@@ -74,9 +81,8 @@ export default function App() {
         <Stack.Screen name="CollegeStudentLogin" component={CollegeStudentLogin} />
         <Stack.Screen name="StudentLogin" component={StudentLogin} />
         <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Dashboard" component={DashboardScreen} />
-        <Stack.Screen name="VendorDashboard" component={VendorDashboard} />
-        <Stack.Screen name="CoachDashboard" component={CoachDashboard} />
+        <Stack.Screen name="Dashboard" component={BottomTabNavigator} />
+
         <Stack.Screen name="Calories" component={CaloriesScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="FeedbackProgressScreen" component={FeedbackProgressScreen} />
@@ -84,6 +90,17 @@ export default function App() {
         <Stack.Screen name="ReportIssueScreen" component={ReportIssueScreen} />
         <Stack.Screen name="HelpCenterScreen" component={HelpCenterScreen} />
         <Stack.Screen name="NotificationScreen" component={NotificationScreen} />
+        <Stack.Screen name="Recipes" component={RecipesScreen} />
+        <Stack.Screen name="MealDetails" component={MealDetailsScreen} />
+        <Stack.Screen name="YourCoins" component={YourCoinsScreen} />
+        <Stack.Screen name="ProgramsAndChallenges" component={ProgramsAndChallengesScreen} />
+        <Stack.Screen name="SubscriptionScreen" component={SubscriptionScreen} />
+        <Stack.Screen name="InvoiceHistoryScreen" component={InvoiceHistoryScreen} />
+        <Stack.Screen name="AddHabitScreen" component={AddHabitScreen} />
+        <Stack.Screen name="PaymentsAndBillsScreen" component={PaymentsAndBillsScreen} />
+        <Stack.Screen name="YourCoinsScreen" component={YourCoinsScreen} />
+        <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
+
       </Stack.Navigator>
     </NavigationContainer>
   );
