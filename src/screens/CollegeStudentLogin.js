@@ -5,12 +5,45 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CollegeStudentLogin = ({ navigation }) => {
   const [secure, setSecure] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [collegeId, setCollegeId] = useState('');
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill all fields');
+      return;
+    }
+
+    try {
+      const data = await AsyncStorage.getItem('DUMMY_USER');
+      if (!data) {
+        Alert.alert('Error', 'No user found, please signup');
+        return;
+      }
+
+      const user = JSON.parse(data);
+
+      if (email.toLowerCase() === user.email.toLowerCase() && password === user.password) {
+        await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
+        Alert.alert('Success', 'Login successful');
+        navigation.replace('Dashboard');
+      } else {
+        Alert.alert('Error', 'Invalid credentials');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Something went wrong');
+    }
+  };
 
   return (
     <LinearGradient
@@ -32,6 +65,10 @@ const CollegeStudentLogin = ({ navigation }) => {
             placeholder="College Email"
             placeholderTextColor="#ccc"
             style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
           />
         </View>
 
@@ -42,6 +79,8 @@ const CollegeStudentLogin = ({ navigation }) => {
             placeholderTextColor="#ccc"
             secureTextEntry={secure}
             style={styles.input}
+            value={password}
+            onChangeText={setPassword}
           />
           <TouchableOpacity onPress={() => setSecure(!secure)}>
             <Ionicons
@@ -49,7 +88,6 @@ const CollegeStudentLogin = ({ navigation }) => {
               size={22}
               color="#fff"
               style={styles.cameraIcon}
-              onPress={() => setSecure(!secure)}
             />
           </TouchableOpacity>
         </View>
@@ -60,16 +98,18 @@ const CollegeStudentLogin = ({ navigation }) => {
             placeholder="College ID (Optional)"
             placeholderTextColor="#ccc"
             style={styles.input}
+            value={collegeId}
+            onChangeText={setCollegeId}
           />
         </View>
 
         {/* Login Button */}
-        <TouchableOpacity style={styles.loginBtn}>
+        <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
           <Text style={styles.loginText}>Login</Text>
         </TouchableOpacity>
 
         {/* Signup */}
-        <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+        <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
           <Text style={styles.signupText}>Don’t have an account? Sign up</Text>
         </TouchableOpacity>
       </View>
@@ -140,4 +180,10 @@ const styles = StyleSheet.create({
   content: {
     marginTop: 140,
   },
+  cameraIcon: {
+    // re-adding cameraIcon style as it was referenced but might be missing/renamed in previous view
+    // assuming it shares style with generic icons
+    width: 24,
+    height: 24,
+  }
 });

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -10,6 +10,8 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// import { useFocusEffect } from '@react-navigation/native'; // Removed to fix static flag error
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ITEMS = [
     {
@@ -32,11 +34,40 @@ const ITEMS = [
     },
 ];
 
-const OrderDetailsScreen = ({ navigation, route }) => {
+const OrderDetailsScreen = ({ navigation, route }: { navigation: any, route: any }) => {
     const insets = useSafeAreaInsets();
     // In a real app, we would get order details from route.params
     const orderId = '#1234567890';
     const status = 'Shipped';
+
+    interface IAddress {
+        street: string;
+        city: string;
+        state: string;
+        zipCode: string;
+        country: string;
+    }
+
+    const [address, setAddress] = useState<IAddress | null>(null);
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            loadAddress();
+        });
+
+        return unsubscribe;
+    }, [navigation]);
+
+    const loadAddress = async () => {
+        try {
+            const savedAddress = await AsyncStorage.getItem('USER_ADDRESS');
+            if (savedAddress) {
+                setAddress(JSON.parse(savedAddress));
+            }
+        } catch (error) {
+            console.log('Error loading address:', error);
+        }
+    };
 
     return (
         <LinearGradient
@@ -79,10 +110,22 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                     ))}
                 </View>
 
-                <Text style={styles.sectionTitle}>Shipping Address</Text>
-                <Text style={styles.address}>
-                    123 Elm Street, Apt 4B, Springfield, IL 62704
-                </Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={styles.sectionTitle}>Shipping Address</Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('SavedAddressesScreen')}>
+                        <Text style={{ color: '#FF6B3D', fontWeight: 'bold' }}>
+                            {address ? 'Change' : 'Add'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                {address ? (
+                    <Text style={styles.address}>
+                        {address.street}, {address.city}, {address.state} {address.zipCode}, {address.country}
+                    </Text>
+                ) : (
+                    <Text style={styles.address}>No shipping address set.</Text>
+                )}
 
                 <Text style={styles.sectionTitle}>Payment Summary</Text>
                 <View style={styles.summaryRow}>

@@ -20,6 +20,7 @@ const settingsData = [
   { icon: 'notifications-outline', title: 'Subscription', subtitle: 'Manage your premium plan' },
   { icon: 'help-circle-outline', title: 'Help Center', subtitle: 'Get help and support' },
   { icon: 'bug-outline', title: 'Report Issue', subtitle: 'Report a bug or issue' },
+  { icon: 'location-outline', title: 'Address', subtitle: 'Manage your delivery address' },
 ];
 
 const SettingsScreen = ({ navigation }) => {
@@ -73,6 +74,9 @@ const SettingsScreen = ({ navigation }) => {
               }
               else if (item.title === 'Subscription') {
                 navigation.navigate('SubscriptionScreen');
+              }
+              else if (item.title === 'Address') {
+                navigation.navigate('AddressScreen');
               }
             }}
           >

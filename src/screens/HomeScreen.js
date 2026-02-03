@@ -6,11 +6,35 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 // import Ionicons from 'react-native-vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const HomeScreen = ({ navigation }) => {
+
+  const handleGoogleLogin = async () => {
+    try {
+      const googleUser = {
+        email: 'google_user@fitleap.com',
+        password: 'google_password',
+        role: 'user', // Ensuring role is 'user' for User Dashboard navigation
+        name: 'Google User',
+      };
+
+      await AsyncStorage.setItem('DUMMY_USER', JSON.stringify(googleUser));
+      await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
+
+      Alert.alert('Success', 'Logged in with Google');
+
+      // Navigate to the User Dashboard
+      navigation.replace('Dashboard');
+    } catch (error) {
+      console.log('Google Login Error:', error);
+      Alert.alert('Error', 'Google Login Failed');
+    }
+  };
 
   return (
     <LinearGradient
@@ -23,7 +47,7 @@ const HomeScreen = ({ navigation }) => {
         <Text style={styles.title}>Let’s You In</Text>
 
         {/* Google Button */}
-        <TouchableOpacity style={styles.googleBtn}>
+        <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleLogin}>
           <View style={styles.googleCircle}>
             <Image
               source={require('../assets/images/google.png')}
@@ -34,7 +58,7 @@ const HomeScreen = ({ navigation }) => {
           <Text style={styles.btnText}>Continue With Google</Text>
         </TouchableOpacity>
         {/* College */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.optionBtn}
           onPress={() => navigation.navigate('CollegeStudentLogin')}
         >
@@ -43,7 +67,7 @@ const HomeScreen = ({ navigation }) => {
 
         {/* School */}
         <TouchableOpacity style={styles.optionBtn}
-        onPress={()=> navigation.navigate('StudentLogin')}>
+          onPress={() => navigation.navigate('StudentLogin')}>
           <Text style={styles.optionText}>Continue As School Student</Text>
         </TouchableOpacity>
 

@@ -34,6 +34,8 @@ import SubscriptionScreen from './src/components/setting/SubscriptionScreen';
 import InvoiceHistoryScreen from './src/components/setting/InvoiceHistoryScreen';
 import AddHabitScreen from './src/components/setting/AddHabitScreen';
 import PaymentsAndBillsScreen from './src/components/setting/PaymentsAndBillsScreen';
+import AddressScreen from './src/components/setting/AddressScreen';
+import SavedAddressesScreen from './src/components/setting/SavedAddressesScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -100,6 +102,8 @@ export default function App() {
         <Stack.Screen name="PaymentsAndBillsScreen" component={PaymentsAndBillsScreen} />
         <Stack.Screen name="YourCoinsScreen" component={YourCoinsScreen} />
         <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
+        <Stack.Screen name="AddressScreen" component={AddressScreen} />
+        <Stack.Screen name="SavedAddressesScreen" component={SavedAddressesScreen} />
 
       </Stack.Navigator>
     </NavigationContainer>
