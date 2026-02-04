@@ -117,8 +117,9 @@ const SignupScreen = ({ navigation }) => {
 
     try {
       await AsyncStorage.setItem('DUMMY_USER', JSON.stringify(dummyUser));
+
       await AsyncStorage.setItem('IS_LOGGED_IN', 'false');
-      alert('Signup successful');
+      alert('Signup successful. Please Login.');
       navigation.navigate('Login');
     } catch (err) {
       console.log(err);

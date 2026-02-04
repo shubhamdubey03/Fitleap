@@ -23,8 +23,45 @@ const LoginScreen = ({ route, navigation }) => {
     }
 
 
+
+    // Check for Vendor Login
+    const lowerEmail = email.trim().toLowerCase();
+    console.log('Checking vendor login for:', lowerEmail);
+
+    if (lowerEmail.includes('vendor')) {
+      await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
+      await AsyncStorage.setItem('USER_ROLE', 'Vendor'); // Store role
+
+      // Extract vendor name from email (e.g. benjamin from benjamin@vendor.com)
+      const vendorName = lowerEmail.split('@')[0];
+      // Capitalize first letter
+      const formattedName = vendorName.charAt(0).toUpperCase() + vendorName.slice(1);
+
+      await AsyncStorage.setItem('VENDOR_NAME', formattedName);
+
+      alert('Vendor Login successful');
+      navigation.replace('VendorDashboard');
+      return;
+    }
+
+    if (lowerEmail.includes('coach')) {
+      await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
+      await AsyncStorage.setItem('USER_ROLE', 'Coach');
+
+      const coachName = lowerEmail.split('@')[0];
+      const formattedName = coachName.charAt(0).toUpperCase() + coachName.slice(1);
+
+      await AsyncStorage.setItem('COACH_NAME', formattedName);
+
+      alert('Coach Login successful');
+      navigation.replace('CoachDashboard');
+      return;
+    }
+
     const data = await AsyncStorage.getItem('DUMMY_USER');
     await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
+    await AsyncStorage.setItem('USER_ROLE', 'user');
+
 
 
     if (!data) {
@@ -37,8 +74,24 @@ const LoginScreen = ({ route, navigation }) => {
     if (email.toLowerCase() === user.email.toLowerCase() && password === user.password) {
       alert('Login successful');
 
-      // Navigate to Dashboard for all users
-      navigation.replace('Dashboard');
+      // Check if the signed-up user has Vendor role
+      if (user.role === 'Vendor') {
+        await AsyncStorage.setItem('USER_ROLE', 'Vendor');
+        const vendorName = user.name || user.email.split('@')[0];
+        await AsyncStorage.setItem('VENDOR_NAME', vendorName);
+        navigation.replace('VendorDashboard');
+
+      } else if (user.role === 'Coach') {
+        await AsyncStorage.setItem('USER_ROLE', 'Coach');
+        const coachName = user.name || user.email.split('@')[0];
+        await AsyncStorage.setItem('COACH_NAME', coachName);
+        navigation.replace('CoachDashboard');
+
+      } else {
+        // Navigate to Dashboard for regular users
+        await AsyncStorage.setItem('USER_ROLE', 'user');
+        navigation.replace('Dashboard');
+      }
     } else {
       alert('Invalid credentials');
     }

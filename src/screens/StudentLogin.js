@@ -23,6 +23,21 @@ const StudentLogin = ({ navigation }) => {
       return;
     }
 
+    // Check for Vendor Login
+    const lowerEmail = email.trim().toLowerCase();
+    if (lowerEmail.includes('vendor')) {
+      await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
+      await AsyncStorage.setItem('USER_ROLE', 'vendor');
+
+      const vendorName = lowerEmail.split('@')[0];
+      const formattedName = vendorName.charAt(0).toUpperCase() + vendorName.slice(1);
+      await AsyncStorage.setItem('VENDOR_NAME', formattedName);
+
+      Alert.alert('Success', 'Vendor Login successful');
+      navigation.replace('VendorDashboard');
+      return;
+    }
+
     try {
       const data = await AsyncStorage.getItem('DUMMY_USER');
       if (!data) {

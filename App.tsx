@@ -36,6 +36,8 @@ import AddHabitScreen from './src/components/setting/AddHabitScreen';
 import PaymentsAndBillsScreen from './src/components/setting/PaymentsAndBillsScreen';
 import AddressScreen from './src/components/setting/AddressScreen';
 import SavedAddressesScreen from './src/components/setting/SavedAddressesScreen';
+import VendorDashboardScreen from './src/screens/VendorDashboardScreen';
+import CoachDashboardScreen from './src/screens/CoachDashboardScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -48,14 +50,15 @@ export default function App() {
         const isLoggedIn = await AsyncStorage.getItem('IS_LOGGED_IN');
         const userData = await AsyncStorage.getItem('DUMMY_USER');
 
-        if (isLoggedIn === 'true' && userData) {
-          const user = JSON.parse(userData);
+        if (isLoggedIn === 'true') {
+          const userRole = await AsyncStorage.getItem('USER_ROLE');
 
-
-          if (user.role) {
-            setInitialRoute('Dashboard');
+          if (userRole === 'Vendor') {
+            setInitialRoute('VendorDashboard');
+          } else if (userRole === 'Coach') {
+            setInitialRoute('CoachDashboard');
           } else {
-            setInitialRoute('Home');
+            setInitialRoute('Dashboard');
           }
         } else {
           setInitialRoute('Login');
@@ -104,6 +107,8 @@ export default function App() {
         <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
         <Stack.Screen name="AddressScreen" component={AddressScreen} />
         <Stack.Screen name="SavedAddressesScreen" component={SavedAddressesScreen} />
+        <Stack.Screen name="VendorDashboard" component={VendorDashboardScreen} />
+        <Stack.Screen name="CoachDashboard" component={CoachDashboardScreen} />
 
       </Stack.Navigator>
     </NavigationContainer>
