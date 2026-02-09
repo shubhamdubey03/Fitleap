@@ -9,30 +9,75 @@ import {
   Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-// import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDispatch, useSelector } from 'react-redux';
+import { googleLogin, reset } from '../redux/authSlice';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
 const HomeScreen = ({ navigation }) => {
 
+  const dispatch = useDispatch();
+  const { user, isLoading, isError, isSuccess, message } = useSelector((state) => state.auth);
+
+  React.useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: '1010168078163-cu8oa0roarn1dup7krir12iviik5hs80.apps.googleusercontent.com',
+      offlineAccess: true,
+    });
+  }, []);
+
+  React.useEffect(() => {
+    if (isError) {
+      Alert.alert('Error', message);
+      dispatch(reset());
+    }
+
+    if (isSuccess && user) {
+      const handleSuccess = async () => {
+        Alert.alert('Success', 'Logged in with Google');
+        await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
+        await AsyncStorage.setItem('USER_ROLE', user.role);
+
+        if (user.role === 'vendor' || user.role === 'Vendor') {
+          const vendorName = user.name || 'Vendor';
+          await AsyncStorage.setItem('VENDOR_NAME', vendorName);
+          navigation.replace('VendorDashboard');
+        } else if (user.role === 'coach' || user.role === 'Coach') {
+          const coachName = user.name || 'Coach';
+          await AsyncStorage.setItem('COACH_NAME', coachName);
+          navigation.replace('CoachDashboard');
+        } else {
+          navigation.replace('Dashboard');
+        }
+        dispatch(reset());
+      };
+      handleSuccess();
+    }
+  }, [isError, isSuccess, user, message, navigation, dispatch]);
+
   const handleGoogleLogin = async () => {
     try {
-      const googleUser = {
-        email: 'google_user@fitleap.com',
-        password: 'google_password',
-        role: 'user', // Ensuring role is 'user' for User Dashboard navigation
-        name: 'Google User',
-      };
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo.data?.idToken;
 
-      await AsyncStorage.setItem('DUMMY_USER', JSON.stringify(googleUser));
-      await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
-
-      Alert.alert('Success', 'Logged in with Google');
-
-      // Navigate to the User Dashboard
-      navigation.replace('Dashboard');
+      if (idToken) {
+        console.log('GOOGLE ID TOKEN FOR POSTMAN:', idToken);
+        dispatch(googleLogin(idToken));
+      } else {
+        Alert.alert('Error', 'Failed to get ID Token from Google');
+      }
     } catch (error) {
-      console.log('Google Login Error:', error);
-      Alert.alert('Error', 'Google Login Failed');
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        console.log('User cancelled the login flow');
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        console.log('Sign in is in progress already');
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert('Error', 'Play services not available');
+      } else {
+        console.error(error);
+        Alert.alert('Error', 'Google Sign-In Error: ' + error.message);
+      }
     }
   };
 
@@ -44,7 +89,7 @@ const HomeScreen = ({ navigation }) => {
       <StatusBar barStyle="light-content" />
 
       <View style={styles.content}>
-        <Text style={styles.title}>Let’s You In</Text>
+        <Text style={styles.title}>Let’s Get You In</Text>
 
         {/* Google Button */}
         <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleLogin}>

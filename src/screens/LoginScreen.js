@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,15 +6,22 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDispatch, useSelector } from 'react-redux';
+import { login } from '../redux/authSlice';
 
 const LoginScreen = ({ route, navigation }) => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [email, setEmail] = useState(route.params?.email || '');
   const [password, setPassword] = useState(route.params?.password || '');
+  const dispatch = useDispatch();
+  const { isLoading } = useSelector((state) => state.auth);
+
+
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -22,78 +29,39 @@ const LoginScreen = ({ route, navigation }) => {
       return;
     }
 
+    const userData = {
+      email,
+      password,
+    };
+
+    dispatch(login(userData))
+      .unwrap()
+      .then(async (user) => {
+        await handleLoginSuccess(user);
+      })
+      .catch((error) => {
+        alert(error);
+      });
+  };
 
 
-    // Check for Vendor Login
-    const lowerEmail = email.trim().toLowerCase();
-    console.log('Checking vendor login for:', lowerEmail);
 
-    if (lowerEmail.includes('vendor')) {
-      await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
-      await AsyncStorage.setItem('USER_ROLE', 'Vendor'); // Store role
-
-      // Extract vendor name from email (e.g. benjamin from benjamin@vendor.com)
-      const vendorName = lowerEmail.split('@')[0];
-      // Capitalize first letter
-      const formattedName = vendorName.charAt(0).toUpperCase() + vendorName.slice(1);
-
-      await AsyncStorage.setItem('VENDOR_NAME', formattedName);
-
-      alert('Vendor Login successful');
-      navigation.replace('VendorDashboard');
-      return;
-    }
-
-    if (lowerEmail.includes('coach')) {
-      await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
-      await AsyncStorage.setItem('USER_ROLE', 'Coach');
-
-      const coachName = lowerEmail.split('@')[0];
-      const formattedName = coachName.charAt(0).toUpperCase() + coachName.slice(1);
-
-      await AsyncStorage.setItem('COACH_NAME', formattedName);
-
-      alert('Coach Login successful');
-      navigation.replace('CoachDashboard');
-      return;
-    }
-
-    const data = await AsyncStorage.getItem('DUMMY_USER');
+  const handleLoginSuccess = async (user) => {
+    alert('Login successful');
+    // Persist Login State Locally
     await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
-    await AsyncStorage.setItem('USER_ROLE', 'user');
+    await AsyncStorage.setItem('USER_ROLE', user.role);
 
-
-
-    if (!data) {
-      alert('No user found, please signup');
-      return;
-    }
-
-    const user = JSON.parse(data);
-
-    if (email.toLowerCase() === user.email.toLowerCase() && password === user.password) {
-      alert('Login successful');
-
-      // Check if the signed-up user has Vendor role
-      if (user.role === 'Vendor') {
-        await AsyncStorage.setItem('USER_ROLE', 'Vendor');
-        const vendorName = user.name || user.email.split('@')[0];
-        await AsyncStorage.setItem('VENDOR_NAME', vendorName);
-        navigation.replace('VendorDashboard');
-
-      } else if (user.role === 'Coach') {
-        await AsyncStorage.setItem('USER_ROLE', 'Coach');
-        const coachName = user.name || user.email.split('@')[0];
-        await AsyncStorage.setItem('COACH_NAME', coachName);
-        navigation.replace('CoachDashboard');
-
-      } else {
-        // Navigate to Dashboard for regular users
-        await AsyncStorage.setItem('USER_ROLE', 'user');
-        navigation.replace('Dashboard');
-      }
+    if (user.role === 'vendor' || user.role === 'Vendor') {
+      const vendorName = user.name || 'Vendor';
+      await AsyncStorage.setItem('VENDOR_NAME', vendorName);
+      navigation.replace('VendorDashboard');
+    } else if (user.role === 'coach' || user.role === 'Coach') {
+      const coachName = user.name || 'Coach';
+      await AsyncStorage.setItem('COACH_NAME', coachName);
+      navigation.replace('CoachDashboard');
     } else {
-      alert('Invalid credentials');
+      navigation.replace('Dashboard');
     }
   };
 
@@ -110,7 +78,7 @@ const LoginScreen = ({ route, navigation }) => {
         <View style={styles.inputBox}>
           <Ionicons name="mail-outline" size={20} color="#fff" />
           <TextInput
-            placeholder="Email / Phone no."
+            placeholder="Email"
             placeholderTextColor="#ccc"
             style={styles.input}
             value={email}
@@ -141,14 +109,16 @@ const LoginScreen = ({ route, navigation }) => {
         </View>
 
 
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginText}>Login</Text>
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={isLoading}>
+          {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginText}>Login</Text>}
         </TouchableOpacity>
 
         {/* Cancel */}
-        <TouchableOpacity onPress={() => navigation.replace('SignUp')}>
+        <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.replace('Home')}>
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
+
+
       </View>
     </LinearGradient>
   );
@@ -187,12 +157,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  cancelButton: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginTop: 15,
+  },
   cancelText: {
     color: '#fff',
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 14,
+    fontSize: 16,
+    fontWeight: '600',
   },
+
 });
 
 export default LoginScreen;

@@ -1,71 +1,70 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     Image,
-    ScrollView,
     TouchableOpacity,
     FlatList,
+    TextInput,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const CATEGORIES = [
-    { id: '1', name: 'Books', icon: 'book-outline' },
-    { id: '2', name: 'Tech', icon: 'hardware-chip-outline' },
-    { id: '3', name: 'Housing', icon: 'home-outline' },
-    { id: '4', name: 'Services', icon: 'construct-outline' },
-];
-
-const LISTINGS = [
+const SPORT_ITEMS = [
     {
         id: '1',
-        title: 'Calculus Textbook',
-        price: 'Rs 200.00',
-        seller: 'Alex',
-        image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=200',
+        title: 'Adjustable Dumbbells',
+        price: 'Rs 12000',
+        seller: 'FitPro Gear',
+        image: 'https://images.unsplash.com/photo-1638531952329-87c2b3af695c?auto=format&fit=crop&q=80&w=200',
     },
     {
         id: '2',
-        title: 'Laptop',
-        price: 'Rs 700.00',
-        seller: 'Eman',
-        image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&q=80&w=200',
+        title: 'Yoga Mat Premium',
+        price: 'Rs 1500',
+        seller: 'Zen Store',
+        image: 'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?auto=format&fit=crop&q=80&w=200',
     },
     {
         id: '3',
-        title: 'Apartment',
-        price: 'Rs 3200.00/month',
-        seller: 'Nash',
-        image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=200',
+        title: 'Running Shoes',
+        price: 'Rs 4500',
+        seller: 'Speedsters',
+        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=200',
     },
     {
         id: '4',
-        title: 'Tutoring',
-        price: 'Rs 30.00/hour',
-        seller: 'Liam',
-        image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=200',
+        title: 'Whey Protein 2kg',
+        price: 'Rs 6000',
+        seller: 'MuscleUp',
+        image: 'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?auto=format&fit=crop&q=80&w=200',
+    },
+    {
+        id: '5',
+        title: 'Resistance Bands Set',
+        price: 'Rs 800',
+        seller: 'Home Gym',
+        image: 'https://plus.unsplash.com/premium_photo-1664109999537-088e7d964da2?auto=format&fit=crop&q=80&w=200',
     },
 ];
 
-const MarketplaceHomeScreen = ({ navigation }) => {
+const MarketplaceHomeScreen = ({ navigation }: any) => {
     const insets = useSafeAreaInsets();
+    const [searchQuery, setSearchQuery] = useState<string>('');
 
-    const renderCategory = ({ item }) => (
-        <TouchableOpacity style={styles.categoryItem}>
-            <Text style={styles.categoryText}>{item.name}</Text>
-        </TouchableOpacity>
+    const filteredItems = SPORT_ITEMS.filter(item =>
+        item.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const renderListing = ({ item }) => (
+    const renderListing = ({ item }: any) => (
         <TouchableOpacity
             style={styles.listingItem}
             onPress={() => navigation.navigate('ProductDetails', { product: item })}
         >
             <View style={styles.listingInfo}>
-                <Text style={styles.listingLabel}>New</Text>
+                <Text style={styles.listingLabel}>Sport Gear</Text>
                 <Text style={styles.listingTitle}>{item.title}</Text>
                 <Text style={styles.listingPrice}>{item.price} - <Text style={styles.sellerName}>{item.seller}</Text></Text>
             </View>
@@ -86,31 +85,41 @@ const MarketplaceHomeScreen = ({ navigation }) => {
                     </View>
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Market Place</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Orders')}>
-                    <View style={styles.iconButton}>
-                        <Ionicons name="receipt-outline" size={20} color="#fff" />
-                    </View>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <TouchableOpacity onPress={() => navigation.navigate('YourCoinsScreen')}>
+                        <View style={styles.iconButton}>
+                            <Ionicons name="cash-outline" size={20} color="#F5C542" />
+                        </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => navigation.navigate('Orders')}>
+                        <View style={styles.iconButton}>
+                            <Ionicons name="receipt-outline" size={20} color="#fff" />
+                        </View>
+                    </TouchableOpacity>
+                </View>
             </View>
 
-            {/* Categories */}
-            <View style={styles.categoriesContainer}>
-                <FlatList
-                    data={CATEGORIES}
-                    renderItem={renderCategory}
-                    keyExtractor={item => item.id}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.categoriesList}
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+                <Ionicons name="search" size={20} color="#ccc" style={styles.searchIcon} />
+                <TextInput
+                    placeholder="Search sports gear..."
+                    placeholderTextColor="#ccc"
+                    style={styles.searchInput}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
                 />
             </View>
 
             {/* Listings */}
             <FlatList
-                data={LISTINGS}
+                data={filteredItems}
                 renderItem={renderListing}
                 keyExtractor={item => item.id}
                 contentContainerStyle={styles.listingsList}
+                ListEmptyComponent={
+                    <Text style={styles.emptyText}>No items found</Text>
+                }
             />
         </LinearGradient>
     );
@@ -140,23 +149,23 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
     },
-    categoriesContainer: {
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderRadius: 12,
+        paddingHorizontal: 15,
+        marginHorizontal: 20,
         marginBottom: 20,
+        height: 50,
     },
-    categoriesList: {
-        paddingHorizontal: 20,
-        gap: 15,
+    searchIcon: {
+        marginRight: 10,
     },
-    categoryItem: {
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        // backgroundColor: 'rgba(255,255,255,0.1)',
-        // borderRadius: 20,
-    },
-    categoryText: {
-        color: '#ccc',
-        fontSize: 14,
-        fontWeight: '600',
+    searchInput: {
+        flex: 1,
+        color: '#fff',
+        fontSize: 16,
     },
     listingsList: {
         paddingHorizontal: 20,
@@ -200,6 +209,11 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         backgroundColor: '#333',
     },
+    emptyText: {
+        color: '#ccc',
+        textAlign: 'center',
+        marginTop: 50,
+    }
 });
 
 export default MarketplaceHomeScreen;

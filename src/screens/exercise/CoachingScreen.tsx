@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -11,8 +11,9 @@ import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const CoachingScreen = ({ navigation }) => {
+const CoachingScreen = ({ navigation }: any) => {
     const insets = useSafeAreaInsets();
+    const [activeTab, setActiveTab] = useState<'appointments' | 'schedule'>("appointments");
 
     return (
         <LinearGradient
@@ -21,80 +22,115 @@ const CoachingScreen = ({ navigation }) => {
         >
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <View style={styles.iconButton}>
-                        <Ionicons name="arrow-back" size={20} color="#fff" />
-                    </View>
-                </TouchableOpacity>
                 <Text style={styles.headerTitle}>Coaching</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('VideoConsultation')}>
-                    <View style={styles.iconButton}>
-                        <Ionicons name="calendar" size={20} color="#ffb74d" />
-                    </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <TouchableOpacity onPress={() => navigation.navigate('YourCoinsScreen')}>
+                        <View style={styles.iconButton}>
+                            <Ionicons name="cash-outline" size={20} color="#F5C542" />
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            {/* Tab Switcher */}
+            <View style={styles.tabContainer}>
+                <TouchableOpacity
+                    style={[styles.tabButton, activeTab === 'schedule' && styles.activeTabButton]}
+                    onPress={() => setActiveTab('schedule')}
+                >
+                    <Text style={[styles.tabText, activeTab === 'schedule' && styles.activeTabText]}>Schedule</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.tabButton, activeTab === 'appointments' && styles.activeTabButton]}
+                    onPress={() => setActiveTab('appointments')}
+                >
+                    <Text style={[styles.tabText, activeTab === 'appointments' && styles.activeTabText]}>Appointments</Text>
                 </TouchableOpacity>
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                <Text style={styles.sectionTitle}>Upcoming</Text>
+                {activeTab === 'appointments' ? (
+                    <>
+                        <Text style={styles.sectionTitle}>Upcoming</Text>
 
-                {/* Upcoming Session Card */}
-                <View style={styles.upcomingCard}>
-                    <View style={styles.cardHeader}>
-                        <Text style={styles.todayLabel}>Today</Text>
-                        <TouchableOpacity style={styles.joinBtn}>
-                            <Text style={styles.joinBtnText}>Join Now</Text>
+                        {/* Upcoming Session Card */}
+                        <View style={styles.upcomingCard}>
+                            <View style={styles.cardHeader}>
+                                <Text style={styles.todayLabel}>Today</Text>
+                                <TouchableOpacity style={styles.joinBtn}>
+                                    <Text style={styles.joinBtnText}>Join Now</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <Text style={styles.sessionTitle}>Nutrition Coaching</Text>
+                            <Text style={styles.sessionTime}>10:00 AM - 10:30 AM</Text>
+
+                            <View style={styles.coachRow}>
+                                <Image
+                                    source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100' }}
+                                    style={styles.coachAvatarSmall}
+                                />
+                                <Text style={styles.coachNameSmall}>Dr. Emily Carter</Text>
+                            </View>
+                        </View>
+
+                        <Text style={styles.sectionTitle}>Your Coach</Text>
+                        <View style={styles.coachProfileCard}>
+                            <View style={styles.profileRow}>
+                                <Image
+                                    source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200' }}
+                                    style={styles.coachAvatarLarge}
+                                />
+                                <View>
+                                    <Text style={styles.profileName}>Dr. Emily Carter</Text>
+                                    <Text style={styles.profileRole}>Nutrition Coach</Text>
+                                </View>
+                                <TouchableOpacity style={styles.videoCallBtn}>
+                                    <Text style={styles.videoCallText}>Video Call</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </>
+                ) : (
+                    <>
+                        {/* Schedule View */}
+                        <Text style={styles.sectionTitle}>Book a Session</Text>
+                        <TouchableOpacity
+                            style={styles.bookSessionCard}
+                            onPress={() => navigation.navigate('VideoConsultation')}
+                        >
+                            <View style={styles.bookIconData}>
+                                <Ionicons name="videocam" size={24} color="#fff" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.bookTitle}>Video Consultation</Text>
+                                <Text style={styles.bookSubtitle}>Schedule a 1-on-1 video call</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color="#ccc" />
                         </TouchableOpacity>
-                    </View>
-                    <Text style={styles.sessionTitle}>Nutrition Coaching</Text>
-                    <Text style={styles.sessionTime}>10:00 AM - 10:30 AM</Text>
 
-                    <View style={styles.coachRow}>
-                        <Image
-                            source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100' }}
-                            style={styles.coachAvatarSmall}
-                        />
-                        <Text style={styles.coachNameSmall}>Dr. Emily Carter</Text>
-                    </View>
-                </View>
-
-                <Text style={styles.sectionTitle}>Your Coach</Text>
-                <View style={styles.coachProfileCard}>
-                    <View style={styles.profileRow}>
-                        <Image
-                            source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200' }}
-                            style={styles.coachAvatarLarge}
-                        />
-                        <View>
-                            <Text style={styles.profileName}>Dr. Emily Carter</Text>
-                            <Text style={styles.profileRole}>Nutrition Coach</Text>
+                        <Text style={styles.sectionTitle}>Availability</Text>
+                        <View style={styles.availabilityList}>
+                            <View style={styles.availabilityItem}>
+                                <View style={styles.dayIcon}>
+                                    <Ionicons name="calendar-outline" size={20} color="#fff" />
+                                </View>
+                                <Text style={styles.availabilityText}>Monday, 9:00 AM - 5:00 PM</Text>
+                            </View>
+                            <View style={styles.availabilityItem}>
+                                <View style={styles.dayIcon}>
+                                    <Ionicons name="calendar-outline" size={20} color="#fff" />
+                                </View>
+                                <Text style={styles.availabilityText}>Tuesday, 9:00 AM - 5:00 PM</Text>
+                            </View>
+                            <View style={styles.availabilityItem}>
+                                <View style={styles.dayIcon}>
+                                    <Ionicons name="calendar-outline" size={20} color="#fff" />
+                                </View>
+                                <Text style={styles.availabilityText}>Wednesday, 8:00 AM - 5:00 PM</Text>
+                            </View>
                         </View>
-                        <TouchableOpacity style={styles.videoCallBtn}>
-                            <Text style={styles.videoCallText}>Video Call</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-                <Text style={styles.sectionTitle}>Availability</Text>
-                <View style={styles.availabilityList}>
-                    <View style={styles.availabilityItem}>
-                        <View style={styles.dayIcon}>
-                            <Ionicons name="calendar-outline" size={20} color="#fff" />
-                        </View>
-                        <Text style={styles.availabilityText}>Monday, 9:00 AM - 5:00 PM</Text>
-                    </View>
-                    <View style={styles.availabilityItem}>
-                        <View style={styles.dayIcon}>
-                            <Ionicons name="calendar-outline" size={20} color="#fff" />
-                        </View>
-                        <Text style={styles.availabilityText}>Tuesday, 9:00 AM - 5:00 PM</Text>
-                    </View>
-                    <View style={styles.availabilityItem}>
-                        <View style={styles.dayIcon}>
-                            <Ionicons name="calendar-outline" size={20} color="#fff" />
-                        </View>
-                        <Text style={styles.availabilityText}>Wednesday, 8:00 AM - 5:00 PM</Text>
-                    </View>
-                </View>
+                    </>
+                )}
             </ScrollView>
         </LinearGradient>
     );
@@ -123,6 +159,31 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 18,
         fontWeight: 'bold',
+    },
+    tabContainer: {
+        flexDirection: 'row',
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        marginHorizontal: 20,
+        borderRadius: 12,
+        padding: 4,
+        marginBottom: 10,
+    },
+    tabButton: {
+        flex: 1,
+        paddingVertical: 8,
+        alignItems: 'center',
+        borderRadius: 10,
+    },
+    activeTabButton: {
+        backgroundColor: '#7b1fa2',
+    },
+    tabText: {
+        color: '#ccc',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    activeTabText: {
+        color: '#fff',
     },
     scrollContent: {
         padding: 20,
@@ -243,6 +304,33 @@ const styles = StyleSheet.create({
     availabilityText: {
         color: '#fff',
         fontSize: 14,
+    },
+    bookSessionCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        borderRadius: 16,
+        padding: 15,
+        marginBottom: 20,
+    },
+    bookIconData: {
+        width: 50,
+        height: 50,
+        borderRadius: 12,
+        backgroundColor: '#7b1fa2',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 15,
+    },
+    bookTitle: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    bookSubtitle: {
+        color: '#aaa',
+        fontSize: 12,
     },
 });
 

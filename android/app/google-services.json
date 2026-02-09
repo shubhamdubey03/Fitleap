@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1010168078163",
+    "project_id": "fitleap-9ba8c",
+    "storage_bucket": "fitleap-9ba8c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1010168078163:android:d61ebb35184b70f30e4ba6",
+        "android_client_info": {
+          "package_name": "com.fitleap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0otKo1k_6h3qA__emLUIf0lbaKxrOr9g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

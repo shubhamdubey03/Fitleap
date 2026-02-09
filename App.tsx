@@ -9,6 +9,10 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Provider } from 'react-redux';
+import { store } from './src/redux/store';
+import { setUser } from './src/redux/authSlice';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import HomeScreen from './src/screens/HomeScreen';
 import SignupScreen from './src/screens/SignupScreen';
@@ -38,6 +42,8 @@ import AddressScreen from './src/components/setting/AddressScreen';
 import SavedAddressesScreen from './src/components/setting/SavedAddressesScreen';
 import VendorDashboardScreen from './src/screens/VendorDashboardScreen';
 import CoachDashboardScreen from './src/screens/CoachDashboardScreen';
+import ChatScreen from './src/screens/ChatScreen';
+import ChatListScreen from './src/screens/ChatListScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -51,6 +57,13 @@ export default function App() {
         const userData = await AsyncStorage.getItem('DUMMY_USER');
 
         if (isLoggedIn === 'true') {
+          // Restore user to Redux
+          const userString = await AsyncStorage.getItem('user');
+          if (userString) {
+            const user = JSON.parse(userString);
+            store.dispatch(setUser(user));
+          }
+
           const userRole = await AsyncStorage.getItem('USER_ROLE');
 
           if (userRole === 'Vendor') {
@@ -76,41 +89,49 @@ export default function App() {
   if (!initialRoute) return null;
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName={initialRoute}
-        screenOptions={{ headerShown: false }}
-      >
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="SignUp" component={SignupScreen} />
-        <Stack.Screen name="CollegeStudentLogin" component={CollegeStudentLogin} />
-        <Stack.Screen name="StudentLogin" component={StudentLogin} />
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Dashboard" component={BottomTabNavigator} />
 
-        <Stack.Screen name="Calories" component={CaloriesScreen} />
-        <Stack.Screen name="Settings" component={SettingsScreen} />
-        <Stack.Screen name="FeedbackProgressScreen" component={FeedbackProgressScreen} />
-        <Stack.Screen name="EventsRewardsScreen" component={EventsRewardsScreen} />
-        <Stack.Screen name="ReportIssueScreen" component={ReportIssueScreen} />
-        <Stack.Screen name="HelpCenterScreen" component={HelpCenterScreen} />
-        <Stack.Screen name="NotificationScreen" component={NotificationScreen} />
-        <Stack.Screen name="Recipes" component={RecipesScreen} />
-        <Stack.Screen name="MealDetails" component={MealDetailsScreen} />
-        <Stack.Screen name="YourCoins" component={YourCoinsScreen} />
-        <Stack.Screen name="ProgramsAndChallenges" component={ProgramsAndChallengesScreen} />
-        <Stack.Screen name="SubscriptionScreen" component={SubscriptionScreen} />
-        <Stack.Screen name="InvoiceHistoryScreen" component={InvoiceHistoryScreen} />
-        <Stack.Screen name="AddHabitScreen" component={AddHabitScreen} />
-        <Stack.Screen name="PaymentsAndBillsScreen" component={PaymentsAndBillsScreen} />
-        <Stack.Screen name="YourCoinsScreen" component={YourCoinsScreen} />
-        <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
-        <Stack.Screen name="AddressScreen" component={AddressScreen} />
-        <Stack.Screen name="SavedAddressesScreen" component={SavedAddressesScreen} />
-        <Stack.Screen name="VendorDashboard" component={VendorDashboardScreen} />
-        <Stack.Screen name="CoachDashboard" component={CoachDashboardScreen} />
+    <Provider store={store}>
+      <KeyboardProvider>
+        <NavigationContainer>
+          <Stack.Navigator
+            initialRouteName={initialRoute}
+            screenOptions={{ headerShown: false }}
+          >
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="SignUp" component={SignupScreen} />
+            <Stack.Screen name="CollegeStudentLogin" component={CollegeStudentLogin} />
+            <Stack.Screen name="StudentLogin" component={StudentLogin} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Dashboard" component={BottomTabNavigator} />
 
-      </Stack.Navigator>
-    </NavigationContainer>
+            <Stack.Screen name="Calories" component={CaloriesScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="FeedbackProgressScreen" component={FeedbackProgressScreen} />
+            <Stack.Screen name="EventsRewardsScreen" component={EventsRewardsScreen} />
+            <Stack.Screen name="ReportIssueScreen" component={ReportIssueScreen} />
+            <Stack.Screen name="HelpCenterScreen" component={HelpCenterScreen} />
+            <Stack.Screen name="NotificationScreen" component={NotificationScreen} />
+            <Stack.Screen name="Recipes" component={RecipesScreen} />
+            <Stack.Screen name="MealDetails" component={MealDetailsScreen} />
+            <Stack.Screen name="YourCoins" component={YourCoinsScreen} />
+            <Stack.Screen name="ProgramsAndChallenges" component={ProgramsAndChallengesScreen} />
+            <Stack.Screen name="SubscriptionScreen" component={SubscriptionScreen} />
+            <Stack.Screen name="InvoiceHistoryScreen" component={InvoiceHistoryScreen} />
+            <Stack.Screen name="AddHabitScreen" component={AddHabitScreen} />
+            <Stack.Screen name="PaymentsAndBillsScreen" component={PaymentsAndBillsScreen} />
+            <Stack.Screen name="YourCoinsScreen" component={YourCoinsScreen} />
+            <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
+            <Stack.Screen name="AddressScreen" component={AddressScreen} />
+            <Stack.Screen name="SavedAddressesScreen" component={SavedAddressesScreen} />
+            <Stack.Screen name="VendorDashboard" component={VendorDashboardScreen} />
+            <Stack.Screen name="CoachDashboard" component={CoachDashboardScreen} />
+            <Stack.Screen name="ChatScreen" component={ChatScreen} />
+            <Stack.Screen name="ChatListScreen" component={ChatListScreen} />
+
+          </Stack.Navigator>
+        </NavigationContainer>
+      </KeyboardProvider>
+    </Provider>
   );
+
 }

@@ -11,29 +11,45 @@ import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import SafeProgressCircle from '../SafeProgressCircle';
 
+import DashboardSidebar from './DashboardSidebar';
+
+import { useSelector } from 'react-redux';
+
 const DashboardScreen = ({ navigation }) => {
+  const { user } = useSelector((state) => state.auth);
+  const [isSidebarVisible, setSidebarVisible] = useState(false);
 
   return (
     <LinearGradient colors={['#1a0033', '#4b0066']} style={styles.container}>
+      <DashboardSidebar
+        visible={isSidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        navigation={navigation}
+      />
       <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+
+            <TouchableOpacity onPress={() => setSidebarVisible(true)}>
               <Image
                 source={{ uri: 'https://i.pravatar.cc/150?img=3' }}
                 style={styles.avatar}
               />
             </TouchableOpacity>
             <View>
-              <Text style={styles.hello}>Hello Benjamin</Text>
+              <Text style={styles.hello}>Hello {user?.name || 'User'}</Text>
               <Text style={styles.title}>Let's Explore</Text>
             </View>
           </View>
 
           <View style={styles.headerIcons}>
-            <Ionicons name="business-outline" size={22} color="#F5C542" />
+            <TouchableOpacity onPress={() => navigation.navigate('YourCoinsScreen')}>
+              <Ionicons name="cash-outline" size={22} color="#F5C542" style={{ marginRight: 15 }} />
+            </TouchableOpacity>
+
+
             <TouchableOpacity onPress={() => navigation.navigate('NotificationScreen')}>
               <Ionicons name="notifications" size={22} color="#FF6B3D" />
             </TouchableOpacity>

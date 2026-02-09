@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -12,13 +12,26 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import { useSelector } from 'react-redux';
 
 const EditProfileScreen = ({ navigation }) => {
-    const [name, setName] = useState('Benjamin');
-    const [email, setEmail] = useState('benjamin@example.com');
-    const [phone, setPhone] = useState('+1 234 567 890');
-    const [gender, setGender] = useState('Male');
-    const [age, setAge] = useState('25');
+    const { user } = useSelector((state) => state.auth);
+
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
+    const [gender, setGender] = useState('');
+    const [age, setAge] = useState('');
+
+    useEffect(() => {
+        if (user) {
+            setName(user.name || '');
+            setEmail(user.email || '');
+            setPhone(user.phone || '');
+            setGender(user.gender || '');
+            setAge(user.age ? String(user.age) : '');
+        }
+    }, [user]);
 
     return (
         <LinearGradient
@@ -56,7 +69,7 @@ const EditProfileScreen = ({ navigation }) => {
                     {/* Form Fields */}
                     <View style={styles.formContainer}>
                         <InputField label="Full Name" value={name} onChangeText={setName} />
-                        <InputField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
+                        <InputField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" editable={false} />
                         <InputField label="Phone Number" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
 
                         <View style={styles.row}>
@@ -79,15 +92,16 @@ const EditProfileScreen = ({ navigation }) => {
     );
 };
 
-const InputField = ({ label, value, onChangeText, keyboardType = 'default' }) => (
+const InputField = ({ label, value, onChangeText, keyboardType = 'default', editable = true }) => (
     <View style={styles.inputGroup}>
         <Text style={styles.label}>{label}</Text>
         <TextInput
-            style={styles.input}
+            style={[styles.input, !editable && { opacity: 0.6, backgroundColor: 'rgba(0,0,0,0.2)' }]}
             value={value}
             onChangeText={onChangeText}
             keyboardType={keyboardType}
             placeholderTextColor="rgba(255,255,255,0.4)"
+            editable={editable}
         />
     </View>
 );

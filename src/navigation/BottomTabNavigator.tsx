@@ -7,6 +7,7 @@ import DashboardScreen from '../components/dashboard/DashboardScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import MarketplaceNavigator from './MarketplaceNavigator';
 import ExerciseStack from './ExerciseNavigator';
+import ConsultationNavigator from './ConsultationNavigator';
 
 const Tab = createBottomTabNavigator();
 
@@ -37,6 +38,8 @@ const BottomTabNavigator = () => {
                         iconName = focused ? 'home' : 'home-outline';
                     } else if (route.name === 'Exercise') {
                         iconName = focused ? 'fitness' : 'fitness-outline';
+                    } else if (route.name === 'Consultation') {
+                        iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
                     } else if (route.name === 'Marketplace') {
                         iconName = focused ? 'cart' : 'cart-outline';
                     } else if (route.name === 'Profile') {
@@ -47,8 +50,11 @@ const BottomTabNavigator = () => {
                 },
             })}
         >
+
+
             <Tab.Screen name="Home" component={DashboardScreen} />
             <Tab.Screen name="Exercise" component={ExerciseStack} />
+            <Tab.Screen name="Consultation" component={ConsultationNavigator} />
             <Tab.Screen name="Marketplace" component={MarketplaceNavigator} />
             <Tab.Screen name="Profile" component={ProfileScreen} />
         </Tab.Navigator>

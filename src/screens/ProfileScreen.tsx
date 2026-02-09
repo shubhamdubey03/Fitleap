@@ -4,9 +4,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import { useSelector } from 'react-redux';
 
 const ProfileScreen = () => {
     const navigation = useNavigation();
+    const { user } = useSelector((state: any) => state.auth);
+    console.log(user);
 
     const handleLogout = async () => {
         try {
@@ -30,9 +33,11 @@ const ProfileScreen = () => {
                     <Ionicons name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Profile</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.iconBtn}>
-                    <Ionicons name="settings-outline" size={22} color="#fff" />
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <TouchableOpacity onPress={() => navigation.navigate('YourCoinsScreen')} style={styles.iconBtn}>
+                        <Ionicons name="cash-outline" size={22} color="#F5C542" />
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -41,8 +46,8 @@ const ProfileScreen = () => {
                         source={{ uri: 'https://i.pravatar.cc/150?img=3' }}
                         style={styles.avatar}
                     />
-                    <Text style={styles.name}>Sophia</Text>
-                    <Text style={styles.phone}>+1-555-123-4567</Text>
+                    <Text style={styles.name}>{user?.name || 'User'}</Text>
+                    <Text style={styles.phone}>{user?.phone || 'No phone number'}</Text>
                 </View>
 
                 {/* Personal Details */}

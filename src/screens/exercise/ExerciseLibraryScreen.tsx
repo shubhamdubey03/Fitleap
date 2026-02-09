@@ -85,12 +85,14 @@ const ExerciseLibraryScreen = ({ navigation }) => {
                     </View>
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Exercise Library</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Coaching')}>
-                    <View style={styles.iconButton}>
-                        {/* Coaching Icon substitute */}
-                        <Ionicons name="school" size={20} color="#fff" />
-                    </View>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <TouchableOpacity onPress={() => navigation.navigate('YourCoinsScreen')}>
+                        <View style={styles.iconButton}>
+                            <Ionicons name="cash-outline" size={20} color="#F5C542" />
+                        </View>
+                    </TouchableOpacity>
+
+                </View>
             </View>
 
             <View style={styles.content}>

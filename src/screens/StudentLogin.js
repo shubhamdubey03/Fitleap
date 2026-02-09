@@ -10,12 +10,15 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDispatch } from 'react-redux';
+import { login } from '../redux/authSlice';
 
 const StudentLogin = ({ navigation }) => {
   const [secure, setSecure] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [studentId, setStudentId] = useState('');
+  const dispatch = useDispatch();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -23,41 +26,23 @@ const StudentLogin = ({ navigation }) => {
       return;
     }
 
-    // Check for Vendor Login
-    const lowerEmail = email.trim().toLowerCase();
-    if (lowerEmail.includes('vendor')) {
-      await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
-      await AsyncStorage.setItem('USER_ROLE', 'vendor');
+    const userData = {
+      email,
+      password,
+      studentId,
+    };
 
-      const vendorName = lowerEmail.split('@')[0];
-      const formattedName = vendorName.charAt(0).toUpperCase() + vendorName.slice(1);
-      await AsyncStorage.setItem('VENDOR_NAME', formattedName);
-
-      Alert.alert('Success', 'Vendor Login successful');
-      navigation.replace('VendorDashboard');
-      return;
-    }
-
-    try {
-      const data = await AsyncStorage.getItem('DUMMY_USER');
-      if (!data) {
-        Alert.alert('Error', 'No user found, please signup');
-        return;
-      }
-
-      const user = JSON.parse(data);
-
-      if (email.toLowerCase() === user.email.toLowerCase() && password === user.password) {
-        await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
+    dispatch(login(userData))
+      .unwrap()
+      .then(async (user) => {
         Alert.alert('Success', 'Login successful');
+        await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
+        await AsyncStorage.setItem('USER_ROLE', user.role || 'student');
         navigation.replace('Dashboard');
-      } else {
-        Alert.alert('Error', 'Invalid credentials');
-      }
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Something went wrong');
-    }
+      })
+      .catch((error) => {
+        Alert.alert('Error', typeof error === 'string' ? error : 'Login failed');
+      });
   };
 
   return (

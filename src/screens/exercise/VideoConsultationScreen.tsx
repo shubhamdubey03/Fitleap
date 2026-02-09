@@ -61,11 +61,8 @@ const VideoConsultationScreen = ({ navigation }) => {
                     </View>
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Video Consultations</Text>
-                <TouchableOpacity>
-                    <View style={styles.iconButton}>
-                        <Ionicons name="add" size={20} color="#ffb74d" />
-                    </View>
-                </TouchableOpacity>
+                <View style={{ width: 36 }} />
+
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>

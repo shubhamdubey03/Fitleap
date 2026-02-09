@@ -13,11 +13,13 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DashboardSidebar from '../components/dashboard/DashboardSidebar';
 
 const { width } = Dimensions.get('window');
 
 const CoachDashboardScreen = ({ navigation }) => {
     const [coachName, setCoachName] = useState('Coach');
+    const [isSidebarVisible, setSidebarVisible] = useState(false);
 
     useEffect(() => {
         const getCoachName = async () => {
@@ -36,13 +38,18 @@ const CoachDashboardScreen = ({ navigation }) => {
     };
 
     const students = [
-        { id: '1', name: 'Sarah Mike', status: 'Active', plan: 'Yoga Basic' },
-        { id: '2', name: 'David John', status: 'Pending', plan: 'Weight Loss' },
-        { id: '3', name: 'Emily Rose', status: 'Active', plan: 'Cardio Blast' },
+        { id: '227be150-696a-4bfc-bee8-d3c121c1d338', name: 'Test User', status: 'Active', plan: 'Yoga Basic' },
+        { id: 'a1a13e8e-af57-4215-8e2a-6930c4080676', name: 'Shubham', status: 'Pending', plan: 'Weight Loss' },
     ];
 
     const renderStudent = ({ item }) => (
-        <View style={styles.studentItem}>
+        <TouchableOpacity
+            style={styles.studentItem}
+            onPress={() => navigation.navigate('ChatScreen', {
+                receiverId: item.id,
+                receiverName: item.name
+            })}
+        >
             <View style={styles.studentInfo}>
                 <View style={styles.studentIcon}>
                     <Ionicons name="person" size={18} color="#fff" />
@@ -52,10 +59,13 @@ const CoachDashboardScreen = ({ navigation }) => {
                     <Text style={styles.studentPlan}>{item.plan}</Text>
                 </View>
             </View>
-            <Text style={[styles.statusText, { color: item.status === 'Active' ? '#2ECC71' : '#F1C40F' }]}>
-                {item.status}
-            </Text>
-        </View>
+            <View style={{ alignItems: 'flex-end' }}>
+                <Ionicons name="chatbubble-outline" size={20} color="#FF6B3D" style={{ marginBottom: 5 }} />
+                <Text style={[styles.statusText, { color: item.status === 'Active' ? '#2ECC71' : '#F1C40F' }]}>
+                    {item.status}
+                </Text>
+            </View>
+        </TouchableOpacity>
     );
 
     return (
@@ -80,6 +90,9 @@ const CoachDashboardScreen = ({ navigation }) => {
                         </View>
                     </View>
                     <View style={styles.headerIcons}>
+                        <TouchableOpacity onPress={() => navigation.navigate('ChatListScreen')} style={styles.iconBtn}>
+                            <Ionicons name="chatbubbles-outline" size={24} color="#fff" />
+                        </TouchableOpacity>
                         <TouchableOpacity onPress={handleLogout} style={styles.iconBtn}>
                             <Ionicons name="log-out-outline" size={24} color="#FF6B3D" />
                         </TouchableOpacity>
@@ -131,8 +144,15 @@ const CoachDashboardScreen = ({ navigation }) => {
                     {students.map((item) => <View key={item.id}>{renderStudent({ item })}</View>)}
                 </View>
 
+
+
+                <DashboardSidebar
+                    visible={isSidebarVisible}
+                    onClose={() => setSidebarVisible(false)}
+                    navigation={navigation}
+                />
             </ScrollView>
-        </LinearGradient>
+        </LinearGradient >
     );
 };
 

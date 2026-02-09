@@ -64,10 +64,7 @@ const RecipesScreen = ({ navigation }) => {
                     <Ionicons name="arrow-back" size={20} color="#fff" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Recipes</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('YourCoinsScreen')}>
-                    {/* Using a coin-like icon, assuming accessible from design or font */}
-                    <Ionicons name="gift" size={20} color="#ffb74d" />
-                </TouchableOpacity>
+                <View style={{ width: 20 }} />
             </View>
 
             {/* Tabs */}
