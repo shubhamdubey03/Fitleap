@@ -6,6 +6,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useSelector } from 'react-redux';
 
+
+
 const ProfileScreen = () => {
     const navigation = useNavigation();
     const { user } = useSelector((state: any) => state.auth);

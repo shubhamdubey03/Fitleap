@@ -21,8 +21,9 @@ const HomeScreen = ({ navigation }) => {
 
   React.useEffect(() => {
     GoogleSignin.configure({
-      webClientId: '1010168078163-cu8oa0roarn1dup7krir12iviik5hs80.apps.googleusercontent.com',
+      webClientId: '1010168078163-mllikqhguodcbl7fvaapo53kmhmobg3r.apps.googleusercontent.com', // Use Web Client ID (client_type 3 from google-services.json)
       offlineAccess: true,
+      forceCodeForRefreshToken: true, // often needed to get idToken reliably
     });
   }, []);
 
@@ -34,7 +35,7 @@ const HomeScreen = ({ navigation }) => {
 
     if (isSuccess && user) {
       const handleSuccess = async () => {
-        Alert.alert('Success', 'Logged in with Google');
+        Alert.alert('Login Successful', `Welcome ${user.name}`);
         await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
         await AsyncStorage.setItem('USER_ROLE', user.role);
 
@@ -58,8 +59,14 @@ const HomeScreen = ({ navigation }) => {
   const handleGoogleLogin = async () => {
     try {
       await GoogleSignin.hasPlayServices();
+      try {
+        await GoogleSignin.signOut();
+      } catch (e) {
+        // Ignore error if user wasn't signed in
+      }
       const userInfo = await GoogleSignin.signIn();
-      const idToken = userInfo.data?.idToken;
+      console.log('Full User Info:', JSON.stringify(userInfo, null, 2));
+      const idToken = userInfo.data?.idToken || userInfo.idToken;
 
       if (idToken) {
         console.log('GOOGLE ID TOKEN FOR POSTMAN:', idToken);
@@ -75,8 +82,8 @@ const HomeScreen = ({ navigation }) => {
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
         Alert.alert('Error', 'Play services not available');
       } else {
-        console.error(error);
-        Alert.alert('Error', 'Google Sign-In Error: ' + error.message);
+        console.error('Google Sign-In Error Details:', JSON.stringify(error, null, 2));
+        Alert.alert('Error', 'Google Sign-In Error: ' + (error.message || 'Unknown error'));
       }
     }
   };

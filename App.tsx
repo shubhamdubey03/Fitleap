@@ -44,12 +44,32 @@ import VendorDashboardScreen from './src/screens/VendorDashboardScreen';
 import CoachDashboardScreen from './src/screens/CoachDashboardScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import ChatListScreen from './src/screens/ChatListScreen';
+import { initNotifications } from './src/services/Notifications';
 
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
+
+
+  // useEffect(() => {
+
+  //   const startNotifications = async () => {
+  //     const token = await initNotifications();
+
+  //     // 👉 Save token to Supabase / backend
+  //     console.log("Saved token:", token);
+  //   };
+
+  //   startNotifications();
+
+  // }, []);
+  useEffect(() => {
+    initNotifications();
+  }, []);
+
+
   useEffect(() => {
     const checkAuth = async () => {
       try {

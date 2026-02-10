@@ -37,6 +37,8 @@ const notifications = [
   },
 ];
 
+
+
 const NotificationScreen = ({ navigation }) => {
   return (
     <LinearGradient

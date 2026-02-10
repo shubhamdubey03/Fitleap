@@ -12,7 +12,20 @@
           "package_name": "com.fitleap"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1010168078163-cu8oa0roarn1dup7krir12iviik5hs80.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fitleap",
+            "certificate_hash": "ea9e2fcf0cb8a41f387f61922705757dc1345da0"
+          }
+        },
+        {
+          "client_id": "1010168078163-mllikqhguodcbl7fvaapo53kmhmobg3r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyB0otKo1k_6h3qA__emLUIf0lbaKxrOr9g"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1010168078163-mllikqhguodcbl7fvaapo53kmhmobg3r.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
