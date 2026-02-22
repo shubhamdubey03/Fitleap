@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -7,55 +7,50 @@ import {
     TouchableOpacity,
     FlatList,
     TextInput,
+    ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import axios from 'axios';
+import { API_BASE_URL } from '../../config/api';
+import { useSelector } from 'react-redux';
 
-const SPORT_ITEMS = [
-    {
-        id: '1',
-        title: 'Adjustable Dumbbells',
-        price: 'Rs 12000',
-        seller: 'FitPro Gear',
-        image: 'https://images.unsplash.com/photo-1638531952329-87c2b3af695c?auto=format&fit=crop&q=80&w=200',
-    },
-    {
-        id: '2',
-        title: 'Yoga Mat Premium',
-        price: 'Rs 1500',
-        seller: 'Zen Store',
-        image: 'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?auto=format&fit=crop&q=80&w=200',
-    },
-    {
-        id: '3',
-        title: 'Running Shoes',
-        price: 'Rs 4500',
-        seller: 'Speedsters',
-        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=200',
-    },
-    {
-        id: '4',
-        title: 'Whey Protein 2kg',
-        price: 'Rs 6000',
-        seller: 'MuscleUp',
-        image: 'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?auto=format&fit=crop&q=80&w=200',
-    },
-    {
-        id: '5',
-        title: 'Resistance Bands Set',
-        price: 'Rs 800',
-        seller: 'Home Gym',
-        image: 'https://plus.unsplash.com/premium_photo-1664109999537-088e7d964da2?auto=format&fit=crop&q=80&w=200',
-    },
-];
 
 const MarketplaceHomeScreen = ({ navigation }: any) => {
     const insets = useSafeAreaInsets();
     const [searchQuery, setSearchQuery] = useState<string>('');
+    const [products, setProducts] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const user = useSelector((state: any) => state.auth.user);
+    const token = user?.token || user?.access_token;
 
-    const filteredItems = SPORT_ITEMS.filter(item =>
-        item.title.toLowerCase().includes(searchQuery.toLowerCase())
+    useEffect(() => {
+        if (user?._id) {
+            fetchProducts();
+        }
+    }, [user]);
+
+    const fetchProducts = async () => {
+        try {
+            const response = await axios.get(
+                `${API_BASE_URL}/orders/products`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+            setProducts(response.data);
+        } catch (error) {
+            console.error("Failed to fetch products:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredItems = products.filter(item =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const renderListing = ({ item }: any) => (
@@ -64,11 +59,14 @@ const MarketplaceHomeScreen = ({ navigation }: any) => {
             onPress={() => navigation.navigate('ProductDetails', { product: item })}
         >
             <View style={styles.listingInfo}>
-                <Text style={styles.listingLabel}>Sport Gear</Text>
-                <Text style={styles.listingTitle}>{item.title}</Text>
-                <Text style={styles.listingPrice}>{item.price} - <Text style={styles.sellerName}>{item.seller}</Text></Text>
+                <Text style={styles.listingLabel}>{item.category || 'Sport Gear'}</Text>
+                <Text style={styles.listingTitle}>{item.name}</Text>
+                <Text style={styles.listingPrice}>Rs {item.price}</Text>
             </View>
-            <Image source={{ uri: item.image }} style={styles.listingImage} />
+            <Image
+                source={{ uri: item.image_url || 'https://images.unsplash.com/photo-1638531952329-87c2b3af695c?auto=format&fit=crop&q=80&w=200' }}
+                style={styles.listingImage}
+            />
         </TouchableOpacity>
     );
 
@@ -112,15 +110,21 @@ const MarketplaceHomeScreen = ({ navigation }: any) => {
             </View>
 
             {/* Listings */}
-            <FlatList
-                data={filteredItems}
-                renderItem={renderListing}
-                keyExtractor={item => item.id}
-                contentContainerStyle={styles.listingsList}
-                ListEmptyComponent={
-                    <Text style={styles.emptyText}>No items found</Text>
-                }
-            />
+            {loading ? (
+                <View style={styles.loaderContainer}>
+                    <ActivityIndicator size="large" color="#fff" />
+                </View>
+            ) : (
+                <FlatList
+                    data={filteredItems}
+                    renderItem={renderListing}
+                    keyExtractor={item => item.id}
+                    contentContainerStyle={styles.listingsList}
+                    ListEmptyComponent={
+                        <Text style={styles.emptyText}>No items found</Text>
+                    }
+                />
+            )}
         </LinearGradient>
     );
 };
@@ -213,6 +217,11 @@ const styles = StyleSheet.create({
         color: '#ccc',
         textAlign: 'center',
         marginTop: 50,
+    },
+    loaderContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     }
 });
 

@@ -6,21 +6,79 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
+  StatusBar,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import SafeProgressCircle from '../SafeProgressCircle';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import { useSelector, useDispatch } from 'react-redux';
 
 import DashboardSidebar from './DashboardSidebar';
-
-import { useSelector } from 'react-redux';
+import { reset } from '../../redux/notificationSlice';
+import { AUTH_URL } from '../../config/api';
 
 const DashboardScreen = ({ navigation }) => {
-  const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const { unreadCount } = useSelector((state) => state.notifications);
   const [isSidebarVisible, setSidebarVisible] = useState(false);
+  const { user } = useSelector((state) => state.auth);
+  console.log("USER DATAssssssssssssssssssssssssss FROM REDUX:", user);
+  const [userProfile, setUserProfile] = useState(user);
+
+
+  const getProfile = async () => {
+
+    try {
+      let token = await AsyncStorage.getItem('authToken');
+
+      // Fallback: Check if stored in 'user' object by Redux
+      if (!token) {
+        const userStr = await AsyncStorage.getItem('user');
+        if (userStr) {
+          const userObj = JSON.parse(userStr);
+          if (userObj && userObj.token) {
+            token = userObj.token;
+          }
+        }
+      }
+
+      if (!token) {
+        console.log("No auth token found");
+        return;
+      }
+      console.log(";;;;;;;;;;;;", token)
+
+      console.log("Fetching profile with token:", token.substring(0, 10) + "...");
+
+      const response = await axios.get(
+        `${AUTH_URL}/profile`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("PROFILE DATA RECEIVED:", response.data.name);
+      setUserProfile(response.data);
+    } catch (error) {
+      console.log("PROFILE FETCH ERROR:", error.response?.data || error.message);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      getProfile();
+    }, []),
+  );
 
   return (
     <LinearGradient colors={['#1a0033', '#4b0066']} style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+
       <DashboardSidebar
         visible={isSidebarVisible}
         onClose={() => setSidebarVisible(false)}
@@ -34,12 +92,12 @@ const DashboardScreen = ({ navigation }) => {
 
             <TouchableOpacity onPress={() => setSidebarVisible(true)}>
               <Image
-                source={{ uri: 'https://i.pravatar.cc/150?img=3' }}
+                source={{ uri: userProfile?.profile_image || 'https://i.pravatar.cc/150?img=3' }}
                 style={styles.avatar}
               />
             </TouchableOpacity>
             <View>
-              <Text style={styles.hello}>Hello {user?.name || 'User'}</Text>
+              <Text style={styles.hello}>Hello {userProfile?.name || 'User'}</Text>
               <Text style={styles.title}>Let's Explore</Text>
             </View>
           </View>
@@ -50,8 +108,18 @@ const DashboardScreen = ({ navigation }) => {
             </TouchableOpacity>
 
 
-            <TouchableOpacity onPress={() => navigation.navigate('NotificationScreen')}>
-              <Ionicons name="notifications" size={22} color="#FF6B3D" />
+            <TouchableOpacity onPress={() => {
+              dispatch(reset());
+              navigation.navigate('NotificationScreen');
+            }}>
+              <View>
+                <Ionicons name="notifications" size={22} color="#FF6B3D" />
+                {unreadCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{unreadCount}</Text>
+                  </View>
+                )}
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -126,7 +194,6 @@ const DashboardScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Coaching */}
         {/* Coaching */}
         <TouchableOpacity
           style={styles.coachCard}
@@ -257,8 +324,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginLeft: 6,
     color: '#333',
-
-
   },
   flowerIcon: {
     width: 26,
@@ -350,6 +415,22 @@ const styles = StyleSheet.create({
     height: 160,
     borderRadius: 16,
     marginBottom: 30,
+  },
+  badge: {
+    position: 'absolute',
+    right: -4,
+    top: -4,
+    backgroundColor: 'red',
+    borderRadius: 8,
+    width: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
 });
 

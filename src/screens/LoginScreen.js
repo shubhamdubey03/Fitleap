@@ -23,25 +23,59 @@ const LoginScreen = ({ route, navigation }) => {
 
 
 
+  // const handleLogin = async () => {
+  //   if (!email || !password) {
+  //     alert('Please fill all fields');
+  //     return;
+  //   }
+
+  //   const userData = {
+  //     email,
+  //     password,
+  //   };
+
+  //   dispatch(login(userData))
+  //     .unwrap()
+  //     .then(async (user) => {
+  //       await handleLoginSuccess(user);
+  //     })
+  //     .catch((error) => {
+  //       alert(error);
+  //     });
+  // };
+
+
   const handleLogin = async () => {
     if (!email || !password) {
       alert('Please fill all fields');
       return;
     }
 
-    const userData = {
-      email,
-      password,
-    };
+    const userData = { email, password };
 
-    dispatch(login(userData))
-      .unwrap()
-      .then(async (user) => {
-        await handleLoginSuccess(user);
-      })
-      .catch((error) => {
-        alert(error);
-      });
+    try {
+      const response = await dispatch(login(userData)).unwrap();
+
+      console.log("API RESPONSE:", response);
+
+      // 🔐 Save token securely
+      await AsyncStorage.setItem('authToken', response.token);
+      console.log("tokennnnnnnn", response.token);
+
+      // (optional but recommended)
+      await AsyncStorage.setItem('userData', JSON.stringify({
+        id: response._id,
+        name: response.name,
+        email: response.email,
+        role: response.role,
+      }));
+
+      await handleLoginSuccess(response);
+
+    } catch (error) {
+      console.log("LOGIN ERROR:", error);
+      alert(error.message || error);
+    }
   };
 
 

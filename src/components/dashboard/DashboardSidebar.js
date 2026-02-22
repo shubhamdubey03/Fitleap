@@ -33,7 +33,6 @@ const settingsData = [
 
 const DashboardSidebar = ({ visible, onClose, navigation }) => {
     const { user } = useSelector((state) => state.auth);
-
     const navigateTo = (screen) => {
         onClose();
         navigation.navigate(screen);
@@ -95,7 +94,7 @@ const DashboardSidebar = ({ visible, onClose, navigation }) => {
                     >
                         <View style={styles.header}>
                             <Image
-                                source={{ uri: 'https://i.pravatar.cc/150?img=3' }}
+                                source={{ uri: user?.profile_image || 'https://i.pravatar.cc/150?img=3' }}
                                 style={styles.avatar}
                             />
                             <View>

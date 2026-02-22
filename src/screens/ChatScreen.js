@@ -156,22 +156,37 @@ const ChatScreen = ({ route, navigation }) => {
 
             {/* Input Area */}
             {/* Input Area */}
+            {/* Input Area or Premium Lock */}
             <KeyboardStickyView
                 offset={{ closed: 0, opened: 0 }}
             >
-                <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 15), backgroundColor: 'rgba(0,0,0,0.3)' }]}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Type a message..."
-                        placeholderTextColor="#ccc"
-                        value={inputText}
-                        onChangeText={setInputText}
-                        multiline
-                    />
-                    <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-                        <Ionicons name="send" size={20} color="#fff" />
-                    </TouchableOpacity>
-                </View>
+                {user.role === 'User' && !user.is_premium ? (
+                    <View style={[styles.inputContainer, { justifyContent: 'center', flexDirection: 'column', gap: 10 }]}>
+                        <Text style={{ color: '#fff', textAlign: 'center' }}>
+                            Upgrade to Premium to chat with your coach.
+                        </Text>
+                        <TouchableOpacity
+                            style={[styles.sendButton, { width: 'auto', paddingHorizontal: 20, marginLeft: 0 }]}
+                            onPress={() => navigation.navigate('Subscription')}
+                        >
+                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Get Premium</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 15), backgroundColor: 'rgba(0,0,0,0.3)' }]}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Type a message..."
+                            placeholderTextColor="#ccc"
+                            value={inputText}
+                            onChangeText={setInputText}
+                            multiline
+                        />
+                        <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+                            <Ionicons name="send" size={20} color="#fff" />
+                        </TouchableOpacity>
+                    </View>
+                )}
             </KeyboardStickyView>
         </LinearGradient>
     );

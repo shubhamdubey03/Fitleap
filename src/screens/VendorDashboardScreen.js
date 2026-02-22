@@ -12,11 +12,14 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDispatch } from 'react-redux';
+import { logout } from '../redux/authSlice';
 
 const { width } = Dimensions.get('window');
 
 const VendorDashboardScreen = ({ navigation }) => {
     const [vendorName, setVendorName] = useState('Vendor');
+    const dispatch = useDispatch();
 
     useEffect(() => {
         const getVendorName = async () => {
@@ -29,6 +32,8 @@ const VendorDashboardScreen = ({ navigation }) => {
     }, []);
 
     const handleLogout = async () => {
+        await dispatch(logout()).unwrap();
+        // Fallback or exact clears matching existing codebase pattern just in case
         await AsyncStorage.removeItem('IS_LOGGED_IN');
         await AsyncStorage.removeItem('USER_ROLE');
         await AsyncStorage.removeItem('VENDOR_NAME');

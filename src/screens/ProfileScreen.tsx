@@ -1,27 +1,84 @@
-import React from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import axios from 'axios';
 
-
+import { AUTH_URL } from '../config/api';
+import { logout, setUser } from '../redux/authSlice';
 
 const ProfileScreen = () => {
     const navigation = useNavigation();
+    const dispatch = useDispatch();
+
+    // Initial state from Redux (fallback)
     const { user } = useSelector((state: any) => state.auth);
-    console.log(user);
+
+    // Local state for fresh data
+    const [userProfile, setUserProfile] = useState(user);
+
+    // Sync local state with Redux when user changes
+    useEffect(() => {
+        if (user) {
+            setUserProfile(user);
+        }
+    }, [user]);
+
+    const getProfile = async () => {
+        try {
+            let token = await AsyncStorage.getItem('authToken');
+
+            if (!token) {
+                const userStr = await AsyncStorage.getItem('user');
+                if (userStr) {
+                    const userObj = JSON.parse(userStr);
+                    token = userObj?.token;
+                }
+            }
+
+            if (!token) return;
+
+            const response = await axios.get(`${AUTH_URL}/profile`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            const freshData = response.data;
+            setUserProfile(freshData);
+
+            // Update Redux state (merge to keep token)
+            if (user) {
+                dispatch(setUser({ ...user, ...freshData }));
+            }
+
+        } catch (error) {
+            console.log("Profile Fetch Error:", error);
+        }
+    };
+
+    useFocusEffect(
+        useCallback(() => {
+            getProfile();
+        }, [])
+    );
 
     const handleLogout = async () => {
         try {
-            await AsyncStorage.setItem('IS_LOGGED_IN', 'false');
+            await dispatch(logout()).unwrap();
             navigation.reset({
                 index: 0,
                 routes: [{ name: 'Login' }],
             });
         } catch (e) {
             console.log('Logout error:', e);
+            // Fallback
+            await AsyncStorage.clear();
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+            });
         }
     };
 
@@ -36,8 +93,8 @@ const ProfileScreen = () => {
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Profile</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <TouchableOpacity onPress={() => navigation.navigate('YourCoinsScreen')} style={styles.iconBtn}>
-                        <Ionicons name="cash-outline" size={22} color="#F5C542" />
+                    <TouchableOpacity onPress={() => navigation.navigate('EditProfileScreen')}>
+                        <Ionicons name="create-outline" size={24} color="#fff" />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -45,16 +102,18 @@ const ProfileScreen = () => {
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.profileSection}>
                     <Image
-                        source={{ uri: 'https://i.pravatar.cc/150?img=3' }}
+                        source={{ uri: userProfile?.profile_image || 'https://i.pravatar.cc/150?img=3' }}
                         style={styles.avatar}
                     />
-                    <Text style={styles.name}>{user?.name || 'User'}</Text>
-                    <Text style={styles.phone}>{user?.phone || 'No phone number'}</Text>
+                    <Text style={styles.name}>{userProfile?.name || 'User'}</Text>
+                    <Text style={styles.phone}>{userProfile?.phone || userProfile?.email || 'No contact info'}</Text>
                 </View>
 
                 {/* Personal Details */}
-                <ProfileItem icon="time-outline" label="Age" value="28" />
-                <ProfileItem icon="female-outline" label="Gender" value="Female" />
+                <ProfileItem icon="person-outline" label="Age" value={userProfile?.age ? `${userProfile.age} Years` : 'N/A'} />
+                <ProfileItem icon="male-female-outline" label="Gender" value={userProfile?.gender || 'N/A'} />
+
+                {/* Hardcoded placeholders for now as these fields are not in DB */}
                 <ProfileItem icon="resize-outline" label="Height" value="5'6" />
                 <ProfileItem icon="barbell-outline" label="Weight" value="65 Kg" />
 
@@ -73,8 +132,8 @@ const ProfileScreen = () => {
     );
 };
 
-const ProfileItem = ({ icon, label, value }) => (
-    <TouchableOpacity style={styles.item}>
+const ProfileItem = ({ icon, label, value }: { icon: any, label: string, value: string }) => (
+    <View style={styles.item}>
         <View style={styles.itemLeft}>
             <View style={styles.iconBox}>
                 <Ionicons name={icon} size={18} color="#fff" />
@@ -84,7 +143,7 @@ const ProfileItem = ({ icon, label, value }) => (
             </Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color="#aaa" />
-    </TouchableOpacity>
+    </View>
 );
 
 const styles = StyleSheet.create({

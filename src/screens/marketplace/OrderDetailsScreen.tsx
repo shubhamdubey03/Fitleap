@@ -6,6 +6,7 @@ import {
     Image,
     ScrollView,
     TouchableOpacity,
+    Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -13,61 +14,27 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // import { useFocusEffect } from '@react-navigation/native'; // Removed to fix static flag error
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const ITEMS = [
-    {
-        id: '1',
-        title: 'Soya Milk',
-        qty: 1,
-        image: 'https://images.unsplash.com/photo-1624456729094-1a938c5d1e2e?auto=format&fit=crop&q=80&w=100'
-    },
-    {
-        id: '2',
-        title: 'Soya Flour',
-        qty: 2,
-        image: 'https://images.unsplash.com/photo-1610452264853-2c1dd7c4c329?auto=format&fit=crop&q=80&w=100'
-    },
-    {
-        id: '3',
-        title: 'Soya Chunks',
-        qty: 1,
-        image: 'https://images.unsplash.com/photo-1594248478440-424a56a62308?auto=format&fit=crop&q=80&w=100'
-    },
-];
+
+
 
 const OrderDetailsScreen = ({ navigation, route }: { navigation: any, route: any }) => {
     const insets = useSafeAreaInsets();
     // In a real app, we would get order details from route.params
     const orderId = '#1234567890';
-    const status = 'Shipped';
+    const { order } = route.params || {}
+    console.log("orderaaaaaaaaaaaa", order);
 
-    interface IAddress {
-        street: string;
-        city: string;
-        state: string;
-        zipCode: string;
-        country: string;
+    // Safety: If no order passed, handle gracefully or check for orderId fetching
+    if (!order) {
+        return (
+            <LinearGradient colors={['#1a0033', '#3a005f']} style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
+                <Text style={{ color: '#fff' }}>Order details unavailable.</Text>
+            </LinearGradient>
+        );
     }
 
-    const [address, setAddress] = useState<IAddress | null>(null);
-
-    useEffect(() => {
-        const unsubscribe = navigation.addListener('focus', () => {
-            loadAddress();
-        });
-
-        return unsubscribe;
-    }, [navigation]);
-
-    const loadAddress = async () => {
-        try {
-            const savedAddress = await AsyncStorage.getItem('USER_ADDRESS');
-            if (savedAddress) {
-                setAddress(JSON.parse(savedAddress));
-            }
-        } catch (error) {
-            console.log('Error loading address:', error);
-        }
-    };
+    // Handle both new flat structure (order IS the item) and old nested structure
+    const items = order.items && order.items.length > 0 ? order.items : [order];
 
     return (
         <LinearGradient
@@ -77,80 +44,66 @@ const OrderDetailsScreen = ({ navigation, route }: { navigation: any, route: any
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <View style={styles.iconButton}>
-                        <Ionicons name="arrow-back" size={20} color="#fff" />
+                        <Ionicons name="close" size={20} color="#fff" />
                     </View>
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Order Details</Text>
-                <TouchableOpacity>
-                    <View style={styles.iconButton}>
-                        <Ionicons name="ellipsis-vertical" size={20} color="#fff" />
-                    </View>
-                </TouchableOpacity>
+                <View style={{ width: 36 }} />
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                <View style={styles.orderHeader}>
-                    <Text style={styles.label}>Order Number</Text>
-                    <Text style={styles.value}>{orderId}</Text>
-                </View>
-                <View style={styles.orderHeader}>
+                <View style={styles.detailsCard}>
+                    <Text style={styles.label}>Order ID</Text>
+                    <Text style={styles.value}>{order.id}</Text>
+
+                    <Text style={styles.label}>Date</Text>
+                    <Text style={styles.value}>{new Date(order.created_at).toLocaleString()}</Text>
+
                     <Text style={styles.label}>Status</Text>
-                    <Text style={styles.status}>{status}</Text>
-                </View>
-
-                <View style={styles.itemsList}>
-                    {ITEMS.map((item) => (
-                        <View key={item.id} style={styles.itemRow}>
-                            <Image source={{ uri: item.image }} style={styles.itemImage} />
-                            <View>
-                                <Text style={styles.itemTitle}>{item.title}</Text>
-                                <Text style={styles.itemQty}>Quantity: {item.qty}</Text>
-                            </View>
-                        </View>
-                    ))}
-                </View>
-
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text style={styles.sectionTitle}>Shipping Address</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('SavedAddressesScreen')}>
-                        <Text style={{ color: '#FF6B3D', fontWeight: 'bold' }}>
-                            {address ? 'Change' : 'Add'}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                {address ? (
-                    <Text style={styles.address}>
-                        {address.street}, {address.city}, {address.state} {address.zipCode}, {address.country}
+                    <Text style={[styles.value, { color: order.status === 'paid' ? '#4caf50' : '#ff9800' }]}>
+                        {order.status ? order.status.toUpperCase() : 'UNKNOWN'}
                     </Text>
-                ) : (
-                    <Text style={styles.address}>No shipping address set.</Text>
-                )}
 
-                <Text style={styles.sectionTitle}>Payment Summary</Text>
-                <View style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Subtotal</Text>
-                    <Text style={styles.summaryValue}>Rs 2500</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Shipping</Text>
-                    <Text style={styles.summaryValue}>Rs 500</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Tax</Text>
-                    <Text style={styles.summaryValue}>Rs 250</Text>
-                </View>
-                <View style={[styles.summaryRow, styles.totalRow]}>
-                    <Text style={styles.totalLabel}>Total</Text>
-                    <Text style={styles.totalValue}>Rs 3250</Text>
+                    <Text style={styles.label}>Total Amount</Text>
+                    <Text style={styles.value}>Rs {order.total_price}</Text>
+
+                    <Text style={styles.label}>Address</Text>
+                    <Text style={styles.value}>{order.addresses.address1},
+                        {order.addresses.address2 && `, ${order.addresses.address2}`}
+                        {order.addresses.city}, {order.addresses.states?.name} - {order.addresses.pincode}</Text>
                 </View>
 
+                {/* Track Order Button */}
                 <TouchableOpacity
                     style={styles.trackBtn}
-                    onPress={() => navigation.navigate('TrackOrder')}
+                    onPress={() => navigation.navigate('TrackOrderScreen', { order })}
                 >
-                    <Text style={styles.trackBtnText}>Track Delivery</Text>
+                    <Text style={styles.trackBtnText}>Track Order</Text>
+                    <Ionicons name="location-outline" size={20} color="#fff" style={{ marginLeft: 8 }} />
                 </TouchableOpacity>
+
+                <Text style={styles.sectionTitle}>Items</Text>
+                {items.length > 0 ? items.map((item: any, index: number) => (
+                    <View key={index} style={styles.itemCard}>
+                        <Image
+                            source={{ uri: item.products?.image_url || 'https://images.unsplash.com/photo-1624456729094-1a938c5d1e2e' }}
+                            style={styles.itemImage}
+                        />
+                        <View style={styles.itemInfo}>
+                            <Text style={styles.itemTitle}>{item.products?.name || 'Product'}</Text>
+                            <Text style={styles.itemPrice}>Rs {item.total_price} x {item.quantity}</Text>
+                        </View>
+                    </View>
+                )) : (
+                    <Text style={{ color: '#aaa' }}>No items information</Text>
+                )}
+
+                {/* <TouchableOpacity
+                    style={styles.helpBtn}
+                    onPress={() => Alert.alert('Support', 'Contacting support...')}
+                >
+                    <Text style={styles.helpBtnText}>Need Help?</Text>
+                </TouchableOpacity> */}
             </ScrollView>
         </LinearGradient>
     );
@@ -182,99 +135,81 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 20,
-        paddingBottom: 40,
     },
-    orderHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 10,
+    detailsCard: {
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 15,
+        padding: 20,
+        marginBottom: 20,
     },
     label: {
-        color: '#ccc',
-        fontSize: 14,
+        color: '#aaa',
+        fontSize: 12,
+        marginBottom: 4,
     },
     value: {
         color: '#fff',
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: 'bold',
+        marginBottom: 15,
     },
-    status: {
-        color: '#4caf50',
-        fontSize: 14,
+    sectionTitle: {
+        color: '#fff',
+        fontSize: 18,
         fontWeight: 'bold',
+        marginBottom: 15,
     },
-    itemsList: {
-        marginTop: 20,
-        marginBottom: 30,
-    },
-    itemRow: {
+    itemCard: {
         flexDirection: 'row',
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 12,
+        padding: 10,
+        marginBottom: 10,
         alignItems: 'center',
-        marginBottom: 20,
     },
     itemImage: {
-        width: 50,
-        height: 50,
-        borderRadius: 10,
+        width: 60,
+        height: 60,
+        borderRadius: 8,
         marginRight: 15,
-        backgroundColor: '#333',
+    },
+    itemInfo: {
+        flex: 1,
     },
     itemTitle: {
         color: '#fff',
         fontSize: 16,
-        marginBottom: 4,
-    },
-    itemQty: {
-        color: '#aaa',
-        fontSize: 12,
-    },
-    sectionTitle: {
-        color: '#fff',
-        fontSize: 16,
         fontWeight: 'bold',
-        marginBottom: 10,
-        marginTop: 10,
+        marginBottom: 5,
     },
-    address: {
-        color: '#ccc',
-        fontSize: 14,
-        lineHeight: 22,
-        marginBottom: 30,
-    },
-    summaryRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 10,
-    },
-    summaryLabel: {
+    itemPrice: {
         color: '#ccc',
         fontSize: 14,
     },
-    summaryValue: {
-        color: '#fff',
-        fontSize: 14,
-    },
-    totalRow: {
-        marginTop: 10,
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.1)',
-        paddingTop: 15,
-        marginBottom: 30,
-    },
-    totalLabel: {
-        color: '#fff',
-        fontSize: 16,
-    },
-    totalValue: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    trackBtn: {
-        backgroundColor: '#5e35b1', // Deep purple
-        paddingVertical: 16,
+    helpBtn: {
+        marginTop: 30,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        paddingVertical: 15,
         borderRadius: 12,
         alignItems: 'center',
+    },
+    helpBtnText: {
+        color: '#fff',
+        fontSize: 16,
+    },
+    trackBtn: {
+        backgroundColor: '#7b1fa2',
+        paddingVertical: 15,
+        borderRadius: 12,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 25,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
     },
     trackBtnText: {
         color: '#fff',

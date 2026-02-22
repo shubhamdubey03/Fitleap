@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import axios from 'axios';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useState, useCallback } from 'react';
+import { useSelector } from 'react-redux';
 import {
     View,
     Text,
@@ -10,60 +13,119 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { API_BASE_URL } from '../../config/api';
+import { Linking } from 'react-native';
+import RNFetchBlob from 'rn-fetch-blob';
+import { Alert } from 'react-native';
 
-const ORDERS = [
-    {
-        id: '1',
-        number: '768012',
-        date: '15/05/24',
-        total: '123.50',
-        status: 'Delivered',
-        image: 'https://images.unsplash.com/photo-1624456729094-1a938c5d1e2e?auto=format&fit=crop&q=80&w=100'
-    },
-    {
-        id: '2',
-        number: '3445678',
-        date: '23/04/24',
-        total: '78.00',
-        status: 'Processing',
-        image: 'https://images.unsplash.com/photo-1610452264853-2c1dd7c4c329?auto=format&fit=crop&q=80&w=100'
-    },
-    {
-        id: '3',
-        number: '901233',
-        date: '21/02/24',
-        total: '20.00',
-        status: 'Delivered',
-        image: 'https://images.unsplash.com/photo-1594248478440-424a56a62308?auto=format&fit=crop&q=80&w=100'
-    },
-    {
-        id: '4',
-        number: '567890',
-        date: '12/06/23',
-        total: '55.25',
-        status: 'Delivered',
-        image: 'https://images.unsplash.com/photo-1624456729094-1a938c5d1e2e?auto=format&fit=crop&q=80&w=100'
-    },
-];
 
-const OrdersScreen = ({ navigation }) => {
+const OrdersScreen = ({ navigation }: { navigation: any }) => {
     const insets = useSafeAreaInsets();
     const [activeTab, setActiveTab] = useState('Active');
+    const [orders, setOrders] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const user = useSelector((state: any) => state.auth.user);
 
-    const renderOrder = ({ item }) => (
-        <TouchableOpacity
-            style={styles.orderItem}
-            onPress={() => navigation.navigate('OrderDetails', { orderId: item.number })}
-        >
-            <Image source={{ uri: item.image }} style={styles.orderImage} />
-            <View style={styles.orderDetails}>
-                <Text style={styles.orderNumber}>Order number: <Text style={styles.orderNumberBold}>{item.number}</Text></Text>
-                <Text style={styles.orderDate}>Order date: {item.date}</Text>
-                <Text style={styles.orderTotal}>Total: ${item.total}</Text>
-            </View>
-            <Ionicons name="arrow-forward" size={20} color="#fff" />
-        </TouchableOpacity>
+    useFocusEffect(
+        useCallback(() => {
+            fetchOrders();
+        }, [])
     );
+
+    const fetchOrders = async () => {
+        try {
+            if (!user) {
+                console.log("No user found, skipping fetch.");
+                setLoading(false);
+                return;
+            }
+
+            const token = user.token || user.access_token;
+            if (!token) {
+                console.log("No token found, skipping fetch.");
+                setLoading(false);
+                return;
+            }
+
+            console.log("Fetching orders...");
+            // Use the new endpoint that gets user ID from token
+            const response = await axios.get(
+                `${API_BASE_URL}/orders/user`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            console.log("*******************************");
+            console.log("Orders fetched:", response.data.length, response.data);
+            setOrders(response.data);
+        } catch (error) {
+            console.error("Failed to fetch orders:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const downloadInvoice = (url) => {
+        if (!url) {
+            Alert.alert("Invoice not available yet");
+            return;
+        }
+
+        const { dirs } = RNFetchBlob.fs;
+
+        RNFetchBlob.config({
+            fileCache: true,
+            path: `${dirs.DownloadDir}/invoice-${Date.now()}.pdf`
+        })
+            .fetch('GET', url)
+            .then(() => {
+                Alert.alert("Success", "Invoice downloaded");
+            })
+            .catch(err => {
+                console.log(err);
+                Alert.alert("Download failed");
+            });
+    };
+    const filteredOrders = orders; // For now show all, can implement status filter later
+
+    const renderOrder = ({ item }: { item: any }) => {
+        // Get first item details for display
+        const firstItem = item.items && item.items[0];
+        const productTitle = firstItem?.product?.name || 'Order Item';
+        const productImage = firstItem?.product?.image_url || 'https://images.unsplash.com/photo-1624456729094-1a938c5d1e2e';
+
+        return (
+            <TouchableOpacity
+                style={styles.orderItem}
+                onPress={() => navigation.navigate('OrderDetails', { order: item })}
+            >
+                <Image source={{ uri: productImage }} style={styles.orderImage} />
+                <View style={styles.orderDetails}>
+                    <Text style={styles.orderNumber}>Order ID: <Text style={styles.orderNumberBold}>{item.id.substring(0, 8)}</Text></Text>
+                    <Text style={styles.orderDate}>Date: {new Date(item.created_at).toLocaleDateString()}</Text>
+                    <Text style={styles.orderTotal}>Total: Rs {item.total_price}</Text>
+                    <Text style={[styles.orderStatus, { color: item.status === 'paid' ? '#4caf50' : '#ff9800' }]}>
+                        {item.status.toUpperCase()}
+                    </Text>
+                    <Text style={{ color: 'white' }}>Address:
+                        {item.addresses.address1}
+                        {item.addresses.address2 && `, ${item.addresses.address2}`}
+                    </Text>
+                    <Text style={styles.orderTotal}>
+                        {item.addresses.city}, {item.addresses.states?.name} - {item.addresses.pincode}
+                    </Text>
+                </View>
+                <Ionicons name="arrow-forward" size={20} color="#fff" />
+
+                <TouchableOpacity
+                    style={styles.invoiceBtn}
+                    onPress={() => downloadInvoice(item.invoice_url)}
+                >
+                    <Text style={{ color: '#7b1fa2', fontWeight: 'bold' }}>
+                        Download Invoice
+                    </Text>
+                </TouchableOpacity>
+            </TouchableOpacity>
+        );
+    };
 
     return (
         <LinearGradient
@@ -71,7 +133,7 @@ const OrdersScreen = ({ navigation }) => {
             style={[styles.container, { paddingTop: insets.top }]}
         >
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
+                <TouchableOpacity onPress={() => navigation.navigate('MarketplaceHome')}>
                     <View style={styles.iconButton}>
                         <Ionicons name="arrow-back" size={20} color="#fff" />
                     </View>
@@ -85,21 +147,22 @@ const OrdersScreen = ({ navigation }) => {
                     style={[styles.tab, activeTab === 'Active' && styles.activeTab]}
                     onPress={() => setActiveTab('Active')}
                 >
-                    <Text style={[styles.tabText, activeTab === 'Active' && styles.activeTabText]}>Active</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'History' && styles.activeTab]}
-                    onPress={() => setActiveTab('History')}
-                >
-                    <Text style={[styles.tabText, activeTab === 'History' && styles.activeTabText]}>History</Text>
+                    <Text style={[styles.tabText, activeTab === 'Active' && styles.activeTabText]}>All Orders</Text>
                 </TouchableOpacity>
             </View>
 
             <FlatList
-                data={ORDERS}
+                data={filteredOrders}
                 renderItem={renderOrder}
-                keyExtractor={item => item.id}
+                keyExtractor={item => item.id ? item.id.toString() : Math.random().toString()}
                 contentContainerStyle={styles.listContent}
+                ListEmptyComponent={
+                    <Text style={{ color: '#ccc', textAlign: 'center', marginTop: 50 }}>No orders found.</Text>
+                }
+                initialNumToRender={8}
+                maxToRenderPerBatch={10}
+                windowSize={5}
+                removeClippedSubviews={true}
             />
         </LinearGradient>
     );
@@ -192,6 +255,21 @@ const styles = StyleSheet.create({
         color: '#ffb74d',
         fontSize: 12,
         fontWeight: 'bold',
+    },
+    orderStatus: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        marginTop: 4,
+    },
+    invoiceBtn: {
+        marginTop: 10,
+        alignSelf: 'flex-start',
+        borderWidth: 1.5,
+        borderColor: '#7b1fa2',
+        paddingVertical: 6,
+        paddingHorizontal: 14,
+        borderRadius: 20,
+        backgroundColor: 'transparent'
     },
 });
 

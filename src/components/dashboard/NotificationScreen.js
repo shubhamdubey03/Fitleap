@@ -8,38 +8,12 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
-
-const notifications = [
-  {
-    icon: 'flame-outline',
-    title: 'Habit Streak',
-    desc: "You've maintained your habit streak for 7 days!",
-  },
-  {
-    icon: 'barbell-outline',
-    title: 'Workout Reminder',
-    desc: 'Time for your daily workout session.',
-  },
-  {
-    icon: 'chatbubble-ellipses-outline',
-    title: 'Coaching Update',
-    desc: 'Coach Alex has sent you a new message.',
-  },
-  {
-    icon: 'list-outline',
-    title: 'Program Update',
-    desc: 'Your program "Healthy Eating" has been updated.',
-  },
-  {
-    icon: 'card-outline',
-    title: 'Payment Reminder',
-    desc: 'Your payment for the coaching program is due.',
-  },
-];
-
+import { useSelector } from 'react-redux';
 
 
 const NotificationScreen = ({ navigation }) => {
+  const { notifications } = useSelector((state) => state.notifications);
+
   return (
     <LinearGradient
       colors={['#1a0033', '#3b0a57', '#6a0f6b']}
@@ -53,27 +27,32 @@ const NotificationScreen = ({ navigation }) => {
 
         <Text style={styles.headerTitle}>Notification</Text>
 
-        <View style={styles.coinCircle}>
-          <Ionicons name="logo-bitcoin" size={18} color="#FFD700" />
-        </View>
+        {/* Placeholder for spacing if needed, or just empty View to balance flex */}
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 60 }}
       >
-        {notifications.map((item, index) => (
-          <View key={index} style={styles.notificationCard}>
-            <View style={styles.iconBox}>
-              <Ionicons name={item.icon} size={20} color="#fff" />
-            </View>
+        {notifications && notifications.length > 0 ? (
+          notifications.map((item, index) => (
+            <View key={index} style={[styles.notificationCard, { borderColor: '#FFD700', borderWidth: 1 }]}>
+              <View style={styles.iconBox}>
+                <Ionicons name="notifications-outline" size={20} color="#fff" />
+              </View>
 
-            <View style={{ flex: 1 }}>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.desc}>{item.desc}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.title}>{item.title}</Text>
+                <Text style={styles.desc}>{item.body}</Text>
+              </View>
             </View>
+          ))
+        ) : (
+          <View style={{ marginTop: 50, alignItems: 'center' }}>
+            <Text style={{ color: 'rgba(255,255,255,0.6)' }}>No new notifications</Text>
           </View>
-        ))}
+        )}
       </ScrollView>
     </LinearGradient>
   );

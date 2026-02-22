@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../redux/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DashboardSidebar from '../components/dashboard/DashboardSidebar';
 
@@ -21,16 +23,39 @@ const CoachDashboardScreen = ({ navigation }) => {
     const [coachName, setCoachName] = useState('Coach');
     const [isSidebarVisible, setSidebarVisible] = useState(false);
 
+    const user = useSelector(state => state.auth.user);
+    const dispatch = useDispatch();
+
+
     useEffect(() => {
-        const getCoachName = async () => {
-            // Ideally fetch from storage, defaulting to 'Coach'
-            const name = await AsyncStorage.getItem('COACH_NAME');
-            if (name) setCoachName(name);
-        }
-        getCoachName();
-    }, []);
+        const checkAuth = async () => {
+            // 1. Check Redux State
+            if (user?.token) {
+                setCoachName(user.name || 'Coach');
+                return;
+            }
+
+            // 2. Check Async Storage (Fallback)
+            const storedUser = await AsyncStorage.getItem('user');
+            if (storedUser) {
+                const parsedUser = JSON.parse(storedUser);
+                if (parsedUser.token) {
+                    setCoachName(parsedUser.name || 'Coach');
+                    return;
+                }
+            }
+
+            // 3. No Token Found -> Redirect to Login
+            console.log('No token found in CoachDashboard, redirecting to Login');
+            navigation.replace('Login');
+        };
+
+        checkAuth();
+    }, [user, navigation]);
 
     const handleLogout = async () => {
+        await dispatch(logout()).unwrap();
+        // Fallback or exact clears matching existing codebase pattern just in case
         await AsyncStorage.removeItem('IS_LOGGED_IN');
         await AsyncStorage.removeItem('USER_ROLE');
         await AsyncStorage.removeItem('COACH_NAME'); // Clear coach specific data

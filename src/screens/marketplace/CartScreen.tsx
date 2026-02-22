@@ -11,39 +11,57 @@ import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const CART_ITEMS = [
-    {
-        id: '1',
-        title: 'Soya Milk',
-        price: 50,
-        qty: 1,
-        image: 'https://images.unsplash.com/photo-1624456729094-1a938c5d1e2e?auto=format&fit=crop&q=80&w=100'
-    },
-    {
-        id: '2',
-        title: 'Soya Chunks',
-        price: 60,
-        qty: 1,
-        image: 'https://images.unsplash.com/photo-1610452264853-2c1dd7c4c329?auto=format&fit=crop&q=80&w=100'
-    },
-    {
-        id: '3',
-        title: 'Soya Beans',
-        price: 45,
-        qty: 1,
-        image: 'https://images.unsplash.com/photo-1594248478440-424a56a62308?auto=format&fit=crop&q=80&w=100'
-    },
-    {
-        id: '4',
-        title: 'Soya Flour',
-        price: 35,
-        qty: 1,
-        image: 'https://images.unsplash.com/photo-1610452264853-2c1dd7c4c329?auto=format&fit=crop&q=80&w=100'
-    },
-];
 
-const CartScreen = ({ navigation }) => {
+
+const CartScreen = ({ navigation, route }: { navigation: any, route: any }) => {
     const insets = useSafeAreaInsets();
+    const { product } = route.params || {};
+    // console.log("product", product)
+
+    const [cartItems, setCartItems] = React.useState<any[]>([]);
+
+    React.useEffect(() => {
+        if (product) {
+            // Check if item already exists
+            const existing = cartItems.find(item => item.id === product.id);
+            if (!existing) {
+                // Determine price: remove 'Rs ' if string, or use number
+                let priceVal = 0;
+                if (typeof product.price === 'string') {
+                    priceVal = parseFloat(product.price.replace(/[^0-9.]/g, ''));
+                } else {
+                    priceVal = product.price;
+                }
+
+                const newItem = {
+                    id: product.id,
+                    title: product.name || product.title,
+                    price: priceVal,
+                    qty: 1,
+                    image: product.image_url || product.image || 'https://images.unsplash.com/photo-1638531952329-87c2b3af695c'
+                };
+
+                // For demo simplicity, if "Buy Now" is clicked, let's just show THAT item in cart or add to it. 
+                // Replacing for now to simulate "Buy Now" flow focusing on that item, 
+                // or appending if you want a persistent cart (would need Redux/Context).
+                // Let's append or putting it at top.
+                setCartItems([newItem]); // Just showing the bought item for "Buy Now" flow smoothness as requested
+            }
+        }
+    }, [product]);
+
+    const incrementQty = (id: string) => {
+        setCartItems(prev => prev.map(item => item.id === id ? { ...item, qty: item.qty + 1 } : item));
+    };
+
+    const decrementQty = (id: string) => {
+        setCartItems(prev => prev.map(item => item.id === id && item.qty > 1 ? { ...item, qty: item.qty - 1 } : item));
+    };
+
+    // Calculate Total
+    const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const shipping = 0;
+    const total = subtotal;
 
     return (
         <LinearGradient
@@ -55,17 +73,16 @@ const CartScreen = ({ navigation }) => {
                     <View style={styles.iconButton}>
                         <Ionicons name="arrow-back" size={20} color="#fff" />
                     </View>
+
+
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Cart</Text>
-                <TouchableOpacity>
-                    <View style={styles.iconButton}>
-                        <Ionicons name="ellipsis-vertical" size={20} color="#fff" />
-                    </View>
-                </TouchableOpacity>
+                <View style={{ flex: 1, alignItems: 'center', marginRight: 36 }}>
+                    <Text style={styles.headerTitle}>Cart</Text>
+                </View>
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {CART_ITEMS.map((item) => (
+                {cartItems.map((item) => (
                     <View key={item.id} style={styles.cartItem}>
                         <Image source={{ uri: item.image }} style={styles.itemImage} />
                         <View style={styles.itemDetails}>
@@ -73,9 +90,13 @@ const CartScreen = ({ navigation }) => {
                             <Text style={styles.itemPrice}>Rs {item.price}</Text>
                         </View>
                         <View style={styles.qtyControl}>
-                            <TouchableOpacity style={styles.qtyBtn}><Ionicons name="remove" size={16} color="#fff" /></TouchableOpacity>
+                            <TouchableOpacity style={styles.qtyBtn} onPress={() => decrementQty(item.id)}>
+                                <Ionicons name="remove" size={16} color="#fff" />
+                            </TouchableOpacity>
                             <Text style={styles.qtyText}>{item.qty}</Text>
-                            <TouchableOpacity style={styles.qtyBtn}><Ionicons name="add" size={16} color="#fff" /></TouchableOpacity>
+                            <TouchableOpacity style={styles.qtyBtn} onPress={() => incrementQty(item.id)}>
+                                <Ionicons name="add" size={16} color="#fff" />
+                            </TouchableOpacity>
                         </View>
                     </View>
                 ))}
@@ -83,20 +104,20 @@ const CartScreen = ({ navigation }) => {
                 <Text style={styles.sectionTitle}>Order Summary</Text>
                 <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>Subtotal</Text>
-                    <Text style={styles.summaryValue}>Rs 1200</Text>
+                    <Text style={styles.summaryValue}>Rs {subtotal}</Text>
                 </View>
                 <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>Shipping</Text>
-                    <Text style={styles.summaryValue}>Rs 100</Text>
+                    <Text style={styles.summaryValue}>Rs {shipping}</Text>
                 </View>
                 <View style={[styles.summaryRow, styles.totalRow]}>
                     <Text style={styles.totalLabel}>Total</Text>
-                    <Text style={styles.totalValue}>Rs 1300</Text>
+                    <Text style={styles.totalValue}>Rs {total}</Text>
                 </View>
 
                 <TouchableOpacity
                     style={styles.checkoutBtn}
-                    onPress={() => navigation.navigate('Shipping')}
+                    onPress={() => navigation.navigate('Shipping', { items: cartItems, totalAmount: total })}
                 >
                     <Text style={styles.checkoutBtnText}>Proceed To Checkout</Text>
                 </TouchableOpacity>

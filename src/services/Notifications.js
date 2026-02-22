@@ -2,6 +2,9 @@ import messaging from '@react-native-firebase/messaging';
 import { PermissionsAndroid, Platform } from 'react-native';
 import notifee, { AndroidImportance } from '@notifee/react-native';
 
+// Import Store and Action
+import { store } from '../redux/store';
+import { increment, addNotification } from '../redux/notificationSlice';
 
 // ✅ Ask permission
 export const requestNotificationPermission = async () => {
@@ -28,6 +31,19 @@ export const listenToNotifications = () => {
     // Foreground
     messaging().onMessage(async remoteMessage => {
         console.log('Foreground:', remoteMessage.notification);
+
+        // 👉 Dispatch to Redux Store
+        if (addNotification) {
+            store.dispatch(addNotification({
+                title: remoteMessage.notification.title,
+                body: remoteMessage.notification.body,
+                data: remoteMessage.data,
+                timestamp: new Date().toISOString()
+            }));
+        } else {
+            console.warn('addNotification action is undefined. Please reload the app.');
+            store.dispatch(increment());
+        }
 
         // Display notification using Notifee
         const channelId = await notifee.createChannel({
@@ -71,6 +87,11 @@ export const initNotifications = async () => {
 
     const token = await getFcmToken();
     console.log("token", token)
+
+    // Subscribe to topic
+    await messaging().subscribeToTopic('all_users')
+        .then(() => console.log('Subscribed to topic: all_users'))
+        .catch(e => console.log('Error subscribing to topic:', e));
 
     listenToNotifications();
 

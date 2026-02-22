@@ -6,23 +6,178 @@ import {
     TextInput,
     ScrollView,
     TouchableOpacity,
+    Alert,
+    ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// import RazorpayCheckout from 'react-native-razorpay';
+import { useSelector } from 'react-redux';
+import { API_BASE_URL } from '../../config/api';
+import axios from 'axios';
+import RazorpayCheckout from "react-native-razorpay";
+
 
 const PAYMENT_METHODS = [
-    { id: 'card', name: 'Credit/Debit Card' },
-    { id: 'netbanking', name: 'Net Banking' },
-    { id: 'razorpay', name: 'Razorpay' },
-    { id: 'paytm', name: 'Paytm' },
+
+    { id: 'razorpay', name: 'Razorpay (UPI, Cards, Netbanking)' },
+
 ];
 
-const PaymentScreen = ({ navigation }) => {
+const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) => {
     const insets = useSafeAreaInsets();
     const [selectedMethod, setSelectedMethod] = useState('card');
-    const [saveCard, setSaveCard] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const user = useSelector((state: any) => state.auth.user);
 
+    // Get params or use defaults for testing
+    let { totalAmount = 0, items = [], address_id, shippingDetails } = route.params || {};
+
+    const handlePayment = async () => {
+        if (selectedMethod !== 'razorpay') {
+            Alert.alert('Selection Required', 'Please select Razorpay to proceed.');
+            return;
+        }
+
+        if (!user || (!user.token && !user.access_token)) {
+            Alert.alert('Auth Error', 'Please login to continue.');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const token = user.token || user.access_token;
+            console.log("Using Token:", token);
+
+            if (!address_id) {
+                Alert.alert("Error", "Delivery address missing. Please go back and select address.");
+                return;
+            }
+
+            // 1️⃣ Create Internal Order
+            const orderPayload = {
+                total_amount: totalAmount,
+                address_id: address_id,
+                items: items.map((item: any) => ({
+                    product_id: item.id,
+                    quantity: item.qty || item.quantity || 1,
+                    price: item.price
+                }))
+            };
+
+            const orderRes = await axios.post(
+                `${API_BASE_URL}/orders/create`,
+                orderPayload,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            // console.log("Order Response", orderRes.data);
+            // const internalOrder = orderRes[0].data;
+            const internalOrderId = orderRes.data[0].id;
+            console.log("Internal Order Created:", internalOrderId);
+
+            // 2️⃣ Create Razorpay Order
+            const paymentRes = await axios.post(`${API_BASE_URL}/payments/create`, {
+                order_id: internalOrderId,
+                amount: totalAmount
+            },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            console.log("Razorpay Payment paymentRes.data", paymentRes.data);
+
+
+            const {
+                id,
+                amount,
+                currency,
+                key
+            } = paymentRes.data;
+
+            // totalAmount = total_price;
+
+
+            const razorpay_order_id = id;
+
+            // 3️⃣ Open Razorpay Checkout
+            // Use key from backend if available, otherwise your test key
+            const rzpKey = key;
+
+            const options = {
+                description: 'FitLeap Order',
+                image: 'https://i.imgur.com/3g7nmJC.png',
+                currency: currency || 'INR',
+                key: rzpKey,
+                amount: amount,
+                name: 'FitLeap',
+                order_id: razorpay_order_id,
+                prefill: {
+                    email: String(user.email || ''),
+                    contact: String(user.phone || user.mobile_number || ''),
+                    name: String(user.name || '')
+                },
+                theme: { color: '#7b1fa2' }
+            };
+
+            // Use setTimeout to prevent UI thread blocking/ANR
+            setTimeout(() => {
+                RazorpayCheckout.open(options)
+                    .then(async (data: any) => {
+                        console.log("Razorpay Payment razor pay success data resp", data);
+                        console.log("Razorpay Payment Opions", options);
+                        await verifyPayment(data, internalOrderId, token);
+                    })
+                    .catch((error: any) => {
+                        console.log("Razorpay Error (Cancelled or Failed)", error);
+                        const errorDesc = error.description || error.error?.description || "Payment Cancelled";
+                        Alert.alert('Payment Failed', errorDesc);
+                    })
+                    .finally(() => {
+                        setLoading(false);
+                    });
+            }, 100);
+
+        } catch (err: any) {
+            console.log("Payment Init Error");
+            setLoading(false);
+            const errMsg = err.response?.data?.error || err.response?.data?.message || err.message || "Could not initiate payment";
+            Alert.alert('Error', String(errMsg));
+        }
+    };
+
+    const verifyPayment = async (paymentData: any, orderId: string, token: string) => {
+        try {
+            console.log("Payment Data Received from Razorpay:", paymentData);
+            console.log("Order ID:", orderId);
+            console.log("Token:", token);
+            const verifyPayload = {
+                ...paymentData,
+                orderId: orderId,
+                token: token
+                // Ensure backend knows which internal order this is for
+            };
+
+            const res = await axios.post(
+                `${API_BASE_URL}/payments/verify`,
+                verifyPayload,
+                { headers: { Authorization: `Bearer ${token}` } } // Optional if verify endpoint is public
+            );
+
+            if (res.status === 200) {
+                Alert.alert('Success', 'Order placed successfully! 🎉', [
+                    { text: 'View Orders', onPress: () => navigation.navigate('Orders') }
+                ]);
+            } else {
+                Alert.alert('Verification Failed', 'Payment reported success but backend verification failed.');
+            }
+
+        } catch (err: any) {
+            console.log("Verification Error");
+            const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || "Verification failed";
+            Alert.alert('Verification Error', String(errMsg), [
+                { text: 'OK', onPress: () => navigation.navigate('Orders') } // Navigate anyway so they can check status later
+            ]);
+        }
+    };
     return (
         <LinearGradient
             colors={['#1a0033', '#3a005f']}
@@ -43,6 +198,7 @@ const PaymentScreen = ({ navigation }) => {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
+                <Text style={styles.amountText}>Total Amount: Rs {totalAmount}</Text>
                 <Text style={styles.sectionTitle}>Select Payment Method</Text>
 
                 {PAYMENT_METHODS.map((method) => (
@@ -61,63 +217,20 @@ const PaymentScreen = ({ navigation }) => {
                     </TouchableOpacity>
                 ))}
 
-                {selectedMethod === 'card' && (
-                    <View style={styles.cardForm}>
-                        <View style={styles.formGroup}>
-                            <TextInput
-                                placeholder="Card Number"
-                                placeholderTextColor="#666"
-                                style={styles.input}
-                                keyboardType="numeric"
-                            />
-                        </View>
-                        <View style={styles.formGroup}>
-                            <TextInput
-                                placeholder="Expiry Date"
-                                placeholderTextColor="#666"
-                                style={styles.input}
-                            />
-                        </View>
-                        <View style={styles.formGroup}>
-                            <TextInput
-                                placeholder="CVV"
-                                placeholderTextColor="#666"
-                                style={styles.input}
-                                secureTextEntry
-                                keyboardType="numeric"
-                                maxLength={3}
-                            />
-                        </View>
-                        <View style={styles.formGroup}>
-                            <TextInput
-                                placeholder="Name on Card"
-                                placeholderTextColor="#666"
-                                style={styles.input}
-                            />
-                        </View>
-
-                        <TouchableOpacity
-                            style={styles.checkboxRow}
-                            onPress={() => setSaveCard(!saveCard)}
-                        >
-                            <Ionicons
-                                name={saveCard ? "checkbox" : "square-outline"}
-                                size={20}
-                                color={saveCard ? "#7b1fa2" : "#ccc"}
-                            />
-                            <Text style={styles.checkboxLabel}>Save card details for future purchases</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
+                {/* Card Form placeholder logic skipped for brevity since we focus on Razorpay */}
 
                 <TouchableOpacity
                     style={styles.checkoutBtn}
-                    onPress={() => {
-                        alert('Purchase Completed!');
-                        navigation.navigate('MarketplaceHome');
-                    }}
+                    onPress={handlePayment}
+                    disabled={loading}
                 >
-                    <Text style={styles.checkoutBtnText}>Complete Purchase</Text>
+                    {loading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.checkoutBtnText}>
+                            {selectedMethod === 'razorpay' ? 'Pay Now' : 'Complete Purchase'}
+                        </Text>
+                    )}
                 </TouchableOpacity>
             </ScrollView>
         </LinearGradient>
@@ -226,6 +339,13 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    amountText: {
+        color: '#ffeb3b',
+        fontSize: 24,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 20,
     },
 });
 

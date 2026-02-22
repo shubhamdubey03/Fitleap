@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Image,
   Modal,
@@ -13,10 +14,9 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useDispatch } from 'react-redux';
-import { register } from '../redux/authSlice';
+import { register, registerCoach, setUser } from '../redux/authSlice';
 import CountryPicker from 'react-native-country-picker-modal';
 import { launchImageLibrary } from 'react-native-image-picker';
-// import DocumentPicker from 'react-native-document-picker'; // Removed unused import
 
 const SignupScreen = ({ navigation }) => {
   const [secure, setSecure] = useState(true);
@@ -127,16 +127,41 @@ const SignupScreen = ({ navigation }) => {
       userData = formData;
     }
 
-    dispatch(register({ userData, role }))
-      .unwrap()
-      .then((response) => {
-        const message = response.message || 'Signup successful. Please Login.';
-        alert(message);
-        navigation.replace('Login');
-      })
-      .catch((error) => {
-        alert(error);
-      });
+    if (role === 'user') {
+      console.log('Dispatching User Registration...');
+      dispatch(register(userData))
+        .unwrap()
+        .then(handleSuccess)
+        .catch(handleError);
+    } else {
+      console.log('Dispatching Coach Registration (FormData)...');
+      // IMPORTANT: Log FormData parts to debug
+      console.log('FormData Parts:', userData._parts);
+
+      dispatch(registerCoach(userData))
+        .unwrap()
+        .then(handleSuccess)
+        .catch(handleError);
+    }
+  };
+
+  const handleSuccess = async (response) => {
+    if (response.token) {
+      // auto login user
+      await AsyncStorage.setItem('authToken', response.token);
+      dispatch(setUser(response));
+      navigation.replace('Dashboard');
+      return;
+    }
+    alert(response.message || 'Signup submitted. Wait for admin approval.');
+    navigation.replace('Login');
+  };
+
+
+  const handleError = (error) => {
+    console.log('Signup Error:', error);
+    const errorMessage = typeof error === 'string' ? error : error?.message || 'An unexpected error occurred';
+    alert(errorMessage);
   };
 
   return (

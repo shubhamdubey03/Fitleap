@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDispatch, useSelector } from 'react-redux';
 import { googleLogin, reset } from '../redux/authSlice';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { useIsFocused } from '@react-navigation/native';
 
 const HomeScreen = ({ navigation }) => {
 
@@ -27,13 +28,15 @@ const HomeScreen = ({ navigation }) => {
     });
   }, []);
 
+  const isFocused = useIsFocused();
+
   React.useEffect(() => {
-    if (isError) {
+    if (isError && isFocused) {
       Alert.alert('Error', message);
       dispatch(reset());
     }
 
-    if (isSuccess && user) {
+    if (isSuccess && user && isFocused) {
       const handleSuccess = async () => {
         Alert.alert('Login Successful', `Welcome ${user.name}`);
         await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
@@ -54,7 +57,7 @@ const HomeScreen = ({ navigation }) => {
       };
       handleSuccess();
     }
-  }, [isError, isSuccess, user, message, navigation, dispatch]);
+  }, [isError, isSuccess, user, message, navigation, dispatch, isFocused]);
 
   const handleGoogleLogin = async () => {
     try {
