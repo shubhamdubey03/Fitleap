@@ -154,6 +154,19 @@ export const updateUserProfile = createAsyncThunk(
     }
 );
 
+// Forgot Password
+export const forgotPassword = createAsyncThunk(
+    'auth/forgotPassword',
+    async (email, thunkAPI) => {
+        try {
+            const { data } = await axios.post(`${API_URL}/forgot-password`, { email });
+            return data;
+        } catch (error) {
+            return thunkAPI.rejectWithValue(getError(error));
+        }
+    }
+);
+
 // Logout
 export const logout = createAsyncThunk('auth/logout', async () => {
     await Promise.all([
@@ -229,6 +242,13 @@ export const authSlice = createSlice({
             .addCase(updateUserProfile.pending, pending)
             .addCase(updateUserProfile.fulfilled, fulfilled)
             .addCase(updateUserProfile.rejected, rejected)
+
+            .addCase(forgotPassword.pending, pending)
+            .addCase(forgotPassword.fulfilled, (state) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+            })
+            .addCase(forgotPassword.rejected, rejected)
 
             .addCase(logout.fulfilled, (state) => {
                 state.user = null;

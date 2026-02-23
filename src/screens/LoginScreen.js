@@ -22,36 +22,16 @@ const LoginScreen = ({ route, navigation }) => {
   const { isLoading } = useSelector((state) => state.auth);
 
 
-
-  // const handleLogin = async () => {
-  //   if (!email || !password) {
-  //     alert('Please fill all fields');
-  //     return;
-  //   }
-
-  //   const userData = {
-  //     email,
-  //     password,
-  //   };
-
-  //   dispatch(login(userData))
-  //     .unwrap()
-  //     .then(async (user) => {
-  //       await handleLoginSuccess(user);
-  //     })
-  //     .catch((error) => {
-  //       alert(error);
-  //     });
-  // };
-
-
   const handleLogin = async () => {
-    if (!email || !password) {
+    const trimmedEmail = email?.trim().toLowerCase();
+    const trimmedPassword = password?.trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
       alert('Please fill all fields');
       return;
     }
 
-    const userData = { email, password };
+    const userData = { email: trimmedEmail, password: trimmedPassword };
 
     try {
       const response = await dispatch(login(userData)).unwrap();
@@ -142,6 +122,12 @@ const LoginScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
 
+        <TouchableOpacity
+          style={styles.forgotButton}
+          onPress={() => navigation.navigate('ForgotPassword')}
+        >
+          <Text style={styles.forgotText}>Forgot Password?</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={isLoading}>
           {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginText}>Login</Text>}
@@ -202,6 +188,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  forgotButton: {
+    alignSelf: 'flex-end',
+    marginBottom: 15,
+  },
+  forgotText: {
+    color: '#ccc',
+    fontSize: 14,
+    fontWeight: '500',
+    textDecorationLine: 'underline',
   },
 
 });

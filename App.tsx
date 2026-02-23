@@ -19,6 +19,7 @@ import SignupScreen from './src/screens/SignupScreen';
 import CollegeStudentLogin from './src/screens/CollegeStudentLogin';
 import StudentLogin from './src/screens/StudentLogin';
 import LoginScreen from './src/screens/LoginScreen';
+import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 
 import BottomTabNavigator from './src/navigation/BottomTabNavigator';
 
@@ -115,6 +116,7 @@ const MainNav = () => {
           <Stack.Screen name="CollegeStudentLogin" component={CollegeStudentLogin} />
           <Stack.Screen name="StudentLogin" component={StudentLogin} />
           <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="Dashboard" component={BottomTabNavigator} />
 
           <Stack.Screen name="Calories" component={CaloriesScreen} />

@@ -21,14 +21,17 @@ const CollegeStudentLogin = ({ navigation }) => {
   const dispatch = useDispatch();
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    const trimmedEmail = email?.trim().toLowerCase();
+    const trimmedPassword = password?.trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
       Alert.alert('Error', 'Please fill all fields');
       return;
     }
 
     const userData = {
-      email,
-      password,
+      email: trimmedEmail,
+      password: trimmedPassword,
       collegeId,
     };
 

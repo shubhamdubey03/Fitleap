@@ -70,23 +70,53 @@ const SignupScreen = ({ navigation }) => {
   };
 
   const handleSignup = async () => {
-    if (!name || !email || !password || !phone) {
+    // Trim values
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+    const trimmedPhone = phone.trim();
+
+    // Basic required check
+    if (!trimmedName || !trimmedEmail || !trimmedPassword || !trimmedPhone) {
       alert('Please fill all common fields (Name, Email, Password, Phone)');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
+    // Password length validation
+    if (trimmedPassword.length < 8) {
+      alert('Password must be at least 8 characters long');
+      return;
+    }
+
+    // Phone length validation
+    if (trimmedPhone.length < 10) {
+      alert('Please enter a valid mobile number');
       return;
     }
 
     let userData;
     if (role === 'user') {
       userData = {
-        name,
-        email,
-        password,
-        mobile: String(phone),
+        name: trimmedName,
+        email: trimmedEmail,
+        password: trimmedPassword,
+        mobile: String(trimmedPhone),
         countryCode,
       };
     } else {
       // Coach Role - FormData
-      if (!bankName || !bankAccountNo || !ifscCode) {
+      const trimmedBankName = bankName.trim();
+      const trimmedBankAccNo = bankAccountNo.trim();
+      const trimmedIfsc = ifscCode.trim();
+
+      if (!trimmedBankName || !trimmedBankAccNo || !trimmedIfsc) {
         alert('Please fill all coach details');
         return;
       }
@@ -97,15 +127,15 @@ const SignupScreen = ({ navigation }) => {
       }
 
       const formData = new FormData();
-      formData.append('name', name);
-      formData.append('email', email);
-      formData.append('password', password);
-      formData.append('mobile', String(phone)); // Changed to mobile to match backend
+      formData.append('name', trimmedName);
+      formData.append('email', trimmedEmail);
+      formData.append('password', trimmedPassword);
+      formData.append('mobile', String(trimmedPhone)); // Changed to mobile to match backend
       formData.append('countryCode', countryCode);
 
-      formData.append('bankName', bankName);
-      formData.append('bankAccNo', bankAccountNo); // Match backend field
-      formData.append('ifscCode', ifscCode);
+      formData.append('bankName', trimmedBankName);
+      formData.append('bankAccNo', trimmedBankAccNo); // Match backend field
+      formData.append('ifscCode', trimmedIfsc);
 
       // Files - using specific names backend expects
       formData.append('nutrition', {
@@ -135,9 +165,6 @@ const SignupScreen = ({ navigation }) => {
         .catch(handleError);
     } else {
       console.log('Dispatching Coach Registration (FormData)...');
-      // IMPORTANT: Log FormData parts to debug
-      console.log('FormData Parts:', userData._parts);
-
       dispatch(registerCoach(userData))
         .unwrap()
         .then(handleSuccess)
