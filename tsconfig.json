@@ -10,7 +10,8 @@
     "**/*.tsx",
     "src/screens/MarketplaceScreen.js",
     "src/screens/ProfileScreen.js",
-    "src/screens/exercise/VideoConsultationScreen.js"
+    "src/screens/exercise/VideoConsultationScreen.js",
+    "src/screens/exercise/CoachingScreen.js"
   ],
   "exclude": [
     "**/node_modules",

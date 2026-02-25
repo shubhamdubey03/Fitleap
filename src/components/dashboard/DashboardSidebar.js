@@ -126,6 +126,24 @@ const DashboardSidebar = ({ visible, onClose, navigation }) => {
                                     </View>
                                 </TouchableOpacity>
                             ))}
+
+                            {user?.role === 'Coach' && (
+                                <TouchableOpacity
+                                    style={styles.menuItem}
+                                    onPress={() => {
+                                        onClose();
+                                        navigation.navigate('CoachAvailability');
+                                    }}
+                                >
+                                    <View style={[styles.iconBox, { backgroundColor: '#FF6B3D' }]}>
+                                        <Ionicons name="time-outline" size={20} color="#fff" />
+                                    </View>
+                                    <View style={styles.textBox}>
+                                        <Text style={styles.menuText}>Set Availability</Text>
+                                        <Text style={styles.menuSubText}>Manage your consultation hours</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            )}
                         </ScrollView>
                     </LinearGradient>
                 </View>

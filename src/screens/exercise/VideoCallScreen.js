@@ -18,34 +18,64 @@ import {
     RtcSurfaceView,
     RenderModeType,
 } from 'react-native-agora';
+import { useSelector } from 'react-redux';
+import axios from 'axios';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import LinearGradient from 'react-native-linear-gradient';
+import { API_BASE_URL } from '../../config/api';
 
 const { width, height } = Dimensions.get('window');
 
 const VideoCallScreen = ({ route, navigation }) => {
-    // These come from backend after coach accepts appointment
     const {
+        appointmentId,
         channelName,
-        token,
+        token: initialToken,
         appId,
-        callTitle = "Consultation"
+        callTitle = "Consultation",
+        userName = "User"
     } = route.params;
 
+    const user = useSelector(state => state.auth.user);
+    const [token, setToken] = useState(initialToken);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const engine = useRef(null);
     const [joined, setJoined] = useState(false);
     const [remoteUid, setRemoteUid] = useState(0);
     const [isMuted, setIsMuted] = useState(false);
     const [isCameraOff, setIsCameraOff] = useState(false);
     const [isFrontCamera, setIsFrontCamera] = useState(true);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         setupVideoSDKEngine();
         return () => {
             leaveChannel();
         };
-    }, []);
+    }, [token]);
+
+    const refreshTokenAndRetry = async () => {
+        if (refreshing || !appointmentId) return;
+        setRefreshing(true);
+        setLoading(true);
+        try {
+            console.log('Token issues detected, refreshing...');
+            const response = await axios.post(`${API_BASE_URL}/v1/appointments/${appointmentId}/refresh-token`, {}, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+
+            if (response.data?.agora_token) {
+                setToken(response.data.agora_token);
+                console.log('Token refreshed, retrying join...');
+            }
+        } catch (error) {
+            console.error('Refresh failed:', error);
+            Alert.alert('Call Error', 'Session could not be authenticated. Please restart the call.');
+            navigation.goBack();
+        } finally {
+            setRefreshing(false);
+        }
+    };
 
     const requestPermissions = async () => {
         if (Platform.OS === 'android') {
@@ -55,6 +85,72 @@ const VideoCallScreen = ({ route, navigation }) => {
             ]);
         }
     };
+
+    // const setupVideoSDKEngine = async () => {
+    //     try {
+    //         await requestPermissions();
+
+    //         engine.current = createAgoraRtcEngine();
+    //         const rtcEngine = engine.current;
+
+    //         rtcEngine.initialize({
+    //             appId: appId,
+    //             channelProfile: ChannelProfileType.ChannelProfileCommunication,
+    //         });
+
+    //         rtcEngine.setDefaultAudioRouteToSpeakerphone(true);
+
+    //         rtcEngine.registerEventHandler({
+    //             onJoinChannelSuccess: (connection, elapsed) => {
+    //                 console.log('Successfully joined channel:', connection.channelId);
+    //                 setJoined(true);
+    //                 setLoading(false);
+    //             },
+    //             onUserJoined: (connection, remoteUid, elapsed) => {
+    //                 setRemoteUid(remoteUid);
+    //             },
+    //             onUserOffline: (connection, remoteUid, reason) => {
+    //                 setRemoteUid(0);
+    //             },
+    //             onLeaveChannel: (connection, stats) => {
+    //                 setJoined(false);
+    //             },
+    //             onError: (err) => {
+    //                 console.error('Agora Error:', err);
+    //                 // 109 = Expired, 1052 = Invalid (often means mismatch or old)
+    //                 if (err === 109 || err === 1052) {
+    //                     refreshTokenAndRetry();
+    //                 } else {
+    //                     setLoading(false);
+    //                     Alert.alert('Call Error', 'Failed to connect. Error: ' + err);
+    //                     navigation.goBack();
+    //                 }
+    //             }
+    //         });
+
+    //         rtcEngine.enableVideo();
+    //         rtcEngine.enableAudio();
+    //         rtcEngine.startPreview();
+
+    //         rtcEngine.joinChannel(
+    //             token,
+    //             channelName,
+    //             0,
+    //             {
+    //                 channelProfile: ChannelProfileType.ChannelProfileCommunication,
+    //                 clientRoleType: ClientRoleType.ClientRoleBroadcaster,
+    //                 publishCameraTrack: true,
+    //                 publishMicrophoneTrack: true,
+    //                 autoSubscribeAudio: true,
+    //                 autoSubscribeVideo: true,
+    //             }
+    //         );
+
+    //     } catch (e) {
+    //         console.error('Setup Engine Error:', e);
+    //         setLoading(false);
+    //     }
+    // };
 
     const setupVideoSDKEngine = async () => {
         try {
@@ -70,43 +166,60 @@ const VideoCallScreen = ({ route, navigation }) => {
 
             rtcEngine.registerEventHandler({
                 onJoinChannelSuccess: (connection, elapsed) => {
-                    console.log('Successfully joined channel:', connection.channelId);
+                    console.log('Joined:', connection.channelId);
                     setJoined(true);
                     setLoading(false);
+
+                    // 🔥 FORCE AUDIO ON
+                    rtcEngine.enableLocalAudio(true);
+                    rtcEngine.muteLocalAudioStream(false);
+                    rtcEngine.setEnableSpeakerphone(true);
                 },
-                onUserJoined: (connection, remoteUid, elapsed) => {
-                    console.log('Remote user joined:', remoteUid);
+
+                onUserJoined: (connection, remoteUid) => {
                     setRemoteUid(remoteUid);
+
+                    // 🔥 FORCE REMOTE AUDIO ON
+                    rtcEngine.muteRemoteAudioStream(remoteUid, false);
                 },
-                onUserOffline: (connection, remoteUid, reason) => {
-                    console.log('Remote user offline:', remoteUid);
-                    setRemoteUid(0);
-                },
-                onLeaveChannel: (connection, stats) => {
-                    console.log('Left channel');
-                    setJoined(false);
-                },
+
+                onUserOffline: () => setRemoteUid(0),
+
                 onError: (err) => {
-                    console.error('Agora Error:', err);
-                    Alert.alert('Call Error', 'Failed to connect to the call. Please try again.');
-                    navigation.goBack();
+                    console.log('Agora error:', err);
+                    if (err === 109 || err === 1052) refreshTokenAndRetry();
                 }
             });
 
-            rtcEngine.enableVideo();
+            // 🔥 AUDIO + VIDEO ENABLE
+            await rtcEngine.enableAudio();
+            await rtcEngine.enableVideo();
+            await rtcEngine.enableLocalAudio(true);
+            await rtcEngine.enableLocalVideo(true);
+
+            rtcEngine.setClientRole(ClientRoleType.ClientRoleBroadcaster);
+            rtcEngine.setEnableSpeakerphone(true);
+
             rtcEngine.startPreview();
 
-            // Join channel
-            rtcEngine.joinChannel(token, channelName, 0, {
-                clientRoleType: ClientRoleType.ClientRoleBroadcaster,
-            });
+            // 🔥 CORRECT JOIN
+            rtcEngine.joinChannel(
+                token,
+                channelName,
+                0,
+                {
+                    publishCameraTrack: true,
+                    publishMicrophoneTrack: true,
+                    autoSubscribeAudio: true,
+                    autoSubscribeVideo: true,
+                }
+            );
 
         } catch (e) {
-            console.error('Setup Engine Error:', e);
+            console.error('Agora setup error:', e);
             setLoading(false);
         }
     };
-
     const leaveChannel = async () => {
         try {
             if (engine.current) {
@@ -168,7 +281,7 @@ const VideoCallScreen = ({ route, navigation }) => {
                         <View style={styles.waitingAvatar}>
                             <Ionicons name="person" size={60} color="rgba(255,255,255,0.3)" />
                         </View>
-                        <Text style={styles.statusText}>Waiting for coach to join...</Text>
+                        <Text style={styles.statusText}>Waiting for {userName} to join...</Text>
                     </View>
                 )
             )}

@@ -23,7 +23,8 @@ const MONTHS = [
     'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-const VideoConsultationScreen = ({ navigation }) => {
+const VideoConsultationScreen = ({ navigation, route }) => {
+    const { coachId } = route.params || {};
     const insets = useSafeAreaInsets();
     const { user } = useSelector((state) => state.auth);
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -35,17 +36,28 @@ const VideoConsultationScreen = ({ navigation }) => {
     const [loading, setLoading] = useState(true);
     const [slotsLoading, setSlotsLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [selectedSlot, setSelectedSlot] = useState(null);
 
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
             // 1. Get Subscription to find Coach
-            const subRes = await axios.get(`${API_BASE_URL}/v1/subscriptions`, {
+            const subRes = await axios.get(`${API_BASE_URL}/v1/subscriptions/`, {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
+            console.log("subRes.data", JSON.stringify(subRes.data));
 
             if (subRes.data && subRes.data.length > 0) {
-                setCoach(subRes.data[0].coach);
+                if (coachId) {
+                    const targetSub = subRes.data.find(s => s.coach?.id === coachId);
+                    if (targetSub) {
+                        setCoach(targetSub.coach);
+                    } else {
+                        setCoach(subRes.data[0].coach);
+                    }
+                } else {
+                    setCoach(subRes.data[0].coach);
+                }
             }
 
             // 2. Get Appointments
@@ -64,6 +76,7 @@ const VideoConsultationScreen = ({ navigation }) => {
     const fetchSlots = useCallback(async (date) => {
         if (!coach) return;
         setSlotsLoading(true);
+        setSelectedSlot(null); // Reset selection when date changes
         try {
             const dateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${date.toString().padStart(2, '0')}`;
             const response = await axios.get(`${API_BASE_URL}/v1/coaches/${coach.id}/slots?date=${dateStr}`, {
@@ -86,18 +99,24 @@ const VideoConsultationScreen = ({ navigation }) => {
         if (selectedDate) fetchSlots(selectedDate);
     }, [selectedDate, fetchSlots]);
 
-    const handleBookSession = async (startTime) => {
+    const handleBookSession = async () => {
+        if (!selectedSlot) {
+            Alert.alert('Selection Required', 'Please select a time slot first');
+            return;
+        }
         try {
             const dateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${selectedDate.toString().padStart(2, '0')}`;
             await axios.post(`${API_BASE_URL}/v1/appointments`, {
                 coach_id: coach.id,
                 appointment_date: dateStr,
-                start_time: startTime
+                start_time: selectedSlot
             }, {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
             Alert.alert('Success', 'Consultation Request Sent!');
+            setSelectedSlot(null);
             fetchData(); // Refresh list
+            fetchSlots(selectedDate); // Refresh slots
         } catch (error) {
             Alert.alert('Error', error.response?.data?.error || 'Booking failed');
         }
@@ -212,16 +231,38 @@ const VideoConsultationScreen = ({ navigation }) => {
                 {slotsLoading ? (
                     <ActivityIndicator color="#fff" />
                 ) : availableSlots.length > 0 ? (
-                    <View style={styles.slotsGrid}>
-                        {availableSlots.map((slot, index) => (
+                    <View>
+                        <View style={styles.slotsGrid}>
+                            {availableSlots.map((slot, index) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    style={[
+                                        styles.slotButton,
+                                        selectedSlot === slot && styles.selectedSlotButton
+                                    ]}
+                                    onPress={() => setSelectedSlot(slot)}
+                                >
+                                    <Text style={[
+                                        styles.slotText,
+                                        selectedSlot === slot && styles.selectedSlotText
+                                    ]}>{slot}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        {selectedSlot && (
                             <TouchableOpacity
-                                key={index}
-                                style={styles.slotButton}
-                                onPress={() => handleBookSession(slot)}
+                                style={styles.bookNowBtn}
+                                onPress={handleBookSession}
                             >
-                                <Text style={styles.slotText}>{slot}</Text>
+                                <LinearGradient
+                                    colors={['#FF6B3D', '#FF8E53']}
+                                    style={styles.bookNowGradient}
+                                >
+                                    <Text style={styles.bookNowText}>Book Session at {selectedSlot}</Text>
+                                </LinearGradient>
                             </TouchableOpacity>
-                        ))}
+                        )}
                     </View>
                 ) : (
                     <Text style={styles.noDataText}>{coach ? 'No slots available for this date' : 'Please subscribe to a coach first'}</Text>
@@ -514,7 +555,29 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginVertical: 20,
         fontSize: 14,
-    }
+    },
+    selectedSlotButton: {
+        backgroundColor: '#FF6B3D',
+        borderColor: '#FF6B3D',
+    },
+    selectedSlotText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    bookNowBtn: {
+        marginTop: 15,
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    bookNowGradient: {
+        paddingVertical: 12,
+        alignItems: 'center',
+    },
+    bookNowText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
 });
 
 export default VideoConsultationScreen;

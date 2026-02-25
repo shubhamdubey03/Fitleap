@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -8,7 +8,9 @@ import {
     Image,
     TouchableOpacity,
     Dimensions,
-    FlatList,
+    ActivityIndicator,
+    Alert,
+    RefreshControl,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -16,81 +18,153 @@ import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../redux/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DashboardSidebar from '../components/dashboard/DashboardSidebar';
+import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
+const AGORA_APP_ID = '3d217b929db1457ab9e1166c7a0f2e37';
 
 const { width } = Dimensions.get('window');
 
 const CoachDashboardScreen = ({ navigation }) => {
     const [coachName, setCoachName] = useState('Coach');
     const [isSidebarVisible, setSidebarVisible] = useState(false);
+    const [appointments, setAppointments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
     const user = useSelector(state => state.auth.user);
     const dispatch = useDispatch();
 
+    const fetchAppointments = useCallback(async () => {
+        if (!user?.token) return;
+        try {
+            const response = await axios.get(`${API_BASE_URL}/v1/appointments/coaches/me/appointments`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            console.log("appointments", response.data);
+            setAppointments(response.data);
+        } catch (error) {
+            console.error('Fetch appointments error:', error);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, [user?.token]);
+
+    console.log("appointmentslllllllll", appointments);
 
     useEffect(() => {
         const checkAuth = async () => {
-            // 1. Check Redux State
             if (user?.token) {
                 setCoachName(user.name || 'Coach');
+                fetchAppointments();
                 return;
             }
 
-            // 2. Check Async Storage (Fallback)
             const storedUser = await AsyncStorage.getItem('user');
             if (storedUser) {
                 const parsedUser = JSON.parse(storedUser);
                 if (parsedUser.token) {
                     setCoachName(parsedUser.name || 'Coach');
+                    fetchAppointments();
                     return;
                 }
             }
 
-            // 3. No Token Found -> Redirect to Login
             console.log('No token found in CoachDashboard, redirecting to Login');
             navigation.replace('Login');
         };
 
         checkAuth();
-    }, [user, navigation]);
+    }, [user, navigation, fetchAppointments]);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchAppointments();
+    };
 
     const handleLogout = async () => {
         await dispatch(logout()).unwrap();
-        // Fallback or exact clears matching existing codebase pattern just in case
         await AsyncStorage.removeItem('IS_LOGGED_IN');
         await AsyncStorage.removeItem('USER_ROLE');
-        await AsyncStorage.removeItem('COACH_NAME'); // Clear coach specific data
+        await AsyncStorage.removeItem('COACH_NAME');
         navigation.replace('Login');
     };
 
-    const students = [
-        { id: '227be150-696a-4bfc-bee8-d3c121c1d338', name: 'Test User', status: 'Active', plan: 'Yoga Basic' },
-        { id: 'a1a13e8e-af57-4215-8e2a-6930c4080676', name: 'Shubham', status: 'Pending', plan: 'Weight Loss' },
-    ];
+    const handleAccept = async (id) => {
+        try {
+            await axios.patch(`${API_BASE_URL}/v1/appointments/${id}/accept`, {}, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            Alert.alert('Success', 'Appointment accepted');
+            fetchAppointments();
+        } catch (error) {
+            Alert.alert('Error', error.response?.data?.error || 'Failed to accept');
+        }
+    };
 
-    const renderStudent = ({ item }) => (
-        <TouchableOpacity
-            style={styles.studentItem}
-            onPress={() => navigation.navigate('ChatScreen', {
-                receiverId: item.id,
-                receiverName: item.name
-            })}
-        >
+    const handleReject = async (id) => {
+        Alert.prompt(
+            'Reject Appointment',
+            'Reason for rejection:',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Reject',
+                    onPress: async (reason) => {
+                        try {
+                            await axios.patch(`${API_BASE_URL}/v1/appointments/${id}/reject`, { reason }, {
+                                headers: { Authorization: `Bearer ${user.token}` }
+                            });
+                            Alert.alert('Success', 'Appointment rejected');
+                            fetchAppointments();
+                        } catch (error) {
+                            Alert.alert('Error', error.response?.data?.error || 'Failed to reject');
+                        }
+                    },
+                },
+            ],
+            'plain-text'
+        );
+    };
+
+    const requested = appointments.filter(a => a.status === 'requested');
+    const accepted = appointments.filter(a => a.status === 'accepted');
+
+    // Filter active sessions to only those that are 'accepted' AND for TODAY
+    const activeSessions = accepted.filter(item => {
+        const today = new Date().toISOString().split('T')[0];
+        const apptDate = new Date(item.appointment_date).toISOString().split('T')[0];
+        return today === apptDate;
+    }).sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+    const renderAppointmentItem = (item) => (
+        <View key={item.id} style={styles.studentItem}>
             <View style={styles.studentInfo}>
                 <View style={styles.studentIcon}>
                     <Ionicons name="person" size={18} color="#fff" />
                 </View>
                 <View>
-                    <Text style={styles.studentName}>{item.name}</Text>
-                    <Text style={styles.studentPlan}>{item.plan}</Text>
+                    <Text style={styles.studentName}>{item.user?.name || 'User'}</Text>
+                    <Text style={styles.studentPlan}>{new Date(item.appointment_date).toDateString()} at {item.start_time}</Text>
                 </View>
             </View>
-            <View style={{ alignItems: 'flex-end' }}>
-                <Ionicons name="chatbubble-outline" size={20} color="#FF6B3D" style={{ marginBottom: 5 }} />
-                <Text style={[styles.statusText, { color: item.status === 'Active' ? '#2ECC71' : '#F1C40F' }]}>
-                    {item.status}
-                </Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+                {item.status === 'requested' ? (
+                    <>
+                        <TouchableOpacity onPress={() => handleAccept(item.id)} style={[styles.actionBtn, { backgroundColor: '#2ECC71' }]}>
+                            <Ionicons name="checkmark" size={16} color="#fff" />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => handleReject(item.id)} style={[styles.actionBtn, { backgroundColor: '#E74C3C' }]}>
+                            <Ionicons name="close" size={16} color="#fff" />
+                        </TouchableOpacity>
+                    </>
+                ) : (
+                    <Text style={[styles.statusText, { color: item.status === 'accepted' ? '#2ECC71' : '#F1C40F' }]}>
+                        {item.status.toUpperCase()}
+                    </Text>
+                )}
             </View>
-        </TouchableOpacity>
+        </View>
     );
 
     return (
@@ -100,7 +174,11 @@ const CoachDashboardScreen = ({ navigation }) => {
         >
             <StatusBar barStyle="light-content" backgroundColor="#000000" />
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />}
+            >
 
                 {/* Header */}
                 <View style={styles.header}>
@@ -127,49 +205,70 @@ const CoachDashboardScreen = ({ navigation }) => {
                 {/* Stats Row */}
                 <View style={styles.statsRow}>
                     <View style={styles.statCard}>
-                        <Text style={styles.statNumber}>12</Text>
-                        <Text style={styles.statLabel}>Students</Text>
+                        <Text style={styles.statNumber}>{appointments.length}</Text>
+                        <Text style={styles.statLabel}>Total</Text>
                     </View>
                     <View style={styles.statCard}>
-                        <Text style={styles.statNumber}>5</Text>
-                        <Text style={styles.statLabel}>Pending</Text>
+                        <Text style={styles.statNumber}>{requested.length}</Text>
+                        <Text style={styles.statLabel}>Requested</Text>
                     </View>
                     <View style={styles.statCard}>
-                        <Text style={styles.statNumber}>$850</Text>
-                        <Text style={styles.statLabel}>Earnings</Text>
+                        <Text style={styles.statNumber}>{accepted.length}</Text>
+                        <Text style={styles.statLabel}>Approved</Text>
                     </View>
                 </View>
 
-                {/* Schedule / Upcoming Classes */}
-                <Text style={styles.sectionTitle}>Upcoming Sessions</Text>
+                {/* Active Sessions (Join Call) */}
+                <Text style={styles.sectionTitle}>Active Sessions</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-                    {[1, 2, 3].map((item, index) => (
+                    {activeSessions.length > 0 ? activeSessions.map((item) => (
                         <LinearGradient
-                            key={index}
+                            key={item.id}
                             colors={['#FF6B3D', '#FF8E53']}
                             style={styles.classCard}
                         >
-                            <Text style={styles.classTime}>10:00 AM</Text>
-                            <Text style={styles.className}>Morning Yoga Flow</Text>
-                            <View style={styles.classFooter}>
-                                <Ionicons name="videocam-outline" size={16} color="#fff" />
-                                <Text style={styles.classLocation}>Online</Text>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.classTime}>{item.start_time}</Text>
+                                <Text style={styles.className}>{item.user?.name || 'Session'}</Text>
                             </View>
+                            <TouchableOpacity
+                                style={styles.joinBtn}
+                                onPress={() => {
+                                    navigation.navigate('VideoCall', {
+                                        appointmentId: item.id,
+                                        channelName: item.channel_name,
+                                        token: item.agora_token,
+                                        appId: AGORA_APP_ID,
+                                        callTitle: 'Nutrition Coaching',
+                                        userName: item.user?.name
+                                    })
+                                }}
+                            >
+                                <Ionicons name="videocam" size={16} color="#FF6B3D" />
+                                <Text style={styles.joinBtnText}>Join</Text>
+                            </TouchableOpacity>
                         </LinearGradient>
-                    ))}
+                    )) : (
+                        <View style={[styles.classCard, { backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center' }]}>
+                            <Text style={{ color: '#aaa', textAlign: 'center' }}>No approved sessions yet</Text>
+                        </View>
+                    )}
                 </ScrollView>
 
-                {/* Student List */}
+                {/* Appointment List */}
                 <View style={styles.listHeader}>
-                    <Text style={styles.sectionTitle}>My Students</Text>
-                    <TouchableOpacity><Text style={styles.seeAll}>See All</Text></TouchableOpacity>
+                    <Text style={styles.sectionTitle}>All Appointments</Text>
                 </View>
 
                 <View style={styles.studentListContainer}>
-                    {students.map((item) => <View key={item.id}>{renderStudent({ item })}</View>)}
+                    {loading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : appointments.length > 0 ? (
+                        appointments.map((item) => renderAppointmentItem(item))
+                    ) : (
+                        <Text style={{ color: '#aaa', textAlign: 'center' }}>No appointments yet</Text>
+                    )}
                 </View>
-
-
 
                 <DashboardSidebar
                     visible={isSidebarVisible}
@@ -254,12 +353,11 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     classCard: {
-        width: 160,
-        height: 100,
+        width: 180,
+        height: 120,
         borderRadius: 15,
         padding: 15,
         marginRight: 15,
-        justifyContent: 'space-between',
     },
     classTime: {
         color: 'rgba(255,255,255,0.9)',
@@ -270,24 +368,28 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
+        marginTop: 5,
     },
-    classFooter: {
+    joinBtn: {
+        backgroundColor: '#fff',
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 6,
+        borderRadius: 10,
+        marginTop: 10,
+        gap: 5,
     },
-    classLocation: {
-        color: '#fff',
+    joinBtnText: {
+        color: '#FF6B3D',
         fontSize: 12,
-        marginLeft: 5,
+        fontWeight: 'bold',
     },
     listHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 10,
-    },
-    seeAll: {
-        color: '#FF6B3D',
     },
     studentListContainer: {
         backgroundColor: 'rgba(255,255,255,0.05)',
@@ -322,11 +424,18 @@ const styles = StyleSheet.create({
     },
     studentPlan: {
         color: '#aaa',
-        fontSize: 12,
+        fontSize: 11,
+    },
+    actionBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     statusText: {
-        fontSize: 12,
-        fontWeight: '600',
+        fontSize: 10,
+        fontWeight: 'bold',
     },
 });
 

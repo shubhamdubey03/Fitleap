@@ -47,6 +47,9 @@ import CoachDashboardScreen from './src/screens/CoachDashboardScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import ChatListScreen from './src/screens/ChatListScreen';
 import InviteFriendScreen from './src/screens/InviteFriendScreen';
+import VideoCallScreen from './src/screens/exercise/VideoCallScreen';
+// import CoachAvailabilityScreen from './src/screens/CoachAvailabilityScreen';
+import VideoConsultationScreen from './src/screens/exercise/VideoConsultationScreen';
 import { initNotifications } from './src/services/Notifications';
 
 
@@ -145,6 +148,9 @@ const MainNav = () => {
           <Stack.Screen name="ChatListScreen" component={ChatListScreen} />
           <Stack.Screen name="TrackOrderScreen" component={TrackOrderScreen} />
           <Stack.Screen name="InviteFriend" component={InviteFriendScreen} />
+          <Stack.Screen name="VideoCall" component={VideoCallScreen} />
+          {/* <Stack.Screen name="CoachAvailability" component={CoachAvailabilityScreen} /> */}
+          <Stack.Screen name="VideoConsultation" component={VideoConsultationScreen} />
 
         </Stack.Navigator>
       </NavigationContainer>
