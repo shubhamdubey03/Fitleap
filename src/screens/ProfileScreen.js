@@ -15,7 +15,7 @@ const ProfileScreen = () => {
     const dispatch = useDispatch();
 
     // Initial state from Redux (fallback)
-    const { user } = useSelector((state: any) => state.auth);
+    const { user } = useSelector((state) => state.auth);
 
     // Local state for fresh data
     const [userProfile, setUserProfile] = useState(user);
@@ -66,15 +66,18 @@ const ProfileScreen = () => {
 
     const handleLogout = async () => {
         try {
-            await dispatch(logout()).unwrap();
+            dispatch(logout());
+
             navigation.reset({
                 index: 0,
                 routes: [{ name: 'Login' }],
             });
+
         } catch (e) {
             console.log('Logout error:', e);
-            // Fallback
+
             await AsyncStorage.clear();
+
             navigation.reset({
                 index: 0,
                 routes: [{ name: 'Login' }],
@@ -124,6 +127,16 @@ const ProfileScreen = () => {
                 <ProfileItem icon="flame-outline" label="BMR" value="1400 Kcal" />
                 <ProfileItem icon="pulse-outline" label="TGEE" value="1800 Kcal" />
 
+                <TouchableOpacity
+                    style={[styles.logoutBtn, { backgroundColor: 'rgba(255,107,61,0.1)', borderColor: '#FF6B3D', marginTop: 20 }]}
+                    onPress={() => navigation.navigate('InviteFriend')}
+                >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="people-outline" size={20} color="#FF6B3D" style={{ marginRight: 10 }} />
+                        <Text style={[styles.logoutText, { color: '#FF6B3D' }]}>Invite Friends & Earn</Text>
+                    </View>
+                </TouchableOpacity>
+
                 <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
                     <Text style={styles.logoutText}>Logout</Text>
                 </TouchableOpacity>
@@ -132,7 +145,7 @@ const ProfileScreen = () => {
     );
 };
 
-const ProfileItem = ({ icon, label, value }: { icon: any, label: string, value: string }) => (
+const ProfileItem = ({ icon, label, value }) => (
     <View style={styles.item}>
         <View style={styles.itemLeft}>
             <View style={styles.iconBox}>

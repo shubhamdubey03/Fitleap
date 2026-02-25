@@ -32,6 +32,7 @@ const SignupScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
+  const [referralByCode, setReferralByCode] = useState('');
 
   // Coach Specific Fields
   const [bankName, setBankName] = useState('');
@@ -109,6 +110,7 @@ const SignupScreen = ({ navigation }) => {
         password: trimmedPassword,
         mobile: String(trimmedPhone),
         countryCode,
+        referralByCode: referralByCode.trim(),
       };
     } else {
       // Coach Role - FormData
@@ -287,6 +289,18 @@ const SignupScreen = ({ navigation }) => {
               style={styles.phoneInput}
               value={phone}
               onChangeText={setPhone}
+            />
+          </View>
+
+          <View style={styles.inputBox}>
+            <Ionicons name="gift-outline" size={22} color="#fff" style={styles.icon} />
+            <TextInput
+              placeholder="Referral Code (Optional)"
+              placeholderTextColor="#ccc"
+              style={styles.input}
+              value={referralByCode}
+              onChangeText={setReferralByCode}
+              autoCapitalize="characters"
             />
           </View>
         </View>

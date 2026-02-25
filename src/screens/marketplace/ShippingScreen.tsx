@@ -89,7 +89,9 @@ const ShippingScreen = ({ navigation, route }: { navigation: any, route: any }) 
 
     const fetchCountries = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/countries`);
+            const response = await axios.get(`${API_BASE_URL}/countries`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
             if (Array.isArray(response.data)) {
                 setCountries(response.data);
             }
@@ -97,10 +99,13 @@ const ShippingScreen = ({ navigation, route }: { navigation: any, route: any }) 
             console.error('Error fetching countries:', error);
         }
     };
+    console.log("---", user.token)
 
     const fetchStates = async (countryId: any) => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/states/${countryId}`);
+            const response = await axios.get(`${API_BASE_URL}/states/${countryId}`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
             setStates(response.data);
             return response.data;
         } catch (error) {
@@ -210,7 +215,7 @@ const ShippingScreen = ({ navigation, route }: { navigation: any, route: any }) 
         try {
             const payload = {
                 id: editingAddressId,
-                user_id: user.id,
+                user_id: user.id || user._id,
                 name,
                 mobile_number: mobile,
                 address1,

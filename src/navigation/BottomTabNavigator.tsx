@@ -32,7 +32,7 @@ const BottomTabNavigator = () => {
                     paddingTop: 5,
                 },
                 tabBarIcon: ({ focused, color, size }) => {
-                    let iconName;
+                    let iconName: any = 'help-circle-outline';
 
                     if (route.name === 'Home') {
                         iconName = focused ? 'home' : 'home-outline';

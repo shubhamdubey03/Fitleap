@@ -18,6 +18,7 @@ import { useSelector, useDispatch } from 'react-redux';
 
 import DashboardSidebar from './DashboardSidebar';
 import { reset } from '../../redux/notificationSlice';
+import { getProfile } from '../../redux/authSlice';
 import { AUTH_URL } from '../../config/api';
 
 const DashboardScreen = ({ navigation }) => {
@@ -25,54 +26,11 @@ const DashboardScreen = ({ navigation }) => {
   const { unreadCount } = useSelector((state) => state.notifications);
   const [isSidebarVisible, setSidebarVisible] = useState(false);
   const { user } = useSelector((state) => state.auth);
-  console.log("USER DATAssssssssssssssssssssssssss FROM REDUX:", user);
-  const [userProfile, setUserProfile] = useState(user);
-
-
-  const getProfile = async () => {
-
-    try {
-      let token = await AsyncStorage.getItem('authToken');
-
-      // Fallback: Check if stored in 'user' object by Redux
-      if (!token) {
-        const userStr = await AsyncStorage.getItem('user');
-        if (userStr) {
-          const userObj = JSON.parse(userStr);
-          if (userObj && userObj.token) {
-            token = userObj.token;
-          }
-        }
-      }
-
-      if (!token) {
-        console.log("No auth token found");
-        return;
-      }
-      console.log(";;;;;;;;;;;;", token)
-
-      console.log("Fetching profile with token:", token.substring(0, 10) + "...");
-
-      const response = await axios.get(
-        `${AUTH_URL}/profile`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log("PROFILE DATA RECEIVED:", response.data.name);
-      setUserProfile(response.data);
-    } catch (error) {
-      console.log("PROFILE FETCH ERROR:", error.response?.data || error.message);
-    }
-  };
 
   useFocusEffect(
     React.useCallback(() => {
-      getProfile();
-    }, []),
+      dispatch(getProfile());
+    }, [dispatch]),
   );
 
   return (
@@ -92,12 +50,12 @@ const DashboardScreen = ({ navigation }) => {
 
             <TouchableOpacity onPress={() => setSidebarVisible(true)}>
               <Image
-                source={{ uri: userProfile?.profile_image || 'https://i.pravatar.cc/150?img=3' }}
+                source={{ uri: user?.profile_image || 'https://i.pravatar.cc/150?img=3' }}
                 style={styles.avatar}
               />
             </TouchableOpacity>
             <View>
-              <Text style={styles.hello}>Hello {userProfile?.name || 'User'}</Text>
+              <Text style={styles.hello}>Hello {user?.name || 'User'}</Text>
               <Text style={styles.title}>Let's Explore</Text>
             </View>
           </View>

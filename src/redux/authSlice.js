@@ -167,6 +167,30 @@ export const forgotPassword = createAsyncThunk(
     }
 );
 
+// Get User Profile (Refresh)
+export const getProfile = createAsyncThunk(
+    'auth/getProfile',
+    async (_, thunkAPI) => {
+        try {
+            const token = thunkAPI.getState().auth.user?.token;
+            if (!token) return thunkAPI.rejectWithValue('No token found');
+
+            const config = {
+                headers: { Authorization: `Bearer ${token}` },
+            };
+            const { data } = await axios.get(`${API_URL}/profile`, config);
+
+            const current = JSON.parse(await AsyncStorage.getItem('user')) || {};
+            const updated = { ...current, ...data, token }; // Keep the token
+
+            await saveUser(updated);
+            return updated;
+        } catch (error) {
+            return thunkAPI.rejectWithValue(getError(error));
+        }
+    }
+);
+
 // Logout
 export const logout = createAsyncThunk('auth/logout', async () => {
     await Promise.all([
@@ -242,6 +266,10 @@ export const authSlice = createSlice({
             .addCase(updateUserProfile.pending, pending)
             .addCase(updateUserProfile.fulfilled, fulfilled)
             .addCase(updateUserProfile.rejected, rejected)
+
+            .addCase(getProfile.fulfilled, (state, action) => {
+                state.user = action.payload;
+            })
 
             .addCase(forgotPassword.pending, pending)
             .addCase(forgotPassword.fulfilled, (state) => {

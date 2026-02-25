@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -6,21 +6,75 @@ import {
     Image,
     ScrollView,
     TouchableOpacity,
+    ActivityIndicator,
+    RefreshControl,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import axios from 'axios';
+import { useSelector } from 'react-redux';
+import { API_BASE_URL } from '../../config/api';
 
 const CoachingScreen = ({ navigation }: any) => {
     const insets = useSafeAreaInsets();
+    const { user } = useSelector((state: any) => state.auth);
     const [activeTab, setActiveTab] = useState<'appointments' | 'schedule'>("appointments");
+
+    const [appointments, setAppointments] = useState<any[]>([]);
+    const [coach, setCoach] = useState<any>(null);
+    const [availability, setAvailability] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const fetchData = useCallback(async () => {
+        try {
+            setLoading(true);
+            // 1. Get Subscription to find Coach
+            const subRes = await axios.get(`${API_BASE_URL}/v1/subscriptions`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+
+            if (subRes.data && subRes.data.length > 0) {
+                const activeCoach = subRes.data[0].coach;
+                setCoach(activeCoach);
+
+                // Fetch coach availability
+                const availRes = await axios.get(`${API_BASE_URL}/v1/coaches/${activeCoach.id}/availability`, {
+                    headers: { Authorization: `Bearer ${user.token}` }
+                });
+                setAvailability(availRes.data);
+            }
+
+            // 2. Get Appointments
+            const apptRes = await axios.get(`${API_BASE_URL}/v1/appointments`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            setAppointments(apptRes.data);
+        } catch (error) {
+            console.error('CoachingScreen Fetch error:', error);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, [user.token]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchData();
+    };
+
+    const nextSession = appointments.find(a => a.status === 'accepted' || a.status === 'requested');
 
     return (
         <LinearGradient
             colors={['#1a0033', '#3a005f']}
             style={[styles.container, { paddingTop: insets.top }]}
         >
-            {/* Header */}
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Coaching</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -32,7 +86,6 @@ const CoachingScreen = ({ navigation }: any) => {
                 </View>
             </View>
 
-            {/* Tab Switcher */}
             <View style={styles.tabContainer}>
                 <TouchableOpacity
                     style={[styles.tabButton, activeTab === 'schedule' && styles.activeTabButton]}
@@ -48,52 +101,76 @@ const CoachingScreen = ({ navigation }: any) => {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                {activeTab === 'appointments' ? (
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />}
+            >
+                {loading ? (
+                    <ActivityIndicator color="#fff" size="large" style={{ marginTop: 50 }} />
+                ) : activeTab === 'appointments' ? (
                     <>
-                        <Text style={styles.sectionTitle}>Upcoming</Text>
+                        <Text style={styles.sectionTitle}>Next Session</Text>
+                        {nextSession ? (
+                            <View style={styles.upcomingCard}>
+                                <View style={styles.cardHeader}>
+                                    <Text style={styles.todayLabel}>{new Date(nextSession.appointment_date).toDateString()}</Text>
+                                    {nextSession.status === 'accepted' && (
+                                        <TouchableOpacity
+                                            style={styles.joinBtn}
+                                            onPress={() => navigation.navigate('VideoCall', {
+                                                channelName: nextSession.channel_name,
+                                                token: nextSession.agora_token,
+                                                appId: '3d217b929db1457ab9e1166c7a0f2e37',
+                                                callTitle: 'Nutrition Coaching'
+                                            })}
+                                        >
+                                            <Text style={styles.joinBtnText}>Join Now</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                                <Text style={styles.sessionTitle}>Video Consultation</Text>
+                                <Text style={styles.sessionTime}>{nextSession.start_time}</Text>
+                                <Text style={[styles.statusTag, { color: nextSession.status === 'accepted' ? '#4caf50' : '#ff9800' }]}>
+                                    {nextSession.status.toUpperCase()}
+                                </Text>
 
-                        {/* Upcoming Session Card */}
-                        <View style={styles.upcomingCard}>
-                            <View style={styles.cardHeader}>
-                                <Text style={styles.todayLabel}>Today</Text>
-                                <TouchableOpacity style={styles.joinBtn}>
-                                    <Text style={styles.joinBtnText}>Join Now</Text>
-                                </TouchableOpacity>
+                                <View style={styles.coachRow}>
+                                    <View style={styles.placeholderAvatar}>
+                                        <Ionicons name="person" size={16} color="#fff" />
+                                    </View>
+                                    <Text style={styles.coachNameSmall}>{nextSession.coach?.name || 'Your Coach'}</Text>
+                                </View>
                             </View>
-                            <Text style={styles.sessionTitle}>Nutrition Coaching</Text>
-                            <Text style={styles.sessionTime}>10:00 AM - 10:30 AM</Text>
-
-                            <View style={styles.coachRow}>
-                                <Image
-                                    source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100' }}
-                                    style={styles.coachAvatarSmall}
-                                />
-                                <Text style={styles.coachNameSmall}>Dr. Emily Carter</Text>
-                            </View>
-                        </View>
+                        ) : (
+                            <Text style={styles.noDataText}>No upcoming sessions</Text>
+                        )}
 
                         <Text style={styles.sectionTitle}>Your Coach</Text>
-                        <View style={styles.coachProfileCard}>
-                            <View style={styles.profileRow}>
-                                <Image
-                                    source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200' }}
-                                    style={styles.coachAvatarLarge}
-                                />
-                                <View>
-                                    <Text style={styles.profileName}>Dr. Emily Carter</Text>
-                                    <Text style={styles.profileRole}>Nutrition Coach</Text>
+                        {coach ? (
+                            <View style={styles.coachProfileCard}>
+                                <View style={styles.profileRow}>
+                                    <View style={styles.coachAvatarLarge}>
+                                        <Ionicons name="person" size={30} color="#fff" />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.profileName}>{coach.name}</Text>
+                                        <Text style={styles.profileRole}>Fitness & Nutrition Expert</Text>
+                                    </View>
+                                    <TouchableOpacity
+                                        style={styles.videoCallBtn}
+                                        onPress={() => navigation.navigate('VideoConsultation')}
+                                    >
+                                        <Text style={styles.videoCallText}>Book Call</Text>
+                                    </TouchableOpacity>
                                 </View>
-                                <TouchableOpacity style={styles.videoCallBtn}>
-                                    <Text style={styles.videoCallText}>Video Call</Text>
-                                </TouchableOpacity>
                             </View>
-                        </View>
+                        ) : (
+                            <Text style={styles.noDataText}>You haven't subscribed to a coach yet</Text>
+                        )}
                     </>
                 ) : (
                     <>
-                        {/* Schedule View */}
-                        <Text style={styles.sectionTitle}>Book a Session</Text>
+                        <Text style={styles.sectionTitle}>Manage Calls</Text>
                         <TouchableOpacity
                             style={styles.bookSessionCard}
                             onPress={() => navigation.navigate('VideoConsultation')}
@@ -102,33 +179,29 @@ const CoachingScreen = ({ navigation }: any) => {
                                 <Ionicons name="videocam" size={24} color="#fff" />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={styles.bookTitle}>Video Consultation</Text>
-                                <Text style={styles.bookSubtitle}>Schedule a 1-on-1 video call</Text>
+                                <Text style={styles.bookTitle}>Book Video Consultation</Text>
+                                <Text style={styles.bookSubtitle}>Pick a slot from your coach's calendar</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={20} color="#ccc" />
                         </TouchableOpacity>
 
-                        <Text style={styles.sectionTitle}>Availability</Text>
-                        <View style={styles.availabilityList}>
-                            <View style={styles.availabilityItem}>
-                                <View style={styles.dayIcon}>
-                                    <Ionicons name="calendar-outline" size={20} color="#fff" />
-                                </View>
-                                <Text style={styles.availabilityText}>Monday, 9:00 AM - 5:00 PM</Text>
+                        <Text style={styles.sectionTitle}>Coach Weekly Availability</Text>
+                        {availability.length > 0 ? (
+                            <View style={styles.availabilityList}>
+                                {availability.map((item, index) => (
+                                    <View key={index} style={styles.availabilityItem}>
+                                        <View style={styles.dayIcon}>
+                                            <Ionicons name="calendar-outline" size={20} color="#fff" />
+                                        </View>
+                                        <Text style={styles.availabilityText}>
+                                            Day {item.day_of_week}: {item.start_time} - {item.end_time}
+                                        </Text>
+                                    </View>
+                                ))}
                             </View>
-                            <View style={styles.availabilityItem}>
-                                <View style={styles.dayIcon}>
-                                    <Ionicons name="calendar-outline" size={20} color="#fff" />
-                                </View>
-                                <Text style={styles.availabilityText}>Tuesday, 9:00 AM - 5:00 PM</Text>
-                            </View>
-                            <View style={styles.availabilityItem}>
-                                <View style={styles.dayIcon}>
-                                    <Ionicons name="calendar-outline" size={20} color="#fff" />
-                                </View>
-                                <Text style={styles.availabilityText}>Wednesday, 8:00 AM - 5:00 PM</Text>
-                            </View>
-                        </View>
+                        ) : (
+                            <Text style={styles.noDataText}>Availability details not set</Text>
+                        )}
                     </>
                 )}
             </ScrollView>
@@ -231,16 +304,24 @@ const styles = StyleSheet.create({
     sessionTime: {
         color: '#ccc',
         fontSize: 14,
+        marginBottom: 5,
+    },
+    statusTag: {
+        fontSize: 11,
+        fontWeight: '700',
         marginBottom: 15,
     },
     coachRow: {
         flexDirection: 'row',
         alignItems: 'center',
     },
-    coachAvatarSmall: {
+    placeholderAvatar: {
         width: 30,
         height: 30,
         borderRadius: 15,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
         marginRight: 10,
     },
     coachNameSmall: {
@@ -262,6 +343,9 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         borderRadius: 25,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
         marginRight: 15,
     },
     profileName: {
@@ -332,6 +416,12 @@ const styles = StyleSheet.create({
         color: '#aaa',
         fontSize: 12,
     },
+    noDataText: {
+        color: 'rgba(255,255,255,0.4)',
+        textAlign: 'center',
+        marginVertical: 20,
+        fontSize: 14,
+    }
 });
 
 export default CoachingScreen;

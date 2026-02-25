@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     View,
     Text,
@@ -10,8 +10,19 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import { useSelector, useDispatch } from 'react-redux';
+import { getProfile } from '../../redux/authSlice';
+
+
 
 const YourCoinsScreen = ({ navigation }) => {
+    const dispatch = useDispatch();
+    const { user } = useSelector((state) => state.auth);
+
+    useEffect(() => {
+        dispatch(getProfile());
+    }, [dispatch]);
+
     return (
         <LinearGradient
             colors={['#1a0033', '#3b0a57', '#6a0f6b']}
@@ -24,7 +35,7 @@ const YourCoinsScreen = ({ navigation }) => {
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                         <Ionicons name="chevron-back" size={24} color="#fff" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Your Coins</Text>
+                    <Text style={styles.headerTitle}>{user?.name}'s Coins</Text>
                     <View style={{ width: 40 }} />
                 </View>
 
@@ -32,7 +43,7 @@ const YourCoinsScreen = ({ navigation }) => {
 
                     {/* Total Coins Card */}
                     <View style={styles.totalCoinsCard}>
-                        <Text style={styles.totalCoinsValue}>1,250</Text>
+                        <Text style={styles.totalCoinsValue}>{user?.wallet_balance}</Text>
                         <Text style={styles.totalCoinsLabel}>Total Coins</Text>
                     </View>
 
