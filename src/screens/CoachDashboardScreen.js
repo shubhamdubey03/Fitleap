@@ -193,7 +193,7 @@ const CoachDashboardScreen = ({ navigation }) => {
                         </View>
                     </View>
                     <View style={styles.headerIcons}>
-                        <TouchableOpacity onPress={() => navigation.navigate('ChatListScreen')} style={styles.iconBtn}>
+                        <TouchableOpacity onPress={() => navigation.navigate('ChatList')} style={styles.iconBtn}>
                             <Ionicons name="chatbubbles-outline" size={24} color="#fff" />
                         </TouchableOpacity>
                         <TouchableOpacity onPress={handleLogout} style={styles.iconBtn}>

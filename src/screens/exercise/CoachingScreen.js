@@ -182,12 +182,20 @@ const CoachingScreen = ({ navigation }) => {
                                             <Text style={styles.profileName}>{c.name}</Text>
                                             <Text style={styles.profileRole}>Fitness & Nutrition Expert</Text>
                                         </View>
-                                        <TouchableOpacity
-                                            style={styles.videoCallBtn}
-                                            onPress={() => navigation.navigate('VideoConsultation', { coachId: c.id })}
-                                        >
-                                            <Text style={styles.videoCallText}>Book Call</Text>
-                                        </TouchableOpacity>
+                                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                                            <TouchableOpacity
+                                                style={styles.chatIconBtn}
+                                                onPress={() => navigation.navigate('Chat', { receiverId: c.id, receiverName: c.name })}
+                                            >
+                                                <Ionicons name="chatbubble-ellipses" size={20} color="#fff" />
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={styles.videoCallBtn}
+                                                onPress={() => navigation.navigate('VideoConsultation', { coachId: c.id })}
+                                            >
+                                                <Text style={styles.videoCallText}>Book Call</Text>
+                                            </TouchableOpacity>
+                                        </View>
                                     </View>
                                 </View>
                             ))
@@ -290,6 +298,7 @@ const styles = StyleSheet.create({
     profileRole: { color: '#ccc', fontSize: 12 },
     videoCallBtn: { backgroundColor: '#FF6B3D', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 12 },
     videoCallText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
+    chatIconBtn: { backgroundColor: '#7b1fa2', width: 36, height: 36, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
     bookSessionCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 16, padding: 15, marginBottom: 20 },
     bookIconData: { width: 50, height: 50, borderRadius: 12, backgroundColor: '#7b1fa2', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
     bookTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 4 },

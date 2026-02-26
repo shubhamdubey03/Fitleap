@@ -26,8 +26,12 @@ const ChatListScreen = ({ navigation }) => {
 
     const fetchConversations = async () => {
         try {
-            const response = await axios.get(`${API_URL}/conversations/${user._id}`);
-            setConversations(response.data);
+            const response = await axios.get(`${CHAT_URL}/conversations`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            if (response.data.success) {
+                setConversations(response.data.data);
+            }
             setLoading(false);
         } catch (error) {
             console.error('Error fetching conversations:', error);
@@ -42,26 +46,33 @@ const ChatListScreen = ({ navigation }) => {
     );
 
     const renderItem = ({ item }) => {
+        const otherUser = item.other_user;
+        const lastMsg = item.last_message;
+
         return (
             <TouchableOpacity
                 style={styles.chatItem}
-                onPress={() => navigation.navigate('ChatScreen', {
-                    receiverId: item.userId,
-                    receiverName: item.name
+                onPress={() => navigation.navigate('Chat', {
+                    receiverId: otherUser.id,
+                    receiverName: otherUser.name
                 })}
             >
                 <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
+                    {otherUser.profile_image ? (
+                        <Image source={{ uri: otherUser.profile_image }} style={styles.avatarImage} />
+                    ) : (
+                        <Text style={styles.avatarText}>{otherUser.name.charAt(0)}</Text>
+                    )}
                 </View>
                 <View style={styles.chatContent}>
                     <View style={styles.topRow}>
-                        <Text style={styles.name}>{item.name}</Text>
+                        <Text style={styles.name}>{otherUser.name}</Text>
                         <Text style={styles.time}>
-                            {new Date(item.lastMessageTime).toLocaleDateString()}
+                            {lastMsg ? new Date(lastMsg.created_at).toLocaleDateString() : ''}
                         </Text>
                     </View>
                     <Text style={styles.lastMessage} numberOfLines={1}>
-                        {item.lastMessage}
+                        {lastMsg ? lastMsg.message : 'No messages yet'}
                     </Text>
                 </View>
             </TouchableOpacity>
@@ -138,6 +149,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 15,
+        overflow: 'hidden'
+    },
+    avatarImage: {
+        width: '100%',
+        height: '100%',
     },
     avatarText: {
         color: '#fff',

@@ -17,7 +17,7 @@ import axios from 'axios';
 import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
-import { CHAT_URL } from '../config/api';
+import { CHAT_URL, SOCKET_URL, MESSAGE_URL } from '../config/api';
 
 const ChatScreen = ({ route, navigation }) => {
     const { receiverId, receiverName } = route.params;
@@ -26,16 +26,39 @@ const ChatScreen = ({ route, navigation }) => {
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
     const [loading, setLoading] = useState(true);
+    const [chatId, setChatId] = useState(null);
     const flatListRef = useRef(null);
+    const socketRef = useRef(null);
 
-
-    // API URL - Centralized
-    const API_URL = CHAT_URL;
-
-    const fetchMessages = async () => {
+    // Get or Create Chat Room
+    const initializeChat = async () => {
         try {
-            const response = await axios.get(`${API_URL}/${user._id}/${receiverId}`);
-            setMessages(response.data);
+            setLoading(true);
+            const response = await axios.post(CHAT_URL,
+                { coach_id: receiverId },
+                { headers: { Authorization: `Bearer ${user.token}` } }
+            );
+            if (response.data.success) {
+                const id = response.data.data.id;
+                setChatId(id);
+                fetchMessages(id);
+            }
+        } catch (error) {
+            console.error('Error initializing chat:', error);
+            setLoading(false);
+        }
+    };
+
+    const fetchMessages = async (id) => {
+        try {
+            const url = `${MESSAGE_URL}/${id}/messages`;
+            const response = await axios.get(url, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            if (response.data.success) {
+                // Reverse if the backend sends descending order (which it does in messageController)
+                setMessages(response.data.data.reverse());
+            }
             setLoading(false);
         } catch (error) {
             console.error('Error fetching messages:', error);
@@ -43,65 +66,78 @@ const ChatScreen = ({ route, navigation }) => {
         }
     };
 
-    // Socket.IO
+    // Socket.IO Connection
     useEffect(() => {
-        // Connect to Socket.IO server
-        const socket = io(CHAT_URL.replace('/api/chat', ''), {
+        if (!chatId) return;
+
+        socketRef.current = io(SOCKET_URL.replace('/api', ''), {
             transports: ['websocket'],
             forceNew: true
         });
 
+        const socket = socketRef.current;
+
         socket.on('connect', () => {
             console.log('Connected to socket server');
-            socket.emit('join', user._id);
+            socket.emit('join_chat', chatId);
         });
 
-        socket.on('receive_message', (newMessage) => {
-            console.log('New message received:', newMessage);
-            // Only append if the message is from the current chat receiver or self (though self is handled by optimistically or re-fetch)
-            if (newMessage.sender_id === receiverId || newMessage.sender_id === user._id) {
-                setMessages(prevMessages => [...prevMessages, newMessage]);
+        socket.on('new_message', (newMessage) => {
+            console.log('New message received via socket:', newMessage);
+            // Append if it belongs to this chat
+            if (newMessage.chat_id === chatId) {
+                setMessages(prevMessages => {
+                    // Avoid duplicates if we added it manually
+                    if (prevMessages.find(m => m.id === newMessage.id)) return prevMessages;
+                    return [...prevMessages, newMessage];
+                });
             }
         });
 
         return () => {
             socket.disconnect();
         };
-    }, [user._id, receiverId]);
+    }, [chatId]);
 
     useEffect(() => {
-        fetchMessages();
+        initializeChat();
     }, []);
 
     useEffect(() => {
         // Scroll to bottom when messages change
         if (flatListRef.current && messages.length > 0) {
-            setTimeout(() => flatListRef.current.scrollToEnd({ animated: true }), 100);
+            setTimeout(() => flatListRef.current.scrollToEnd({ animated: true }), 200);
         }
     }, [messages]);
 
     const handleSend = async () => {
-        if (!inputText.trim()) return;
+        if (!inputText.trim() || !chatId) return;
 
-        const newMessageData = {
-            senderId: user._id,
-            receiverId: receiverId,
-            message: inputText.trim()
-        };
+        const messageText = inputText.trim();
+        setInputText(''); // Clear input early for better UX
 
         try {
-            const response = await axios.post(`${API_URL}/send`, newMessageData);
-            // Message is added via socket event 'receive_message' usually, but for self-message instantaneous feedback:
-            // If the backend emits to sender too, we might get duplicate if we add it here manually.
-            // Current backend logic: emits to 'receiverId'. 
-            // So we should manually add our own message to the list or wait for a 'message_sent' ack.
-            // For now, let's just append it manually since we are not listening to our own room for our own messages?
-            // Actually, usually we don't emit to self. So append manually.
-            setMessages(prev => [...prev, response.data]);
-            setInputText('');
+            const response = await axios.post(MESSAGE_URL,
+                {
+                    chat_id: chatId,
+                    message: messageText
+                },
+                { headers: { Authorization: `Bearer ${user.token}` } }
+            );
+
+            if (response.data.success) {
+                // The socket 'new_message' will handle appending for us, 
+                // but let's add it manually if the socket is slow/failed for immediate feedback
+                const sentMessage = response.data.data;
+                setMessages(prev => {
+                    if (prev.find(m => m.id === sentMessage.id)) return prev;
+                    return [...prev, sentMessage];
+                });
+            }
         } catch (error) {
             console.error('Error sending message:', error);
-            alert('Failed to send message');
+            setInputText(messageText); // Restore text on failure
+            alert(error.response?.data?.message || 'Failed to send message');
         }
     };
 
@@ -160,16 +196,16 @@ const ChatScreen = ({ route, navigation }) => {
             <KeyboardStickyView
                 offset={{ closed: 0, opened: 0 }}
             >
-                {user.role === 'User' && !user.is_premium ? (
+                {user.role === 'User' && !user.is_subscribed ? (
                     <View style={[styles.inputContainer, { justifyContent: 'center', flexDirection: 'column', gap: 10 }]}>
                         <Text style={{ color: '#fff', textAlign: 'center' }}>
-                            Upgrade to Premium to chat with your coach.
+                            No active subscription found for this coach.
                         </Text>
                         <TouchableOpacity
                             style={[styles.sendButton, { width: 'auto', paddingHorizontal: 20, marginLeft: 0 }]}
-                            onPress={() => navigation.navigate('Subscription')}
+                            onPress={() => navigation.navigate('SubscriptionScreen')}
                         >
-                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Get Premium</Text>
+                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>View Plans</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (

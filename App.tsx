@@ -144,8 +144,8 @@ const MainNav = () => {
           <Stack.Screen name="SavedAddressesScreen" component={SavedAddressesScreen} />
           <Stack.Screen name="VendorDashboard" component={VendorDashboardScreen} />
           <Stack.Screen name="CoachDashboard" component={CoachDashboardScreen} />
-          <Stack.Screen name="ChatScreen" component={ChatScreen} />
-          <Stack.Screen name="ChatListScreen" component={ChatListScreen} />
+          <Stack.Screen name="Chat" component={ChatScreen} />
+          <Stack.Screen name="ChatList" component={ChatListScreen} />
           <Stack.Screen name="TrackOrderScreen" component={TrackOrderScreen} />
           <Stack.Screen name="InviteFriend" component={InviteFriendScreen} />
           <Stack.Screen name="VideoCall" component={VideoCallScreen} />
