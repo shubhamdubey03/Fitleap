@@ -136,19 +136,25 @@ const ProductDetailsScreen = ({ navigation, route }: { navigation: any, route: a
                     </View>
                 </View>
 
-                {/* Updated Action Buttons: Add to Cart and Buy Now (No Message Button) */}
-                <View style={styles.actionButtons}>
-                    <TouchableOpacity style={styles.addToCartBtn} onPress={handleAddToCart}>
-                        <Text style={styles.addToCartBtnText}>Add to Cart</Text>
-                    </TouchableOpacity>
+                {product.stock <= 0 ? (
+                    <View style={styles.outOfStockBadge}>
+                        <Ionicons name="alert-circle-outline" size={20} color="#ff4d4d" />
+                        <Text style={styles.outOfStockText}>Currently Out of Stock</Text>
+                    </View>
+                ) : (
+                    <View style={styles.actionButtons}>
+                        <TouchableOpacity style={styles.addToCartBtn} onPress={handleAddToCart}>
+                            <Text style={styles.addToCartBtnText}>Add to Cart</Text>
+                        </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={styles.buyBtn}
-                        onPress={() => navigation.navigate('Cart', { product: product })}
-                    >
-                        <Text style={styles.buyBtnText}>Buy Now</Text>
-                    </TouchableOpacity>
-                </View>
+                        <TouchableOpacity
+                            style={styles.buyBtn}
+                            onPress={() => navigation.navigate('Cart', { product: product })}
+                        >
+                            <Text style={styles.buyBtnText}>Buy Now</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
             </ScrollView>
         </LinearGradient>
     );
@@ -270,6 +276,22 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
+    },
+    outOfStockBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255, 77, 77, 0.1)',
+        paddingVertical: 15,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#ff4d4d',
+        gap: 8,
+    },
+    outOfStockText: {
+        color: '#ff4d4d',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 });
 

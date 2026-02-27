@@ -50,12 +50,8 @@ const YourCoinsScreen = ({ navigation }) => {
                     {/* Coin Breakdown */}
                     <Text style={styles.sectionTitle}>Coin Breakdown</Text>
                     <View style={styles.breakdownRow}>
-                        <Text style={styles.breakdownLabel}>Bonus Coins</Text>
-                        <Text style={styles.breakdownValue}>500</Text>
-                    </View>
-                    <View style={styles.breakdownRow}>
                         <Text style={styles.breakdownLabel}>Earned Coins</Text>
-                        <Text style={styles.breakdownValue}>750</Text>
+                        <Text style={styles.breakdownValue}>{user?.wallet_balance || 0}</Text>
                     </View>
 
                     {/* Action Buttons */}
@@ -68,59 +64,11 @@ const YourCoinsScreen = ({ navigation }) => {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Transaction History */}
-                    <Text style={styles.sectionTitle}>Transaction History</Text>
-                    <View style={styles.historyList}>
-                        <HistoryItem
-                            icon="gift-outline"
-                            title="Daily Streak Bonus"
-                            subtitle="Bonus Coins"
-                            amount="+100"
-                        />
-                        <HistoryItem
-                            icon="barbell-outline"
-                            title="Completed Workout"
-                            subtitle="Earned Coins"
-                            amount="+50"
-                        />
-                        <HistoryItem
-                            icon="nutrition-outline"
-                            title="Completed Nutrition Goal"
-                            subtitle="Earned Coins"
-                            amount="+50"
-                        />
-                        <HistoryItem
-                            icon="people-outline"
-                            title="Referral Bonus"
-                            subtitle="Bonus Coins"
-                            amount="+200"
-                        />
-                        <HistoryItem
-                            icon="checkbox-outline"
-                            title="Completed Habit"
-                            subtitle="Earned Coins"
-                            amount="+50"
-                        />
-                    </View>
-
                 </ScrollView>
             </SafeAreaView>
         </LinearGradient>
     );
 };
-
-const HistoryItem = ({ icon, title, subtitle, amount }) => (
-    <View style={styles.historyItem}>
-        <View style={styles.historyIcon}>
-            <Ionicons name={icon} size={20} color="#fff" />
-        </View>
-        <View style={{ flex: 1 }}>
-            <Text style={styles.historyTitle}>{title}</Text>
-            <Text style={styles.historySubtitle}>{subtitle}</Text>
-        </View>
-        <Text style={styles.historyAmount}>{amount}</Text>
-    </View>
-);
 
 const styles = StyleSheet.create({
     container: {
@@ -230,40 +178,10 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 14,
     },
-    historyList: {
-        marginBottom: 20,
-    },
-    historyItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 20,
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        padding: 15,
-        borderRadius: 12,
-    },
-    historyIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 15,
-    },
-    historyTitle: {
+    redeemButtonText: {
         color: '#fff',
+        fontWeight: 'bold',
         fontSize: 14,
-        fontWeight: '600',
-        marginBottom: 4,
-    },
-    historySubtitle: {
-        color: 'rgba(255,255,255,0.6)',
-        fontSize: 12,
-    },
-    historyAmount: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: '600',
     },
 });
 

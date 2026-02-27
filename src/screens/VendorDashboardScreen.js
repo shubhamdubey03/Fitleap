@@ -12,24 +12,68 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/authSlice';
+import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
 const VendorDashboardScreen = ({ navigation }) => {
     const [vendorName, setVendorName] = useState('Vendor');
+    const [products, setProducts] = useState([]);
+    const [orders, setOrders] = useState([]);
+    const [stats, setStats] = useState({
+        totalOrders: 0,
+        totalProducts: 0,
+        totalEarnings: 0
+    });
     const dispatch = useDispatch();
+    const { user } = useSelector((state) => state.auth);
+    const token = user?.token;
 
-    useEffect(() => {
-        const getVendorName = async () => {
-            const name = await AsyncStorage.getItem('VENDOR_NAME');
-            if (name) {
-                setVendorName(name);
+    useFocusEffect(
+        React.useCallback(() => {
+            if (token) {
+                fetchDashboardData();
             }
+        }, [token])
+    );
+
+    const fetchDashboardData = async () => {
+        try {
+            if (!token) return;
+
+            // Fetch Products
+            const prodRes = await axios.get(`${API_BASE_URL}/orders/products`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setProducts(prodRes.data);
+
+            // Fetch Orders
+            const orderRes = await axios.get(`${API_BASE_URL}/orders/all`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setOrders(orderRes.data);
+
+            // Calculate Stats
+            const earnings = orderRes.data.reduce((acc, curr) => acc + (curr.total_price || 0), 0);
+            setStats({
+                totalOrders: orderRes.data.length,
+                totalProducts: prodRes.data.length,
+                totalEarnings: earnings
+            });
+
+            // Get Vendor Name from Storage as fallback, prefer Redux user name
+            const storedName = await AsyncStorage.getItem('VENDOR_NAME');
+            setVendorName(user?.name || storedName || 'Vendor');
+
+        } catch (error) {
+            console.error("Dashboard Fetch Error:", error);
+            // Optionally set some error state or toast if needed
         }
-        getVendorName();
-    }, []);
+    };
 
     const handleLogout = async () => {
         await dispatch(logout()).unwrap();
@@ -79,8 +123,8 @@ const VendorDashboardScreen = ({ navigation }) => {
                 >
                     <View>
                         <Text style={styles.earningsLabel}>Total Earnings</Text>
-                        <Text style={styles.earningsValue}>$12,450.00</Text>
-                        <Text style={styles.earningsSub}>+15% from last month</Text>
+                        <Text style={styles.earningsValue}>₹{stats.totalEarnings.toLocaleString()}</Text>
+                        <Text style={styles.earningsSub}>Updated just now</Text>
                     </View>
                     <Ionicons name="wallet-outline" size={40} color="#fff" />
                 </LinearGradient>
@@ -92,8 +136,8 @@ const VendorDashboardScreen = ({ navigation }) => {
                         <View style={[styles.iconContainer, { backgroundColor: 'rgba(46, 204, 113, 0.2)' }]}>
                             <Ionicons name="cart-outline" size={24} color="#2ECC71" />
                         </View>
-                        <Text style={styles.statValue}>54</Text>
-                        <Text style={styles.statLabel}>New Orders</Text>
+                        <Text style={styles.statValue}>{stats.totalOrders}</Text>
+                        <Text style={styles.statLabel}>Orders</Text>
                     </View>
 
                     {/* Products */}
@@ -101,17 +145,17 @@ const VendorDashboardScreen = ({ navigation }) => {
                         <View style={[styles.iconContainer, { backgroundColor: 'rgba(74, 144, 226, 0.2)' }]}>
                             <Ionicons name="cube-outline" size={24} color="#4A90E2" />
                         </View>
-                        <Text style={styles.statValue}>128</Text>
+                        <Text style={styles.statValue}>{stats.totalProducts}</Text>
                         <Text style={styles.statLabel}>Products</Text>
                     </View>
-                    {/* Clients */}
-                    <View style={styles.statCard}>
+                    {/* Active */}
+                    <TouchableOpacity style={styles.statCard} onPress={() => navigation.navigate('Marketplace')}>
                         <View style={[styles.iconContainer, { backgroundColor: 'rgba(255, 215, 0, 0.2)' }]}>
-                            <Ionicons name="people-outline" size={24} color="#FFD700" />
+                            <Ionicons name="eye-outline" size={24} color="#FFD700" />
                         </View>
-                        <Text style={styles.statValue}>320</Text>
-                        <Text style={styles.statLabel}>Clients</Text>
-                    </View>
+                        <Text style={styles.statValue}>View</Text>
+                        <Text style={styles.statLabel}>Store</Text>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Quick Actions */}
@@ -140,20 +184,50 @@ const VendorDashboardScreen = ({ navigation }) => {
                 </View>
 
                 <View style={styles.ordersList}>
-                    {[1, 2, 3].map((item, index) => (
-                        <View key={index} style={styles.orderItem}>
+                    {orders.slice(0, 3).map((order) => (
+                        <View key={order.id} style={styles.orderItem}>
                             <View style={styles.orderLeft}>
                                 <View style={styles.orderIcon}>
                                     <Ionicons name="bag-handle-outline" size={20} color="#FF6B3D" />
                                 </View>
                                 <View>
-                                    <Text style={styles.orderId}>Order #234{item}</Text>
-                                    <Text style={styles.orderDate}>2 mins ago</Text>
+                                    <Text style={styles.orderId}>Order #{String(order.id).slice(-6)}</Text>
+                                    <Text style={styles.orderDate}>{order.products?.name || 'Item'}</Text>
                                 </View>
                             </View>
-                            <Text style={styles.orderAmount}>$45.00</Text>
+                            <Text style={styles.orderAmount}>₹{order.total_price}</Text>
                         </View>
                     ))}
+                    {orders.length === 0 && (
+                        <Text style={{ color: '#aaa', textAlign: 'center' }}>No orders yet</Text>
+                    )}
+                </View>
+
+                {/* Your Products */}
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Your Products</Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('Marketplace')}>
+                        <Text style={styles.seeAll}>Manage</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.productsList}>
+                    {products.slice(0, 5).map((product) => (
+                        <View key={product.id} style={styles.productItem}>
+                            <Image
+                                source={{ uri: product.image_url || 'https://images.unsplash.com/photo-1599058917212-d750089bc07e' }}
+                                style={styles.productThumb}
+                            />
+                            <View style={styles.productInfo}>
+                                <Text style={styles.productName}>{product.name}</Text>
+                                <Text style={styles.productStock}>Stock: {product.stock}</Text>
+                            </View>
+                            <Text style={styles.productPrice}>₹{product.price}</Text>
+                        </View>
+                    ))}
+                    {products.length === 0 && (
+                        <Text style={{ color: '#aaa', textAlign: 'center' }}>No products listed</Text>
+                    )}
                 </View>
 
             </ScrollView>
@@ -330,6 +404,40 @@ const styles = StyleSheet.create({
     orderAmount: {
         color: '#FF6B3D',
         fontSize: 16,
+        fontWeight: 'bold',
+    },
+    productsList: {
+        marginBottom: 20,
+    },
+    productItem: {
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 15,
+        padding: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    productThumb: {
+        width: 50,
+        height: 50,
+        borderRadius: 10,
+        marginRight: 15,
+    },
+    productInfo: {
+        flex: 1,
+    },
+    productName: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    productStock: {
+        color: '#aaa',
+        fontSize: 12,
+    },
+    productPrice: {
+        color: '#2ECC71',
+        fontSize: 14,
         fontWeight: 'bold',
     },
 });

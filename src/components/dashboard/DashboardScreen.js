@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import DashboardSidebar from './DashboardSidebar';
 import { reset } from '../../redux/notificationSlice';
 import { getProfile } from '../../redux/authSlice';
-import { AUTH_URL } from '../../config/api';
+import { AUTH_URL, API_BASE_URL } from '../../config/api';
 
 const DashboardScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -27,11 +27,34 @@ const DashboardScreen = ({ navigation }) => {
   const [isSidebarVisible, setSidebarVisible] = useState(false);
   const { user } = useSelector((state) => state.auth);
 
+  const [products, setProducts] = useState([]);
+
   useFocusEffect(
     React.useCallback(() => {
       dispatch(getProfile());
+      fetchProducts();
     }, [dispatch]),
   );
+
+  const fetchProducts = async () => {
+    try {
+      const token = user?.token || user?.access_token;
+      if (!token) return;
+
+      const response = await axios.get(
+        `${API_BASE_URL}/orders/products`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      // Show only top 5-6 products on home
+      setProducts(response.data.slice(0, 6));
+    } catch (error) {
+      console.error("Failed to fetch products for dashboard:", error);
+    }
+  };
 
   return (
     <LinearGradient colors={['#1a0033', '#4b0066']} style={styles.container}>
@@ -158,7 +181,7 @@ const DashboardScreen = ({ navigation }) => {
           onPress={() => navigation.navigate('Exercise', { screen: 'Coaching' })}
         >
           <Text style={styles.cardTitle}>Coaching</Text>
-          <Text style={styles.coach}>Dr. Emily</Text>
+          <Text style={styles.coach}>{user?.coach_name || 'No Coach Assigned'}</Text>
         </TouchableOpacity>
 
         {/* Daily Intake */}
@@ -184,19 +207,38 @@ const DashboardScreen = ({ navigation }) => {
           })}
         </View>
 
-        {/* Shop */}
         <TouchableOpacity onPress={() => navigation.navigate('Marketplace')}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text style={styles.section}>Shop Equipment's</Text>
             <Ionicons name="chevron-forward" size={20} color="#fff" />
           </View>
-          <Image
-            source={{
-              uri: 'https://images.unsplash.com/photo-1599058917212-d750089bc07e',
-            }}
-            style={styles.shopImage}
-          />
         </TouchableOpacity>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.horizontalScroll}
+        >
+          {products.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.productCard}
+              onPress={() => navigation.navigate('Marketplace', { screen: 'ProductDetails', params: { product: item } })}
+            >
+              <Image
+                source={{ uri: item.image_url || 'https://images.unsplash.com/photo-1599058917212-d750089bc07e' }}
+                style={styles.productImage}
+              />
+              <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
+              <Text style={styles.productPrice}>₹{item.price}</Text>
+            </TouchableOpacity>
+          ))}
+          {products.length === 0 && (
+            <View style={styles.emptyProducts}>
+              <Text style={{ color: '#ccc' }}>No Equipment Available</Text>
+            </View>
+          )}
+        </ScrollView>
       </ScrollView>
     </LinearGradient>
   );
@@ -372,7 +414,37 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 160,
     borderRadius: 16,
+    marginBottom: 10,
+  },
+  horizontalScroll: {
     marginBottom: 30,
+  },
+  productCard: {
+    width: 140,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 12,
+    padding: 10,
+    marginRight: 15,
+  },
+  productImage: {
+    width: '100%',
+    height: 100,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  productName: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  productPrice: {
+    color: '#F5C542',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  emptyProducts: {
+    padding: 20,
+    alignItems: 'center',
   },
   badge: {
     position: 'absolute',

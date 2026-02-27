@@ -53,22 +53,28 @@ const MarketplaceHomeScreen = ({ navigation }: any) => {
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const renderListing = ({ item }: any) => (
-        <TouchableOpacity
-            style={styles.listingItem}
-            onPress={() => navigation.navigate('ProductDetails', { product: item })}
-        >
-            <View style={styles.listingInfo}>
-                <Text style={styles.listingLabel}>{item.category || 'Sport Gear'}</Text>
-                <Text style={styles.listingTitle}>{item.name}</Text>
-                <Text style={styles.listingPrice}>Rs {item.price}</Text>
-            </View>
-            <Image
-                source={{ uri: item.image_url || 'https://images.unsplash.com/photo-1638531952329-87c2b3af695c?auto=format&fit=crop&q=80&w=200' }}
-                style={styles.listingImage}
-            />
-        </TouchableOpacity>
-    );
+    const renderListing = ({ item }: any) => {
+        const isOutOfStock = item.stock <= 0;
+        return (
+            <TouchableOpacity
+                style={[styles.listingItem, isOutOfStock && { opacity: 0.6 }]}
+                onPress={() => navigation.navigate('ProductDetails', { product: item })}
+            >
+                <View style={styles.listingInfo}>
+                    <Text style={styles.listingLabel}>{item.category || 'Sport Gear'}</Text>
+                    <Text style={styles.listingTitle}>{item.name}</Text>
+                    <Text style={styles.listingPrice}>Rs {item.price}</Text>
+                    {isOutOfStock && (
+                        <Text style={styles.outOfStockText}>Out of Stock</Text>
+                    )}
+                </View>
+                <Image
+                    source={{ uri: item.image_url || 'https://images.unsplash.com/photo-1638531952329-87c2b3af695c?auto=format&fit=crop&q=80&w=200' }}
+                    style={styles.listingImage}
+                />
+            </TouchableOpacity>
+        );
+    };
 
     return (
         <LinearGradient
@@ -203,6 +209,12 @@ const styles = StyleSheet.create({
     listingPrice: {
         color: '#ccc',
         fontSize: 14,
+    },
+    outOfStockText: {
+        color: '#ff4d4d',
+        fontSize: 12,
+        fontWeight: 'bold',
+        marginTop: 4,
     },
     sellerName: {
         color: '#aaa',

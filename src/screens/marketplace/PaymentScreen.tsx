@@ -71,8 +71,9 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
                 orderPayload,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            // console.log("Order Response", orderRes.data);
-            // const internalOrder = orderRes[0].data;
+            if (!orderRes.data || !orderRes.data[0]) {
+                throw new Error("Failed to create order record on server.");
+            }
             const internalOrderId = orderRes.data[0].id;
             console.log("Internal Order Created:", internalOrderId);
 
@@ -83,31 +84,25 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
             },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            console.log("Razorpay Payment paymentRes.data", paymentRes.data);
 
+            if (!paymentRes.data || !paymentRes.data.id) {
+                throw new Error("Failed to initiate payment gateway.");
+            }
 
             const {
-                id,
-                amount,
+                id: razorpay_order_id,
+                amount: rzpAmount,
                 currency,
-                key
+                key: rzpKey
             } = paymentRes.data;
 
-            // totalAmount = total_price;
-
-
-            const razorpay_order_id = id;
-
             // 3️⃣ Open Razorpay Checkout
-            // Use key from backend if available, otherwise your test key
-            const rzpKey = key;
-
             const options = {
                 description: 'FitLeap Order',
                 image: 'https://i.imgur.com/3g7nmJC.png',
                 currency: currency || 'INR',
                 key: rzpKey,
-                amount: amount,
+                amount: rzpAmount,
                 name: 'FitLeap',
                 order_id: razorpay_order_id,
                 prefill: {
@@ -118,29 +113,29 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
                 theme: { color: '#7b1fa2' }
             };
 
-            // Use setTimeout to prevent UI thread blocking/ANR
+            // ⚡ OPTIMIZATION: Wait for UI thread to settle and keyboard to hide
             setTimeout(() => {
+                setLoading(false); // STOP loading spinner BEFORE opening native screen (reduces CONTENTION)
+
                 RazorpayCheckout.open(options)
                     .then(async (data: any) => {
-                        console.log("Razorpay Payment razor pay success data resp", data);
-                        console.log("Razorpay Payment Opions", options);
+                        console.log("Razorpay Success:", data);
                         await verifyPayment(data, internalOrderId, token);
                     })
                     .catch((error: any) => {
-                        console.log("Razorpay Error (Cancelled or Failed)", error);
+                        console.log("Razorpay Error/Cancel:", error);
                         const errorDesc = error.description || error.error?.description || "Payment Cancelled";
-                        Alert.alert('Payment Failed', errorDesc);
-                    })
-                    .finally(() => {
-                        setLoading(false);
+                        if (errorDesc !== "Payment Cancelled") {
+                            Alert.alert('Payment Failed', errorDesc);
+                        }
                     });
-            }, 100);
+            }, 600); // 600ms is safer for older Android devices to avoid ANR
 
         } catch (err: any) {
-            console.log("Payment Init Error");
+            console.log("Payment Initialization Failed:", err);
             setLoading(false);
-            const errMsg = err.response?.data?.error || err.response?.data?.message || err.message || "Could not initiate payment";
-            Alert.alert('Error', String(errMsg));
+            const errMsg = err.response?.data?.error || err.response?.data?.message || err.message || "Something went wrong";
+            Alert.alert('Initialization Error', String(errMsg).substring(0, 100));
         }
     };
 

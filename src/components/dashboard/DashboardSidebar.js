@@ -19,7 +19,6 @@ const { width, height } = Dimensions.get('window');
 const settingsData = [
     { icon: 'person-outline', title: 'Edit Profile', subtitle: 'Edit your profile information' },
     { icon: 'chatbubble-ellipses-outline', title: 'Feedback And Review', subtitle: 'Share your thoughts and experiences' },
-    { icon: 'chatbubbles-outline', title: 'Messages', subtitle: 'Chat with coaches and students' },
     { icon: 'gift-outline', title: 'Event & Rewards', subtitle: 'View upcoming events and earned rewards' },
     { icon: 'trophy-outline', title: 'Programs & Challenges', subtitle: 'Join programs and compete in challenges' },
     { icon: 'settings-outline', title: 'Add Habits', subtitle: 'Build and track new healthy habits' },
@@ -44,8 +43,6 @@ const DashboardSidebar = ({ visible, onClose, navigation }) => {
             navigation.navigate('EditProfileScreen');
         } else if (item.title === 'Feedback And Review') {
             navigation.navigate('FeedbackProgressScreen');
-        } else if (item.title === 'Messages') {
-            navigation.navigate('ChatListScreen');
         } else if (item.title === 'Event & Rewards') {
             navigation.navigate('EventsRewardsScreen');
         }

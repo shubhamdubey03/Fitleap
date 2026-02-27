@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -9,65 +9,93 @@ import {
     Image,
     FlatList,
     Dimensions,
+    ActivityIndicator,
+    Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSelector, useDispatch } from 'react-redux';
+import axios from 'axios';
+import { API_BASE_URL } from '../../config/api';
+import { getProfile } from '../../redux/authSlice';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
-const WORKOUTS = [
-    {
-        id: '1',
-        title: 'Full Body Workout',
-        duration: '30 min',
-        image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=400',
-    },
-    {
-        id: '2',
-        title: 'Upper Body',
-        duration: '45 min',
-        image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&q=80&w=400',
-    },
-    {
-        id: '3',
-        title: 'Core Blast',
-        duration: '20 min',
-        image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&q=80&w=400',
-    },
-    {
-        id: '4',
-        title: 'Leg Day Challenge',
-        duration: '60 min',
-        image: 'https://images.unsplash.com/photo-1434608519344-49d77a699ded?auto=format&fit=crop&q=80&w=400',
-    },
-    {
-        id: '5',
-        title: 'Cardio Kickstart',
-        duration: '25 min',
-        image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=400',
-    },
-    {
-        id: '6',
-        title: 'Yoga Flow',
-        duration: '40 min',
-        image: 'https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?auto=format&fit=crop&q=80&w=400',
-    },
-];
-
-const ExerciseLibraryScreen = ({ navigation }) => {
+const ExerciseLibraryScreen = ({ navigation }: any) => {
     const insets = useSafeAreaInsets();
-    const [activeFilter, setActiveFilter] = useState('Body Part');
+    const dispatch = useDispatch<any>();
 
-    const renderWorkoutItem = ({ item }) => (
+    // User data from Redux
+    const { user } = useSelector((state: any) => state.auth);
+    const isSubscribed = user?.subscription || user?.is_premium || user?.is_subscribed || false;
+
+    // API Data
+    const [workouts, setWorkouts] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [activeCategoryId, setActiveCategoryId] = useState<any>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const [workoutRes, categoryRes] = await Promise.all([
+                axios.get(`${API_BASE_URL}/workouts`),
+                axios.get(`${API_BASE_URL}/workout-categories`)
+            ]);
+
+            if (workoutRes.data) setWorkouts(workoutRes.data.data);
+            if (categoryRes.data) setCategories(categoryRes.data.data);
+
+            // Re-fetch profile to ensure subscription status is accurate
+            dispatch(getProfile());
+
+        } catch (error) {
+            console.error('Fetch Error:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchData();
+        }, [])
+    );
+
+    const filteredWorkouts = workouts.filter((w: any) => {
+        const matchesCategory = activeCategoryId ? w.workout_category_id === activeCategoryId : true;
+        const matchesSearch = w.name.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesCategory && matchesSearch;
+    });
+
+    const renderWorkoutItem = ({ item }: any) => (
         <TouchableOpacity
             style={styles.workoutCard}
-            onPress={() => navigation.navigate('WorkoutDetails', { workout: item })}
+            onPress={() => {
+                if (!isSubscribed) {
+                    Alert.alert('Subscription Required', 'Please subscribe to access workouts.');
+                    return;
+                }
+                navigation.navigate('WorkoutDetails', { workout: item });
+            }}
         >
-            <Image source={{ uri: item.image }} style={styles.workoutImage} />
+            <View style={styles.imageContainer}>
+                <Image
+                    source={{ uri: item.image_url || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=400' }}
+                    style={[styles.workoutImage, !isSubscribed && styles.lockedImage]}
+                />
+                {!isSubscribed && (
+                    <View style={styles.lockOverlay}>
+                        <Ionicons name="lock-closed" size={24} color="#fff" />
+                    </View>
+                )}
+            </View>
             <View style={styles.workoutInfo}>
-                <Text style={styles.workoutTitle}>{item.title}</Text>
-                <Text style={styles.workoutDuration}>{item.duration}</Text>
+                <Text style={styles.workoutTitle}>{item.name}</Text>
+                <Text style={styles.workoutDuration}>{item.time} min • {item.coin} Coins</Text>
             </View>
         </TouchableOpacity>
     );
@@ -91,7 +119,6 @@ const ExerciseLibraryScreen = ({ navigation }) => {
                             <Ionicons name="cash-outline" size={20} color="#F5C542" />
                         </View>
                     </TouchableOpacity>
-
                 </View>
             </View>
 
@@ -100,40 +127,68 @@ const ExerciseLibraryScreen = ({ navigation }) => {
                 <View style={styles.searchContainer}>
                     <Ionicons name="search" size={20} color="#ccc" style={styles.searchIcon} />
                     <TextInput
-                        placeholder="Search"
+                        placeholder="Search exercises..."
                         placeholderTextColor="#ccc"
                         style={styles.searchInput}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
                     />
                 </View>
 
-                {/* Filters */}
-                <View style={styles.filterContainer}>
-                    <TouchableOpacity
-                        style={[styles.filterBtn, activeFilter === 'Body Part' && styles.activeFilterBtn]}
-                        onPress={() => setActiveFilter('Body Part')}
-                    >
-                        <Text style={styles.filterText}>Body Part</Text>
-                        <Ionicons name="chevron-down" size={16} color="#fff" style={{ marginLeft: 5 }} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.filterBtn, activeFilter === 'Equipment' && styles.activeFilterBtn]}
-                        onPress={() => setActiveFilter('Equipment')}
-                    >
-                        <Text style={styles.filterText}>Equipment</Text>
-                        <Ionicons name="chevron-down" size={16} color="#fff" style={{ marginLeft: 5 }} />
-                    </TouchableOpacity>
+                {/* Categories / Filters */}
+                <View style={{ height: 50, marginBottom: 20 }}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+                        <TouchableOpacity
+                            style={[styles.filterBtn, !activeCategoryId && styles.activeFilterBtn]}
+                            onPress={() => setActiveCategoryId(null)}
+                        >
+                            <Text style={styles.filterText}>All</Text>
+                        </TouchableOpacity>
+                        {categories.map((cat: any) => (
+                            <TouchableOpacity
+                                key={cat.id}
+                                style={[styles.filterBtn, activeCategoryId === cat.id && styles.activeFilterBtn]}
+                                onPress={() => setActiveCategoryId(cat.id)}
+                            >
+                                <Text style={styles.filterText}>{cat.name}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
                 </View>
 
+                {/* Locked Message if not subscribed */}
+                {!isSubscribed && (
+                    <TouchableOpacity
+                        style={styles.subscribeBanner}
+                        onPress={() => navigation.navigate('SubscriptionScreen')}
+                    >
+                        <Ionicons name="star" size={20} color="#F5C542" />
+                        <Text style={styles.subscribeBannerText}>Unlock Premium Workouts. Subscribe Now!</Text>
+                        <Ionicons name="chevron-forward" size={16} color="#fff" />
+                    </TouchableOpacity>
+                )}
+
                 {/* Grid */}
-                <FlatList
-                    data={WORKOUTS}
-                    renderItem={renderWorkoutItem}
-                    keyExtractor={item => item.id}
-                    numColumns={2}
-                    columnWrapperStyle={styles.columnWrapper}
-                    contentContainerStyle={styles.listContent}
-                    showsVerticalScrollIndicator={false}
-                />
+                {loading ? (
+                    <View style={{ flex: 1, justifyContent: 'center' }}>
+                        <ActivityIndicator size="large" color="#5e35b1" />
+                    </View>
+                ) : (
+                    <FlatList
+                        data={filteredWorkouts}
+                        renderItem={renderWorkoutItem}
+                        keyExtractor={(item: any) => item.id.toString()}
+                        numColumns={2}
+                        columnWrapperStyle={styles.columnWrapper}
+                        contentContainerStyle={styles.listContent}
+                        showsVerticalScrollIndicator={false}
+                        ListEmptyComponent={
+                            <View style={{ marginTop: 50, alignItems: 'center' }}>
+                                <Text style={{ color: '#aaa' }}>No workouts found</Text>
+                            </View>
+                        }
+                    />
+                )}
             </View>
         </LinearGradient>
     );
@@ -220,8 +275,40 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 120,
         borderRadius: 12,
-        marginBottom: 8,
         backgroundColor: '#333',
+    },
+    imageContainer: {
+        width: '100%',
+        height: 120,
+        borderRadius: 12,
+        overflow: 'hidden',
+        marginBottom: 8,
+    },
+    lockedImage: {
+        opacity: 0.4,
+    },
+    lockOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    subscribeBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        padding: 12,
+        borderRadius: 12,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(245, 197, 66, 0.3)',
+    },
+    subscribeBannerText: {
+        color: '#fff',
+        flex: 1,
+        marginLeft: 10,
+        fontSize: 14,
+        fontWeight: '600',
     },
     workoutInfo: {
         paddingHorizontal: 4,
