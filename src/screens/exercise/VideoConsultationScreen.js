@@ -122,6 +122,31 @@ const VideoConsultationScreen = ({ navigation, route }) => {
         }
     };
 
+    const handleCancelAppointment = async (id) => {
+        Alert.alert(
+            'Cancel Appointment',
+            'Are you sure you want to cancel this appointment?',
+            [
+                { text: 'No', style: 'cancel' },
+                {
+                    text: 'Yes, Cancel',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await axios.patch(`${API_BASE_URL}/v1/appointments/${id}/cancel`, {}, {
+                                headers: { Authorization: `Bearer ${user.token}` }
+                            });
+                            Alert.alert('Success', 'Appointment cancelled');
+                            fetchData(); // Refresh list
+                        } catch (error) {
+                            Alert.alert('Error', error.response?.data?.error || 'Failed to cancel');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
     const onRefresh = () => {
         setRefreshing(true);
         fetchData();
@@ -295,19 +320,28 @@ const VideoConsultationScreen = ({ navigation, route }) => {
                                     </View>
                                 </View>
 
-                                {appt.status === 'accepted' && (
+                                <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
                                     <TouchableOpacity
-                                        style={styles.joinBtn}
-                                        onPress={() => navigation.navigate('VideoCall', {
-                                            channelName: appt.channel_name,
-                                            token: appt.agora_token,
-                                            appId: '3d217b929db1457ab9e1166c7a0f2e37',
-                                            callTitle: 'Consultation'
-                                        })}
+                                        onPress={() => handleCancelAppointment(appt.id)}
+                                        style={styles.cancelActionBtn}
                                     >
-                                        <Text style={styles.joinBtnText}>Join</Text>
+                                        <Ionicons name="trash-outline" size={20} color="#ff5252" />
                                     </TouchableOpacity>
-                                )}
+
+                                    {appt.status === 'accepted' && (
+                                        <TouchableOpacity
+                                            style={styles.joinBtn}
+                                            onPress={() => navigation.navigate('VideoCall', {
+                                                channelName: appt.channel_name,
+                                                token: appt.agora_token,
+                                                appId: '3d217b929db1457ab9e1166c7a0f2e37',
+                                                callTitle: 'Consultation'
+                                            })}
+                                        >
+                                            <Text style={styles.joinBtnText}>Join</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
                             </LinearGradient>
                         </View>
                     ))
@@ -518,6 +552,14 @@ const styles = StyleSheet.create({
         color: '#3a005f',
         fontWeight: 'bold',
         fontSize: 14,
+    },
+    cancelActionBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: 'rgba(255,82,82,0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     historyCard: {
         flexDirection: 'row',

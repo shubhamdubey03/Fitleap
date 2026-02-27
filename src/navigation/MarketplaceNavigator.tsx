@@ -9,7 +9,7 @@ import ShippingScreen from '../screens/marketplace/ShippingScreen';
 import PaymentScreen from '../screens/marketplace/PaymentScreen';
 import OrdersScreen from '../screens/marketplace/OrdersScreen';
 import OrderDetailsScreen from '../screens/marketplace/OrderDetailsScreen';
-import TrackOrderScreen from '../screens/marketplace/TrackOrderScreen';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -27,7 +27,7 @@ const MarketplaceNavigator = () => {
             <Stack.Screen name="Payment" component={PaymentScreen} />
             <Stack.Screen name="Orders" component={OrdersScreen} />
             <Stack.Screen name="OrderDetails" component={OrderDetailsScreen} />
-            <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
+
         </Stack.Navigator>
     );
 };

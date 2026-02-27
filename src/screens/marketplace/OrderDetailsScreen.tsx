@@ -19,12 +19,29 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const OrderDetailsScreen = ({ navigation, route }: { navigation: any, route: any }) => {
     const insets = useSafeAreaInsets();
-    // In a real app, we would get order details from route.params
-    const orderId = '#1234567890';
     const { order } = route.params || {}
     console.log("orderaaaaaaaaaaaa", order);
 
-    // Safety: If no order passed, handle gracefully or check for orderId fetching
+    const getStatusColor = (status: string) => {
+        switch (status?.toLowerCase()) {
+            case 'pending':
+            case 'paid': return '#ff9800';
+            case 'confirmed': return '#2196f3';
+            case 'packed': return '#9c27b0';
+            case 'shipped': return '#3f51b5';
+            case 'out_for_delivery': return '#e91e63';
+            case 'delivered': return '#4caf50';
+            case 'cancelled': return '#f44336';
+            default: return '#757575';
+        }
+    };
+
+    const getStatusDisplay = (status: string) => {
+        if (!status) return 'Pending';
+        if (status === 'paid') return 'Pending';
+        return status.replace(/_/g, ' ').toUpperCase();
+    };
+
     if (!order) {
         return (
             <LinearGradient colors={['#1a0033', '#3a005f']} style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
@@ -59,10 +76,23 @@ const OrderDetailsScreen = ({ navigation, route }: { navigation: any, route: any
                     <Text style={styles.label}>Date</Text>
                     <Text style={styles.value}>{new Date(order.created_at).toLocaleString()}</Text>
 
-                    <Text style={styles.label}>Status</Text>
-                    <Text style={[styles.value, { color: order.status === 'paid' ? '#4caf50' : '#ff9800' }]}>
-                        {order.status ? order.status.toUpperCase() : 'UNKNOWN'}
-                    </Text>
+                    <Text style={styles.label}>Payment Status</Text>
+                    <View style={styles.statusRow}>
+                        <View style={[styles.statusBadge, { backgroundColor: (order.status === 'paid' ? '#4caf50' : '#ff9800') + '33' }]}>
+                            <Text style={[styles.statusText, { color: order.status === 'paid' ? '#4caf50' : '#ff9800' }]}>
+                                {order.status ? order.status.toUpperCase() : 'PENDING'}
+                            </Text>
+                        </View>
+                    </View>
+
+                    <Text style={styles.label}>Delivery Status</Text>
+                    <View style={styles.statusRow}>
+                        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.delivery_status || 'pending') + '33' }]}>
+                            <Text style={[styles.statusText, { color: getStatusColor(order.delivery_status || 'pending') }]}>
+                                {getStatusDisplay(order.delivery_status || 'pending')}
+                            </Text>
+                        </View>
+                    </View>
 
                     <Text style={styles.label}>Total Amount</Text>
                     <Text style={styles.value}>Rs {order.total_price}</Text>
@@ -73,14 +103,7 @@ const OrderDetailsScreen = ({ navigation, route }: { navigation: any, route: any
                         {order.addresses.city}, {order.addresses.states?.name} - {order.addresses.pincode}</Text>
                 </View>
 
-                {/* Track Order Button */}
-                <TouchableOpacity
-                    style={styles.trackBtn}
-                    onPress={() => navigation.navigate('TrackOrderScreen', { order })}
-                >
-                    <Text style={styles.trackBtnText}>Track Order</Text>
-                    <Ionicons name="location-outline" size={20} color="#fff" style={{ marginLeft: 8 }} />
-                </TouchableOpacity>
+
 
                 <Text style={styles.sectionTitle}>Items</Text>
                 {items.length > 0 ? items.map((item: any, index: number) => (
@@ -197,23 +220,18 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
     },
-    trackBtn: {
-        backgroundColor: '#7b1fa2',
-        paddingVertical: 15,
-        borderRadius: 12,
+
+    statusRow: {
         flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 25,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 3,
+        marginBottom: 10,
     },
-    trackBtnText: {
-        color: '#fff',
-        fontSize: 16,
+    statusBadge: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 6,
+    },
+    statusText: {
+        fontSize: 14,
         fontWeight: 'bold',
     },
 });

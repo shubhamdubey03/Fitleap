@@ -63,7 +63,7 @@ const VideoCallScreen = ({ route, navigation }) => {
             const response = await axios.post(`${API_BASE_URL}/v1/appointments/${appointmentId}/refresh-token`, {}, {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
-
+            console.log("responsewwwwwwwwwwwwwwwwwwwwwwww", response.data);
             if (response.data?.agora_token) {
                 setToken(response.data.agora_token);
                 console.log('Token refreshed, retrying join...');
@@ -183,7 +183,10 @@ const VideoCallScreen = ({ route, navigation }) => {
                     rtcEngine.muteRemoteAudioStream(remoteUid, false);
                 },
 
-                onUserOffline: () => setRemoteUid(0),
+                onUserOffline: () => {
+                    setRemoteUid(0);
+                    triggerCompletion();
+                },
 
                 onError: (err) => {
                     console.log('Agora error:', err);
@@ -251,9 +254,33 @@ const VideoCallScreen = ({ route, navigation }) => {
         setIsFrontCamera(!isFrontCamera);
     };
 
-    const endCall = () => {
+    const triggerCompletion = async () => {
+        if (!appointmentId) return;
+        try {
+            console.log('Sending completion for appointment:', appointmentId);
+            await axios.patch(`${API_BASE_URL}/v1/appointments/${appointmentId}/complete`, {}, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            console.log("llllllllllllllllllllllllllllllll", appointmentId)
+        } catch (error) {
+            console.error('Completion call failed:', error?.response?.data || error.message);
+        }
+    };
+
+    const endCall = async () => {
+        await triggerCompletion();
         leaveChannel();
-        navigation.goBack();
+
+        if (navigation.canGoBack()) {
+            navigation.goBack();
+        } else {
+            // Fallback if no history (e.g. opened from notification)
+            if (user?.role === 'Coach') {
+                navigation.replace('CoachDashboard');
+            } else {
+                navigation.replace('Dashboard');
+            }
+        }
     };
 
     return (

@@ -29,7 +29,7 @@ import FeedbackProgressScreen from './src/components/setting/FeedbackProgressScr
 import EventsRewardsScreen from './src/components/setting/EventsRewardsScreen';
 import ReportIssueScreen from './src/components/setting/ReportIssueScreen';
 import HelpCenterScreen from './src/components/setting/HelpCenterScreen';
-import TrackOrderScreen from './src/screens/marketplace/TrackOrderScreen';
+
 import NotificationScreen from './src/components/dashboard/NotificationScreen';
 import RecipesScreen from './src/components/dashboard/RecipesScreen';
 import MealDetailsScreen from './src/components/dashboard/MealDetailsScreen';
@@ -146,7 +146,7 @@ const MainNav = () => {
           <Stack.Screen name="CoachDashboard" component={CoachDashboardScreen} />
           <Stack.Screen name="Chat" component={ChatScreen} />
           <Stack.Screen name="ChatList" component={ChatListScreen} />
-          <Stack.Screen name="TrackOrderScreen" component={TrackOrderScreen} />
+
           <Stack.Screen name="InviteFriend" component={InviteFriendScreen} />
           <Stack.Screen name="VideoCall" component={VideoCallScreen} />
           {/* <Stack.Screen name="CoachAvailability" component={CoachAvailabilityScreen} /> */}

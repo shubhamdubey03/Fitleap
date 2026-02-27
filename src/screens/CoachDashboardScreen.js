@@ -127,6 +127,31 @@ const CoachDashboardScreen = ({ navigation }) => {
         );
     };
 
+    const handleCancel = async (id) => {
+        Alert.alert(
+            'Cancel Appointment',
+            'Are you sure you want to cancel this accepted appointment?',
+            [
+                { text: 'No', style: 'cancel' },
+                {
+                    text: 'Yes, Cancel',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await axios.patch(`${API_BASE_URL}/v1/appointments/${id}/cancel`, {}, {
+                                headers: { Authorization: `Bearer ${user.token}` }
+                            });
+                            Alert.alert('Success', 'Appointment cancelled');
+                            fetchAppointments();
+                        } catch (error) {
+                            Alert.alert('Error', error.response?.data?.error || 'Failed to cancel');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
     const requested = appointments.filter(a => a.status === 'requested');
     const accepted = appointments.filter(a => a.status === 'accepted');
 
@@ -154,12 +179,21 @@ const CoachDashboardScreen = ({ navigation }) => {
                         <TouchableOpacity onPress={() => handleAccept(item.id)} style={[styles.actionBtn, { backgroundColor: '#2ECC71' }]}>
                             <Ionicons name="checkmark" size={16} color="#fff" />
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => handleReject(item.id)} style={[styles.actionBtn, { backgroundColor: '#E74C3C' }]}>
+                        <TouchableOpacity onPress={() => handleCancel(item.id)} style={[styles.actionBtn, { backgroundColor: '#E74C3C' }]}>
                             <Ionicons name="close" size={16} color="#fff" />
                         </TouchableOpacity>
                     </>
+                ) : item.status === 'accepted' ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        <Text style={[styles.statusText, { color: '#2ECC71' }]}>
+                            {item.status.toUpperCase()}
+                        </Text>
+                        <TouchableOpacity onPress={() => handleCancel(item.id)} style={[styles.actionBtn, { backgroundColor: '#E74C3C' }]}>
+                            <Ionicons name="close" size={16} color="#fff" />
+                        </TouchableOpacity>
+                    </View>
                 ) : (
-                    <Text style={[styles.statusText, { color: item.status === 'accepted' ? '#2ECC71' : '#F1C40F' }]}>
+                    <Text style={[styles.statusText, { color: item.status === 'expired' ? '#F1C40F' : '#E74C3C' }]}>
                         {item.status.toUpperCase()}
                     </Text>
                 )}
@@ -231,22 +265,31 @@ const CoachDashboardScreen = ({ navigation }) => {
                                 <Text style={styles.classTime}>{item.start_time}</Text>
                                 <Text style={styles.className}>{item.user?.name || 'Session'}</Text>
                             </View>
-                            <TouchableOpacity
-                                style={styles.joinBtn}
-                                onPress={() => {
-                                    navigation.navigate('VideoCall', {
-                                        appointmentId: item.id,
-                                        channelName: item.channel_name,
-                                        token: item.agora_token,
-                                        appId: AGORA_APP_ID,
-                                        callTitle: 'Nutrition Coaching',
-                                        userName: item.user?.name
-                                    })
-                                }}
-                            >
-                                <Ionicons name="videocam" size={16} color="#FF6B3D" />
-                                <Text style={styles.joinBtnText}>Join</Text>
-                            </TouchableOpacity>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 }}>
+                                <TouchableOpacity
+                                    style={styles.joinBtn}
+                                    onPress={() => {
+                                        navigation.navigate('VideoCall', {
+                                            appointmentId: item.id,
+                                            channelName: item.channel_name,
+                                            token: item.agora_token,
+                                            appId: AGORA_APP_ID,
+                                            callTitle: 'Nutrition Coaching',
+                                            userName: item.user?.name
+                                        })
+                                    }}
+                                >
+                                    <Ionicons name="videocam" size={16} color="#FF6B3D" />
+                                    <Text style={styles.joinBtnText}>Join</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.joinBtn, { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#fff' }]}
+                                    onPress={() => handleCancel(item.id)}
+                                >
+                                    <Ionicons name="close" size={16} color="#fff" />
+                                    <Text style={[styles.joinBtnText, { color: '#fff' }]}>Cancel</Text>
+                                </TouchableOpacity>
+                            </View>
                         </LinearGradient>
                     )) : (
                         <View style={[styles.classCard, { backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center' }]}>
@@ -376,9 +419,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 6,
+        paddingHorizontal: 10,
         borderRadius: 10,
         marginTop: 10,
         gap: 5,
+        flex: 0.45,
     },
     joinBtnText: {
         color: '#FF6B3D',

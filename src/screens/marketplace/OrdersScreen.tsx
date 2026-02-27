@@ -84,46 +84,71 @@ const OrdersScreen = ({ navigation }: { navigation: any }) => {
                 Alert.alert("Download failed");
             });
     };
+    const getStatusColor = (status: string) => {
+        switch (status?.toLowerCase()) {
+            case 'pending':
+            case 'paid': return '#ff9800'; // Orange
+            case 'confirmed': return '#2196f3'; // Blue
+            case 'packed': return '#9c27b0'; // Purple
+            case 'shipped': return '#3f51b5'; // Indigo
+            case 'out_for_delivery': return '#e91e63'; // Pink
+            case 'delivered': return '#4caf50'; // Green
+            case 'cancelled': return '#f44336'; // Red
+            default: return '#757575';
+        }
+    };
+
+    const getStatusDisplay = (status: string) => {
+        if (!status) return 'Pending';
+        if (status === 'paid') return 'Pending';
+        return status.replace(/_/g, ' ').toUpperCase();
+    };
+
     const filteredOrders = orders; // For now show all, can implement status filter later
 
     const renderOrder = ({ item }: { item: any }) => {
-        // Get first item details for display
-        const firstItem = item.items && item.items[0];
-        const productTitle = firstItem?.product?.name || 'Order Item';
-        const productImage = firstItem?.product?.image_url || 'https://images.unsplash.com/photo-1624456729094-1a938c5d1e2e';
+        // Prioritize delivery_status for fulfillment stages
+        const currentDeliveryStatus = item.delivery_status || item.status;
+
+        // Match backend structure (products is an object)
+        const productTitle = item.products?.name || 'Order Item';
+        const productImage = item.products?.image_url || 'https://images.unsplash.com/photo-1624456729094-1a938c5d1e2e';
 
         return (
-            <TouchableOpacity
-                style={styles.orderItem}
-                onPress={() => navigation.navigate('OrderDetails', { order: item })}
-            >
-                <Image source={{ uri: productImage }} style={styles.orderImage} />
-                <View style={styles.orderDetails}>
-                    <Text style={styles.orderNumber}>Order ID: <Text style={styles.orderNumberBold}>{item.id.substring(0, 8)}</Text></Text>
-                    <Text style={styles.orderDate}>Date: {new Date(item.created_at).toLocaleDateString()}</Text>
-                    <Text style={styles.orderTotal}>Total: Rs {item.total_price}</Text>
-                    <Text style={[styles.orderStatus, { color: item.status === 'paid' ? '#4caf50' : '#ff9800' }]}>
-                        {item.status.toUpperCase()}
-                    </Text>
-                    <Text style={{ color: 'white' }}>Address:
-                        {item.addresses.address1}
-                        {item.addresses.address2 && `, ${item.addresses.address2}`}
-                    </Text>
-                    <Text style={styles.orderTotal}>
-                        {item.addresses.city}, {item.addresses.states?.name} - {item.addresses.pincode}
-                    </Text>
-                </View>
-                <Ionicons name="arrow-forward" size={20} color="#fff" />
+            <View style={styles.orderItemContainer}>
+                <TouchableOpacity
+                    style={styles.orderItem}
+                    onPress={() => navigation.navigate('OrderDetails', { order: item })}
+                >
+                    <Image source={{ uri: productImage }} style={styles.orderImage} />
+                    <View style={styles.orderDetails}>
+                        <Text style={styles.orderNumber}>Order ID: <Text style={styles.orderNumberBold}>{item.id.substring(0, 8)}</Text></Text>
+                        <Text style={styles.orderDate}>Date: {new Date(item.created_at).toLocaleDateString()}</Text>
+                        <Text style={styles.orderTotal}>Total: Rs {item.total_price}</Text>
 
+                        <View style={styles.statusRow}>
+                            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(currentDeliveryStatus) + '33' }]}>
+                                <Text style={[styles.statusLabel, { color: getStatusColor(currentDeliveryStatus) }]}>
+                                    {getStatusDisplay(currentDeliveryStatus)}
+                                </Text>
+                            </View>
+                        </View>
+
+                        <Text style={{ color: '#aaa', fontSize: 11, marginTop: 5 }}>
+                            Ship to: {item.addresses?.city || 'N/A'}
+                        </Text>
+                    </View>
+                    <Ionicons name="arrow-forward" size={20} color="#fff" />
+                </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.invoiceBtn}
                     onPress={() => downloadInvoice(item.invoice_url)}
                 >
-                    <Text style={{ color: '#7b1fa2', fontWeight: 'bold' }}>
+                    <Text style={{ color: '#7b1fa2', fontWeight: 'bold', fontSize: 12 }}>
                         Download Invoice
                     </Text>
                 </TouchableOpacity>
-            </TouchableOpacity>
+            </View>
         );
     };
 
@@ -219,10 +244,12 @@ const styles = StyleSheet.create({
     listContent: {
         padding: 20,
     },
+    orderItemContainer: {
+        marginBottom: 20,
+    },
     orderItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 20,
         backgroundColor: 'rgba(255,255,255,0.05)',
         padding: 10,
         borderRadius: 12,
@@ -256,10 +283,18 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: 'bold',
     },
-    orderStatus: {
-        fontSize: 12,
+    statusRow: {
+        flexDirection: 'row',
+        marginTop: 5,
+    },
+    statusBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    statusLabel: {
+        fontSize: 10,
         fontWeight: 'bold',
-        marginTop: 4,
     },
     invoiceBtn: {
         marginTop: 10,
