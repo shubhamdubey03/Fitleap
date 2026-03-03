@@ -95,16 +95,19 @@ const VendorDashboardScreen = ({ navigation }) => {
 
                 {/* Header */}
                 <View style={styles.header}>
-                    <View style={styles.userInfo}>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('EditProfileScreen')}
+                        style={styles.userInfo}
+                    >
                         <Image
-                            source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }}
+                            source={{ uri: user?.profile_image || 'https://i.pravatar.cc/150?img=3' }}
                             style={styles.avatar}
                         />
                         <View>
-                            <Text style={styles.greeting}>Hello {vendorName}</Text>
+                            <Text style={styles.greeting}>Hello {user?.name || 'Vendor'}</Text>
                             <Text style={styles.subGreeting}>Vendor Portal</Text>
                         </View>
-                    </View>
+                    </TouchableOpacity>
                     <View style={styles.headerIcons}>
                         <TouchableOpacity onPress={handleLogout} style={styles.iconBtn}>
                             <Ionicons name="log-out-outline" size={24} color="#FF6B3D" />
@@ -169,7 +172,10 @@ const VendorDashboardScreen = ({ navigation }) => {
                         <Ionicons name="stats-chart-outline" size={28} color="#fff" />
                         <Text style={styles.actionText}>Analytics</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionBtn}>
+                    <TouchableOpacity
+                        style={styles.actionBtn}
+                        onPress={() => navigation.navigate('EditProfileScreen')}
+                    >
                         <Ionicons name="settings-outline" size={28} color="#fff" />
                         <Text style={styles.actionText}>Settings</Text>
                     </TouchableOpacity>

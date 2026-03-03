@@ -27,12 +27,18 @@ const PAYMENT_METHODS = [
 
 const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) => {
     const insets = useSafeAreaInsets();
-    const [selectedMethod, setSelectedMethod] = useState('card');
+    const [selectedMethod, setSelectedMethod] = useState('razorpay');
     const [loading, setLoading] = useState(false);
+    const [useCoins, setUseCoins] = useState(false);
     const user = useSelector((state: any) => state.auth.user);
 
     // Get params or use defaults for testing
-    let { totalAmount = 0, items = [], address_id, shippingDetails } = route.params || {};
+    let { totalAmount = 0, items = [], address_id } = route.params || {};
+
+    const walletBalance = user?.wallet_balance || 0;
+    // Prediction for UI only - Backend does the real math
+    const predictedCoins = useCoins ? Math.min(walletBalance * 0.25, totalAmount) : 0;
+    const predictedFinal = Math.max(0, totalAmount - predictedCoins);
 
     const handlePayment = async () => {
         if (selectedMethod !== 'razorpay') {
@@ -58,6 +64,7 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
             // 1️⃣ Create Internal Order
             const orderPayload = {
                 total_amount: totalAmount,
+                use_coins: useCoins, // Tell backend to apply coins
                 address_id: address_id,
                 items: items.map((item: any) => ({
                     product_id: item.id,
@@ -71,16 +78,29 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
                 orderPayload,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            if (!orderRes.data || !orderRes.data[0]) {
+
+            // Backend returns: { orders, cartTotal, walletUsed, finalPayable }
+            const { orders, finalPayable, walletUsed } = orderRes.data;
+
+            if (!orders || !orders[0]) {
                 throw new Error("Failed to create order record on server.");
             }
-            const internalOrderId = orderRes.data[0].id;
-            console.log("Internal Order Created:", internalOrderId);
+
+            const internalOrderId = orders[0].id;
+            const actualPayable = finalPayable ?? totalAmount;
+
+            console.log("Order Created Logic:", { internalOrderId, actualPayable, walletUsed });
+
+            // ⚡ If actualPayable is 0, we don't need Razorpay
+            if (actualPayable <= 0) {
+                await verifyPayment({ skip_gateway: true }, internalOrderId, token);
+                return;
+            }
 
             // 2️⃣ Create Razorpay Order
             const paymentRes = await axios.post(`${API_BASE_URL}/payments/create`, {
                 order_id: internalOrderId,
-                amount: totalAmount
+                amount: actualPayable
             },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -110,7 +130,11 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
                     contact: String(user.phone || user.mobile_number || ''),
                     name: String(user.name || '')
                 },
-                theme: { color: '#7b1fa2' }
+                theme: { color: '#7b1fa2' },
+                notes: {
+                    internal_order_id: internalOrderId,
+                    coins_used: walletUsed || 0
+                }
             };
 
             // ⚡ OPTIMIZATION: Wait for UI thread to settle and keyboard to hide
@@ -193,7 +217,53 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                <Text style={styles.amountText}>Total Amount: Rs {totalAmount}</Text>
+
+                {/* Coin Usage Section */}
+                <View style={[styles.coinContainer, useCoins && styles.coinContainerActive]}>
+                    <View style={styles.coinHeader}>
+                        <View style={styles.coinInfo}>
+                            <Ionicons name="wallet-outline" size={24} color="#ffeb3b" />
+                            <View style={{ marginLeft: 12 }}>
+                                <Text style={styles.coinTitle}>Fitleap Coins</Text>
+                                <Text style={styles.coinBalance}>Balance: {walletBalance} coins</Text>
+                            </View>
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => setUseCoins(!useCoins)}
+                            activeOpacity={0.7}
+                        >
+                            <View style={[styles.toggleBackground, useCoins && styles.toggleActive]}>
+                                <View style={[styles.toggleCircle, useCoins && styles.toggleCircleActive]} />
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                    {useCoins && walletBalance > 0 && (
+                        <View style={styles.coinAppliedNote}>
+                            <Text style={styles.appliedText}>
+                                - Rs {predictedCoins.toFixed(1)} estimated discount
+                            </Text>
+                        </View>
+                    )}
+                </View>
+
+                <View style={styles.summaryCard}>
+                    <View style={styles.summaryRow}>
+                        <Text style={styles.summaryLabel}>Order Total</Text>
+                        <Text style={styles.summaryValue}>Rs {totalAmount}</Text>
+                    </View>
+                    {useCoins && predictedCoins > 0 && (
+                        <View style={styles.summaryRow}>
+                            <Text style={styles.summaryLabel}>Estimated Savings</Text>
+                            <Text style={[styles.summaryValue, { color: '#4caf50' }]}>- Rs {predictedCoins.toFixed(1)}</Text>
+                        </View>
+                    )}
+                    <View style={styles.divider} />
+                    <View style={styles.summaryRow}>
+                        <Text style={styles.totalLabel}>Payable Amount</Text>
+                        <Text style={styles.totalValue}>Rs {predictedFinal.toFixed(1)}</Text>
+                    </View>
+                </View>
+
                 <Text style={styles.sectionTitle}>Select Payment Method</Text>
 
                 {PAYMENT_METHODS.map((method) => (
@@ -223,7 +293,9 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
                         <ActivityIndicator color="#fff" />
                     ) : (
                         <Text style={styles.checkoutBtnText}>
-                            {selectedMethod === 'razorpay' ? 'Pay Now' : 'Complete Purchase'}
+                            {selectedMethod === 'razorpay'
+                                ? `Pay Now (Rs ${predictedFinal.toFixed(1)})`
+                                : 'Complete Purchase'}
                         </Text>
                     )}
                 </TouchableOpacity>
@@ -341,6 +413,102 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 20,
+    },
+    coinContainer: {
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    coinContainerActive: {
+        borderColor: 'rgba(255,235,59,0.3)',
+        backgroundColor: 'rgba(255,235,59,0.05)',
+    },
+    coinHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    coinInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    coinTitle: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    coinBalance: {
+        color: 'rgba(255,255,255,0.6)',
+        fontSize: 12,
+        marginTop: 2,
+    },
+    toggleBackground: {
+        width: 48,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        padding: 2,
+    },
+    toggleActive: {
+        backgroundColor: '#4caf50',
+    },
+    toggleCircle: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: '#fff',
+    },
+    toggleCircleActive: {
+        transform: [{ translateX: 24 }],
+    },
+    coinAppliedNote: {
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.1)',
+    },
+    appliedText: {
+        color: '#ffeb3b',
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    summaryCard: {
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 25,
+    },
+    summaryRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+    },
+    summaryLabel: {
+        color: 'rgba(255,255,255,0.6)',
+        fontSize: 14,
+    },
+    summaryValue: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        marginVertical: 10,
+    },
+    totalLabel: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    totalValue: {
+        color: '#ffeb3b',
+        fontSize: 20,
+        fontWeight: 'bold',
     },
 });
 

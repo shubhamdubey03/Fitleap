@@ -25,7 +25,6 @@ const AGORA_APP_ID = '3d217b929db1457ab9e1166c7a0f2e37';
 const { width } = Dimensions.get('window');
 
 const CoachDashboardScreen = ({ navigation }) => {
-    const [coachName, setCoachName] = useState('Coach');
     const [isSidebarVisible, setSidebarVisible] = useState(false);
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -55,7 +54,6 @@ const CoachDashboardScreen = ({ navigation }) => {
     useEffect(() => {
         const checkAuth = async () => {
             if (user?.token) {
-                setCoachName(user.name || 'Coach');
                 fetchAppointments();
                 return;
             }
@@ -64,7 +62,6 @@ const CoachDashboardScreen = ({ navigation }) => {
             if (storedUser) {
                 const parsedUser = JSON.parse(storedUser);
                 if (parsedUser.token) {
-                    setCoachName(parsedUser.name || 'Coach');
                     fetchAppointments();
                     return;
                 }
@@ -216,19 +213,25 @@ const CoachDashboardScreen = ({ navigation }) => {
 
                 {/* Header */}
                 <View style={styles.header}>
-                    <View style={styles.userInfo}>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('EditProfileScreen')}
+                        style={styles.userInfo}
+                    >
                         <Image
-                            source={{ uri: 'https://randomuser.me/api/portraits/men/44.jpg' }}
+                            source={{ uri: user?.profile_image || 'https://i.pravatar.cc/150?img=3' }}
                             style={styles.avatar}
                         />
                         <View>
-                            <Text style={styles.greeting}>Hello {coachName}</Text>
+                            <Text style={styles.greeting}>Hello {user?.name || 'Coach'}</Text>
                             <Text style={styles.subGreeting}>Coach Portal</Text>
                         </View>
-                    </View>
+                    </TouchableOpacity>
                     <View style={styles.headerIcons}>
                         <TouchableOpacity onPress={() => navigation.navigate('ChatList')} style={styles.iconBtn}>
                             <Ionicons name="chatbubbles-outline" size={24} color="#fff" />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.iconBtn}>
+                            <Ionicons name="menu-outline" size={26} color="#fff" />
                         </TouchableOpacity>
                         <TouchableOpacity onPress={handleLogout} style={styles.iconBtn}>
                             <Ionicons name="log-out-outline" size={24} color="#FF6B3D" />

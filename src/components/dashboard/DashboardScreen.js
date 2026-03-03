@@ -71,7 +71,7 @@ const DashboardScreen = ({ navigation }) => {
       dispatch(getProfile());
       fetchProducts();
       fetchNotificationCount();
-    }, [dispatch, user]),
+    }, [dispatch]),
   );
 
 
