@@ -34,7 +34,6 @@ const EditProfileScreen = ({ navigation }) => {
         email: '',
         phone: '',
         gender: '',
-        location: '',
         profileImage: null
     });
     // UI State
@@ -44,14 +43,21 @@ const EditProfileScreen = ({ navigation }) => {
     const [successMessage, setSuccessMessage] = useState('');
     const [isFetching, setIsFetching] = useState(true);
 
-    // Logs State
-    const [updateLogs, setUpdateLogs] = useState([]);
 
     // Destructure profile state for easier access
-    const { name, email, phone, gender, location } = profile;
+    const { name, email, phone, gender } = profile;
 
     // Fetch user profile on component mount
     useEffect(() => {
+        if (user) {
+            setProfile({
+                name: user.name || '',
+                email: user.email || '',
+                phone: user.phone || '',
+                gender: user.gender || '',
+                profileImage: user.profile_image ? { uri: user.profile_image } : null
+            });
+        }
         fetchUserProfile();
     }, []);
 
@@ -61,71 +67,35 @@ const EditProfileScreen = ({ navigation }) => {
 
         try {
             const token = await AsyncStorage.getItem('authToken');
-            if (!token) return;
+            if (!token) {
+                return;
+            }
 
             const { data } = await axios.get(`${AUTH_URL}/profile`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
+            // Handle both { user: {} } and {} response structures
+            const userData = data.user || data;
+
             setProfile({
-                name: data.user?.name || '',
-                email: data.user?.email || '',
-                phone: data.user?.phone || '',
-                gender: data.user?.gender || '',
-                location: data.user?.location || '',
-                profileImage: data.user?.profile_image
-                    ? { uri: data.user.profile_image }
+                name: userData.name || '',
+                email: userData.email || '',
+                phone: userData.phone || '',
+                gender: userData.gender || '',
+                profileImage: userData.profile_image
+                    ? { uri: userData.profile_image }
                     : null,
             });
-            dispatch(setUser(data));
-            return data;
+            dispatch(setUser(userData));
+            return userData;
 
+        } catch (error) {
+            console.error('Refresh Profile Error:', error.message);
         } finally {
             setIsFetching(false);
         }
     };
-
-    // Add log entry
-    const MAX_LOGS = 50;
-
-    const addLog = (action, status, details = null) => {
-        setUpdateLogs(prevLogs => {
-            const newLog = {
-                id: Date.now(),          // faster + unique enough
-                action,
-                status,
-                details,
-                time: new Date().toLocaleTimeString()
-            };
-
-            // Avoid large array copy if already max size
-            if (prevLogs.length >= MAX_LOGS) {
-                return [newLog, ...prevLogs.slice(0, MAX_LOGS - 1)];
-            }
-
-            return [newLog, ...prevLogs];
-        });
-
-        if (__DEV__) {
-            console.log(`${action} → ${status}`, details);
-        }
-    };
-
-    // Clear logs
-    const clearLogs = () => {
-        setUpdateLogs([{
-            id: Date.now(),
-            action: 'Clear Logs',
-            status: 'Success',
-            details: 'All logs cleared',
-            time: new Date().toLocaleTimeString()
-        }]);
-    };
-
-
-    // Handle Image Picker
-    // Handle Image Picker - FIXED VERSION
-    // ✅ FIXED VERSION
 
     // Handle Image Picker with Cropping
     const pickImage = useCallback(() => {
@@ -136,7 +106,6 @@ const EditProfileScreen = ({ navigation }) => {
                 {
                     text: 'Take Photo',
                     onPress: () => {
-                        addLog('Camera', 'Started');
                         ImagePicker.openCamera({
                             width: 300,
                             height: 300,
@@ -152,13 +121,9 @@ const EditProfileScreen = ({ navigation }) => {
                                     fileName: image.filename || `profile_${Date.now()}.jpg`,
                                 }
                             }));
-                            addLog('Camera', 'Success', { path: image.path });
                         }).catch(err => {
                             if (err.code !== 'E_PICKER_CANCELLED') {
-                                addLog('Camera', 'Error', err.message);
                                 Alert.alert('Error', err.message);
-                            } else {
-                                addLog('Camera', 'Cancelled');
                             }
                         });
                     }
@@ -166,7 +131,6 @@ const EditProfileScreen = ({ navigation }) => {
                 {
                     text: 'Choose from Gallery',
                     onPress: () => {
-                        addLog('Gallery', 'Started');
                         ImagePicker.openPicker({
                             width: 300,
                             height: 300,
@@ -182,13 +146,9 @@ const EditProfileScreen = ({ navigation }) => {
                                     fileName: image.filename || `profile_${Date.now()}.jpg`,
                                 }
                             }));
-                            addLog('Gallery', 'Success', { path: image.path });
                         }).catch(err => {
                             if (err.code !== 'E_PICKER_CANCELLED') {
-                                addLog('Gallery', 'Error', err.message);
                                 Alert.alert('Error', err.message);
-                            } else {
-                                addLog('Gallery', 'Cancelled');
                             }
                         });
                     }
@@ -256,7 +216,6 @@ const EditProfileScreen = ({ navigation }) => {
     // Update Profile Data Only - FIXED VERSION
     const updateProfileDataOnly = async () => {
         try {
-            addLog('Update Profile Data', 'Started');
 
             let token = await AsyncStorage.getItem('authToken');
 
@@ -277,7 +236,6 @@ const EditProfileScreen = ({ navigation }) => {
                 name: name.trim(),
                 phone: phone.trim(),
                 gender: gender.trim(),
-                location: location.trim(),
             };
 
             // ✅ CORRECT ENDPOINT for profile data!
@@ -292,12 +250,10 @@ const EditProfileScreen = ({ navigation }) => {
                 }
             );
 
-            addLog('Update Profile Data', 'Success');
             return response.data;
 
         } catch (error) {
             const errorMessage = error.response?.data?.message || error.message;
-            addLog('Update Profile Data', 'Failed', { error: errorMessage });
             throw error;
         }
     };
@@ -307,8 +263,6 @@ const EditProfileScreen = ({ navigation }) => {
         try {
             setIsUploading(true);
             setError('');
-
-            addLog('Handle Image Update', 'Started');
 
             if (!profile?.profileImage?.uri) {
                 throw new Error('No image selected');
@@ -322,11 +276,6 @@ const EditProfileScreen = ({ navigation }) => {
                 const updatedProfile = await fetchUserProfile();
 
                 if (updatedProfile) {
-                    addLog('Handle Image Update', 'Success', {
-                        message: 'Image updated and profile refreshed',
-                        newImageUrl: updatedProfile.profile_image
-                    });
-
                     setSuccessMessage('Profile image updated successfully!');
                     setTimeout(() => setSuccessMessage(''), 3000);
                 }
@@ -335,10 +284,6 @@ const EditProfileScreen = ({ navigation }) => {
         } catch (error) {
             const errorMessage = error.response?.data?.message || error.message;
             setError(errorMessage);
-
-            addLog('Handle Image Update', 'Failed', {
-                error: errorMessage
-            });
 
             Alert.alert('Error', errorMessage || 'Failed to update profile image');
         } finally {
@@ -352,8 +297,6 @@ const EditProfileScreen = ({ navigation }) => {
             setIsLoading(true);
             setError('');
             setSuccessMessage('');
-
-            addLog('Save Profile', 'Started');
 
             // Validate required fields
             if (!name.trim()) {
@@ -372,10 +315,8 @@ const EditProfileScreen = ({ navigation }) => {
                     const imageUpdateResult = await updateProfileImageOnly();
                     if (imageUpdateResult) {
                         imageUpdated = true;
-                        addLog('Save Profile', 'Image Updated', { result: imageUpdateResult });
                     }
                 } catch (imageError) {
-                    addLog('Save Profile', 'Image Update Failed', { error: imageError.message });
                     Alert.alert('Warning', 'Failed to update profile image. Your other changes can still be saved.');
                 }
             }
@@ -385,30 +326,17 @@ const EditProfileScreen = ({ navigation }) => {
                 const profileUpdateResult = await updateProfileDataOnly();
                 if (profileUpdateResult) {
                     profileUpdated = true;
-                    addLog('Save Profile', 'Data Updated', { result: profileUpdateResult });
                 }
             } catch (profileError) {
-                addLog('Save Profile', 'Data Update Failed', { error: profileError.message });
                 throw new Error(profileError.message || 'Failed to update profile data');
             }
 
             // 3. Fetch complete updated profile from server
             if (imageUpdated || profileUpdated) {
                 const updatedProfile = await fetchUserProfile();
-
-                if (updatedProfile) {
-                    addLog('Save Profile', 'Profile Refreshed', {
-                        message: 'User profile updated from server'
-                    });
-                }
             }
 
             setSuccessMessage('Profile updated successfully!');
-            addLog('Save Profile', 'Completed', {
-                message: 'Profile updated successfully',
-                imageUpdated,
-                profileUpdated
-            });
 
             Alert.alert(
                 'Success',
@@ -424,11 +352,6 @@ const EditProfileScreen = ({ navigation }) => {
         } catch (error) {
             const errorMessage = error.response?.data?.message || error.message;
             setError(errorMessage);
-
-            addLog('Save Profile', 'Failed', {
-                error: errorMessage,
-                stack: error.stack
-            });
 
             Alert.alert('Error', errorMessage || 'Failed to update profile. Please try again.');
         } finally {
@@ -473,31 +396,6 @@ const EditProfileScreen = ({ navigation }) => {
     //         ]
     //     );
     // };
-
-    // Render Log Entry
-    const renderLogEntry = (log) => (
-        <View key={log.id} style={styles.logEntry}>
-            <Text style={styles.logTimestamp}>
-                {new Date(log.timestamp).toLocaleTimeString()}
-            </Text>
-            <View style={styles.logHeader}>
-                <Text style={[
-                    styles.logAction,
-                    log.status === 'Success' || log.status === 'Completed' ? styles.logSuccess :
-                        log.status === 'Failed' || log.status === 'Error' ? styles.logError :
-                            styles.logInfo
-                ]}>
-                    {log.action}
-                </Text>
-                <Text style={styles.logStatus}>{log.status}</Text>
-            </View>
-            {log.details && Object.keys(log.details).length > 0 && (
-                <Text style={styles.logDetails}>
-                    {JSON.stringify(log.details, null, 2)}
-                </Text>
-            )}
-        </View>
-    );
 
     if (isFetching) {
         return (
@@ -667,18 +565,6 @@ const EditProfileScreen = ({ navigation }) => {
                             />
                         </View>
 
-                        {/* Location Field */}
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Location</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={location}
-                                onChangeText={(text) => setProfile(prev => ({ ...prev, location: text }))}
-                                placeholder="City, Country"
-                                placeholderTextColor="rgba(255,255,255,0.4)"
-                                editable={!isLoading}
-                            />
-                        </View>
                     </View>
 
                     {/* Save Button */}
@@ -694,35 +580,6 @@ const EditProfileScreen = ({ navigation }) => {
                         )}
                     </TouchableOpacity>
 
-                    {/* Refresh Button */}
-                    <TouchableOpacity
-                        style={styles.refreshBtn}
-                        onPress={fetchUserProfile}
-                        disabled={isFetching}
-                    >
-                        <Ionicons name="refresh-outline" size={18} color="#fff" />
-                        <Text style={styles.refreshBtnText}>Refresh Profile</Text>
-                    </TouchableOpacity>
-
-                    {/* Logs Section */}
-                    <View style={styles.logsContainer}>
-                        <View style={styles.logsHeader}>
-                            <Text style={styles.logsTitle}>Update Logs</Text>
-                            <TouchableOpacity
-                                onPress={clearLogs}
-                                style={styles.clearLogsButton}
-                            >
-                                <Ionicons name="trash-outline" size={18} color="#fff" />
-                                <Text style={styles.clearLogsText}>Clear</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {updateLogs.length === 0 ? (
-                            <Text style={styles.noLogsText}>No logs available</Text>
-                        ) : (
-                            updateLogs.map(renderLogEntry)
-                        )}
-                    </View>
 
                 </ScrollView>
             </SafeAreaView>
@@ -911,92 +768,6 @@ const styles = StyleSheet.create({
         color: '#3b0a57',
         fontSize: 16,
         fontWeight: 'bold',
-    },
-    refreshBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        borderRadius: 12,
-        paddingVertical: 12,
-        marginTop: 10,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
-    },
-    refreshBtnText: {
-        color: '#fff',
-        fontSize: 14,
-        marginLeft: 8,
-    },
-    logsContainer: {
-        marginTop: 30,
-        backgroundColor: 'rgba(0,0,0,0.3)',
-        borderRadius: 12,
-        padding: 15,
-    },
-    logsHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 15,
-    },
-    logsTitle: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    clearLogsButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 16,
-    },
-    clearLogsText: {
-        color: '#fff',
-        fontSize: 12,
-        marginLeft: 4,
-    },
-    noLogsText: {
-        color: 'rgba(255,255,255,0.4)',
-        textAlign: 'center',
-        padding: 20,
-        fontSize: 14,
-    },
-    logEntry: {
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 10,
-    },
-    logTimestamp: {
-        color: 'rgba(255,255,255,0.5)',
-        fontSize: 10,
-        marginBottom: 4,
-    },
-    logHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 6,
-    },
-    logAction: {
-        fontSize: 13,
-        fontWeight: 'bold',
-    },
-    logStatus: {
-        fontSize: 12,
-        color: 'rgba(255,255,255,0.7)',
-    },
-    logSuccess: {
-        color: '#4caf50',
-    },
-    logError: {
-        color: '#ff6b6b',
-    },
-    logInfo: {
-        color: '#ffd700',
     },
     logDetails: {
         color: 'rgba(255,255,255,0.6)',

@@ -8,6 +8,7 @@ import {
     ActivityIndicator,
     RefreshControl,
     Dimensions,
+    Image,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -23,6 +24,7 @@ const CoachingScreen = ({ navigation }) => {
 
     const [appointments, setAppointments] = useState([]);
     const [allCoaches, setAllCoaches] = useState([]);
+    const [potentialCoaches, setPotentialCoaches] = useState([]);
     const [selectedCoachId, setSelectedCoachId] = useState(null);
     const [availability, setAvailability] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -31,31 +33,43 @@ const CoachingScreen = ({ navigation }) => {
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
+            console.log("Fetching subscriptions...");
             // 1. Get Subscriptions
             const subRes = await axios.get(`${API_BASE_URL}/v1/subscriptions/`, {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
+            console.log("All Coaches:", subRes);
 
             if (subRes.data && subRes.data.length > 0) {
                 const uniqueCoaches = [];
                 const ids = new Set();
+
                 subRes.data.forEach(s => {
-                    if (s.coach && !ids.has(s.coach.id)) {
-                        uniqueCoaches.push(s.coach);
-                        ids.add(s.coach.id);
+                    // Only show coaches with an ACTIVE subscription
+                    const coachData = s.coach;
+                    if (coachData && s.status === 'active' && s.payment_status === 'paid') {
+                        if (!ids.has(coachData.id)) {
+                            uniqueCoaches.push({
+                                ...coachData,
+                                subscription_id: s.id
+                            });
+                            ids.add(coachData.id);
+                        }
                     }
                 });
                 setAllCoaches(uniqueCoaches);
+                console.log("All Coaches:", uniqueCoaches);
 
-                // Default to first coach if none selected
-                const targetCoachId = selectedCoachId || uniqueCoaches[0].id;
-                if (!selectedCoachId) setSelectedCoachId(targetCoachId);
+                if (uniqueCoaches.length > 0) {
+                    const targetCoachId = selectedCoachId || uniqueCoaches[0].id;
+                    if (!selectedCoachId) setSelectedCoachId(targetCoachId);
 
-                // 2. Fetch selected coach availability
-                const availRes = await axios.get(`${API_BASE_URL}/v1/coaches/${targetCoachId}/availability`, {
-                    headers: { Authorization: `Bearer ${user.token}` }
-                });
-                setAvailability(availRes.data || []);
+                    // 2. Fetch selected coach availability
+                    const availRes = await axios.get(`${API_BASE_URL}/v1/coaches/${targetCoachId}/availability`, {
+                        headers: { Authorization: `Bearer ${user.token}` }
+                    });
+                    setAvailability(availRes.data || []);
+                }
             }
 
             // 3. Get Appointments
@@ -63,7 +77,24 @@ const CoachingScreen = ({ navigation }) => {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
             setAppointments(apptRes.data || []);
+
+            // 4. Get all potential coaches (for browsing)
+            try {
+                const coachesRes = await axios.get(`${API_BASE_URL}/admin/coaches`);
+                console.log("Potentialsssssssssssss Coaches:", coachesRes);
+                // Backend returns { data: [...] }
+                const coachesData = coachesRes.data.data || [];
+                setPotentialCoaches(coachesData);
+                console.log("Potentialsssssssssssss Coaches:", coachesData);
+            } catch (e) {
+                console.error("Failed to fetch all coaches:", e);
+            }
         } catch (error) {
+            console.log("FULL ERROR:", error);
+            console.log("ERROR RESPONSE:", error.response);
+            console.log("ERROR DATA:", error.response?.data);
+            console.log("ERROR STATUS:", error.response?.status);
+            console.log("ERROR MESSAGE:", error.message);
             console.error('CoachingScreen Fetch error:', error);
         } finally {
             setLoading(false);
@@ -161,7 +192,11 @@ const CoachingScreen = ({ navigation }) => {
 
                                 <View style={styles.coachRow}>
                                     <View style={styles.placeholderAvatar}>
-                                        <Ionicons name="person" size={16} color="#fff" />
+                                        {nextSession.coach?.users?.profile_image ? (
+                                            <Image source={{ uri: nextSession.coach.users.profile_image }} style={{ width: '100%', height: '100%', borderRadius: 15 }} />
+                                        ) : (
+                                            <Ionicons name="person" size={16} color="#fff" />
+                                        )}
                                     </View>
                                     <Text style={styles.coachNameSmall}>{nextSession.coach?.name || 'Your Coach'}</Text>
                                 </View>
@@ -176,7 +211,11 @@ const CoachingScreen = ({ navigation }) => {
                                 <View key={c.id} style={styles.coachProfileCard}>
                                     <View style={styles.profileRow}>
                                         <View style={styles.coachAvatarLarge}>
-                                            <Ionicons name="person" size={30} color="#fff" />
+                                            {c.users?.profile_image ? (
+                                                <Image source={{ uri: c.users.profile_image }} style={{ width: '100%', height: '100%', borderRadius: 25 }} />
+                                            ) : (
+                                                <Ionicons name="person" size={30} color="#fff" />
+                                            )}
                                         </View>
                                         <View style={{ flex: 1 }}>
                                             <Text style={styles.profileName}>{c.name}</Text>
@@ -191,7 +230,7 @@ const CoachingScreen = ({ navigation }) => {
                                             </TouchableOpacity>
                                             <TouchableOpacity
                                                 style={styles.videoCallBtn}
-                                                onPress={() => navigation.navigate('VideoConsultation', { coachId: c.id })}
+                                                onPress={() => navigation.navigate('VideoConsultation', { coachId: c.user_id })}
                                             >
                                                 <Text style={styles.videoCallText}>Book Call</Text>
                                             </TouchableOpacity>
@@ -200,7 +239,44 @@ const CoachingScreen = ({ navigation }) => {
                                 </View>
                             ))
                         ) : (
-                            <Text style={styles.noDataText}>You haven't subscribed to a coach yet</Text>
+                            <View style={styles.emptyCoachesContainer}>
+                                <Text style={styles.noDataText}>You haven't subscribed to any coaches yet.</Text>
+                            </View>
+                        )}
+
+                        {potentialCoaches.length > 0 && (
+                            <View style={{ width: '100%', marginTop: 30 }}>
+                                <Text style={styles.sectionTitle}>Browse Our Experts</Text>
+                                {potentialCoaches.map((c) => (
+                                    <TouchableOpacity
+                                        key={c.id}
+                                        style={styles.coachProfileCard}
+                                        onPress={() => navigation.navigate('SubscriptionScreen', { coachId: c.user_id })}
+                                    >
+                                        <View style={styles.profileRow}>
+                                            <View style={styles.coachAvatarLarge}>
+                                                {c.user_profile_image ? (
+
+                                                    <Image source={{ uri: c.user_profile_image }} style={{ width: '100%', height: '100%', borderRadius: 25 }} />
+                                                ) : (
+                                                    <Ionicons name="person" size={30} color="#fff" />
+                                                )}
+                                            </View>
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={styles.profileName}>{c.users?.name || 'Coach'}</Text>
+                                                <Text style={styles.profileRole}>{c.specialization || 'Fitness Expert'}</Text>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                                                    <Ionicons name="star" size={14} color="#F5C542" />
+                                                    <Text style={{ color: '#aaa', fontSize: 12, marginLeft: 4 }}>4.9 (120+ reviews)</Text>
+                                                </View>
+                                            </View>
+                                            <View style={styles.subscribeBtnMini}>
+                                                <Text style={styles.subscribeBtnText}>Subscribe</Text>
+                                            </View>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         )}
                     </>
                 ) : (
@@ -264,7 +340,7 @@ const CoachingScreen = ({ navigation }) => {
                     </>
                 )}
             </ScrollView>
-        </LinearGradient>
+        </LinearGradient >
     );
 };
 
@@ -313,6 +389,47 @@ const styles = StyleSheet.create({
     selectedCoachChip: { backgroundColor: '#FF6B3D', borderColor: '#FF6B3D' },
     coachChipText: { color: 'rgba(255,255,255,0.7)', fontSize: 13 },
     selectedCoachChipText: { color: '#fff', fontWeight: 'bold' },
+    emptyCoachesContainer: {
+        alignItems: 'center',
+        paddingVertical: 20,
+    },
+    emptyActionRow: {
+        flexDirection: 'row',
+        gap: 12,
+        marginTop: 10,
+    },
+    findCoachBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#7b1fa2',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 12,
+    },
+    subscribeBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FF6B3D',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 12,
+    },
+    actionBtnText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    subscribeBtnMini: {
+        backgroundColor: '#FF6B3D',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
+    },
+    subscribeBtnText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
 });
 
 export default CoachingScreen;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -7,11 +7,147 @@ import {
     ScrollView,
     SafeAreaView,
     StatusBar,
+    Alert,
+    ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import RazorpayCheckout from 'react-native-razorpay';
+import axios from 'axios';
+import { useSelector, useDispatch } from 'react-redux';
+import { getProfile } from '../../redux/authSlice';
+import { API_BASE_URL } from '../../config/api';
 
-const SubscriptionScreen = ({ navigation }) => {
+const SubscriptionScreen = ({ navigation, route }) => {
+    const { user } = useSelector((state) => state.auth);
+    const dispatch = useDispatch();
+    const coachId = route?.params?.coachId || null;
+    const [loading, setLoading] = useState(false);
+    const [activeSubscription, setActiveSubscription] = useState(null);
+    const [plans, setPlans] = useState([]);
+
+    useEffect(() => {
+        fetchCurrentSubscription();
+        fetchCoachPlans();
+        if (coachId) {
+            fetchCoachPlans();
+        }
+    }, [coachId]);
+
+    const fetchCurrentSubscription = async () => {
+        try {
+            const res = await axios.get(`${API_BASE_URL}/v1/subscriptions`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+
+            console.log("==========", res)
+            const active = res.data.find(s => s.status === 'active');
+            if (active) setActiveSubscription(active);
+        } catch (e) {
+            console.error("Fetch sub error:", e);
+        }
+    };
+
+    const fetchCoachPlans = async () => {
+        try {
+            const url = coachId
+                ? `${API_BASE_URL}/v1/subscriptions/${coachId}/plans`
+                : `${API_BASE_URL}/v1/subscriptions/plans/all`;
+
+            console.log("Fetching plans from:", url);
+            const res = await axios.get(url);
+
+            if (res.data.success && res.data.data) {
+                const dynamicPlans = res.data.data.map(p => ({
+                    id: p.id,
+                    name: p.plan_name,
+                    price: p.price,
+                    months: p.duration_days ? Math.round(p.duration_days / 30) : 1,
+                    features: Array.isArray(p.features) ? p.features : []
+                }));
+                setPlans(dynamicPlans);
+                console.log("Loaded plans:", dynamicPlans);
+            }
+        } catch (e) {
+            console.error("Fetch plans error:", e);
+        }
+    };
+
+
+    const handleSubscribe = async (plan) => {
+        if (!user) {
+            Alert.alert("Error", "Please login to subscribe");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const res = await axios.post(`${API_BASE_URL}/v1/subscriptions`, {
+                coach_id: coachId,
+                months: plan.months,
+                amount: plan.price,
+                plan_id: plan.id
+            }, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+
+            const { order, subscription_id, key } = res.data;
+
+            const options = {
+                description: `Subscription for ${plan.name} Plan`,
+                image: 'https://i.imgur.com/3g7nmJC.png',
+                currency: 'INR',
+                key: key,
+                name: 'FitLeap',
+                order_id: order.id,
+                prefill: {
+                    email: user.email || '',
+                    contact: user.phone || '',
+                    name: user.name || ''
+                },
+                theme: { color: '#3b0a57' }
+            };
+
+            RazorpayCheckout.open(options).then(async (data) => {
+                try {
+                    const verifyRes = await axios.post(`${API_BASE_URL}/v1/subscriptions/verify`, {
+                        razorpay_order_id: data.razorpay_order_id,
+                        razorpay_payment_id: data.razorpay_payment_id,
+                        razorpay_signature: data.razorpay_signature,
+                        subscription_id: subscription_id
+                    }, {
+                        headers: { Authorization: `Bearer ${user.token}` }
+                    });
+
+                    if (verifyRes.data.success) {
+                        Alert.alert("Success", "Subscription activated successfully!");
+                        // Refresh both local state and global Redux state
+                        fetchCurrentSubscription();
+
+                        // THIS IS IMPORTANT: Update Redux state to unlock Exercise Library and show coach on Dashboard
+                        await dispatch(getProfile()).unwrap();
+
+                        navigation.navigate('Dashboard', {
+                            screen: 'Consultation',
+                            params: { screen: 'Coaching' }
+                        });
+                    }
+                } catch (err) {
+                    console.error("Verification failed:", err);
+                    Alert.alert("Error", "Payment verification failed. Please contact support.");
+                }
+            }).catch((error) => {
+                console.log("Razorpay Error:", error);
+                Alert.alert("Cancelled", "Payment was cancelled or failed.");
+            });
+
+        } catch (error) {
+            console.error("Subscription initiation error:", error);
+            Alert.alert("Error", error.response?.data?.error || "Failed to initiate subscription");
+        } finally {
+            setLoading(false);
+        }
+    };
     return (
         <LinearGradient
             colors={['#1a0033', '#3b0a57', '#6a0f6b']}
@@ -25,10 +161,7 @@ const SubscriptionScreen = ({ navigation }) => {
                         <Ionicons name="chevron-back" size={24} color="#fff" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Subscriptions</Text>
-                    <View style={styles.coinIcon}>
-                        {/* Abstract representation of the coin icon from screenshot */}
-                        <View style={styles.coinInner} />
-                    </View>
+                    <View style={{ width: 40 }} />
                 </View>
 
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -37,84 +170,71 @@ const SubscriptionScreen = ({ navigation }) => {
                     <Text style={styles.sectionTitle}>Current Plan</Text>
                     <View style={styles.currentPlanCard}>
                         <View style={styles.planIconBox}>
-                            <Ionicons name="star-outline" size={24} color="#fff" />
+                            <Ionicons name="star" size={24} color="#FFD700" />
                         </View>
                         <View>
-                            <Text style={styles.planName}>Premium</Text>
-                            <Text style={styles.planExpiry}>Expires on July 15, 2024</Text>
+                            <Text style={styles.planName}>
+                                {activeSubscription ? `Premium (${activeSubscription.plan_type})` : 'Free Tier'}
+                            </Text>
+                            <Text style={styles.planExpiry}>
+                                {activeSubscription ? `Expires on ${new Date(activeSubscription.end_date).toLocaleDateString()}` : 'Subscribe to unlock all features'}
+                            </Text>
                         </View>
                     </View>
 
                     {/* Upgrade Your Plan */}
                     <Text style={styles.sectionTitle}>Upgrade Your Plan</Text>
 
-                    {/* Monthly Plan */}
-                    <View style={styles.upgradeCard}>
-                        <View style={styles.upgradeHeader}>
-                            <Text style={styles.upgradeType}>Monthly</Text>
-                            <View style={styles.priceRow}>
-                                <Text style={styles.price}>$19.99</Text>
-                                <Text style={styles.perPeriod}>/month</Text>
-                            </View>
-                        </View>
+                    {loading ? (
+                        <ActivityIndicator color="#fff" size="large" style={{ marginVertical: 30 }} />
+                    ) : (
+                        plans.map((p) => (
+                            <View key={p.id} style={styles.upgradeCard}>
+                                <View style={styles.upgradeHeader}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                        <Text style={styles.upgradeType}>{p.name}</Text>
+                                        {p.save && (
+                                            <View style={styles.saveBadge}>
+                                                <Text style={styles.saveText}>Save {p.save}</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <View style={styles.priceRow}>
+                                        <Text style={styles.price}>₹{p.price}</Text>
+                                        <Text style={styles.perPeriod}>/{p.id === 'monthly' ? 'month' : 'year'}</Text>
+                                    </View>
+                                </View>
 
-                        <TouchableOpacity style={styles.selectButton}>
-                            <Text style={styles.selectButtonText}>Select</Text>
-                        </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.selectButton}
+                                    onPress={() => handleSubscribe(p)}
+                                    disabled={loading}
+                                >
+                                    <Text style={styles.selectButtonText}>Select Plan</Text>
+                                </TouchableOpacity>
 
-                        <View style={styles.featureList}>
-                            <FeatureItem text="Access to all workouts" />
-                            <FeatureItem text="Personalized nutrition plans" />
-                            <FeatureItem text="Habit tracking" />
-                            <FeatureItem text="Coaching support" />
-                        </View>
-                    </View>
-
-                    {/* Yearly Plan */}
-                    <View style={[styles.upgradeCard]}>
-                        <View style={styles.upgradeHeader}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                <Text style={styles.upgradeType}>Yearly</Text>
-                                <View style={styles.saveBadge}>
-                                    <Text style={styles.saveText}>Save 37%</Text>
+                                <View style={styles.featureList}>
+                                    {p.features.map((f, idx) => (
+                                        <FeatureItem key={idx} text={f} />
+                                    ))}
                                 </View>
                             </View>
-                            <View style={styles.priceRow}>
-                                <Text style={styles.price}>$149.99</Text>
-                                <Text style={styles.perPeriod}>/year</Text>
-                            </View>
-                        </View>
+                        ))
+                    )}
 
-                        <TouchableOpacity style={styles.selectButton}>
-                            <Text style={styles.selectButtonText}>Select</Text>
-                        </TouchableOpacity>
-
-                        <View style={styles.featureList}>
-                            <FeatureItem text="Access to all workouts" />
-                            <FeatureItem text="Personalized nutrition plans" />
-                            <FeatureItem text="Habit tracking" />
-                            <FeatureItem text="Coaching support" />
-                        </View>
-                    </View>
-
-                    {/* Payment Method */}
-                    <Text style={styles.sectionTitle}>Payment Method</Text>
-                    <View style={styles.paymentRow}>
-                        <View style={styles.cardIcon}>
-                            <View style={{ width: 24, height: 16, backgroundColor: '#4a3b69', borderRadius: 2 }} />
-                        </View>
-                        <View>
-                            <Text style={styles.paymentText}>Visa ... 4242</Text>
-                            <Text style={styles.paymentExpiry}>Expires 08/2025</Text>
-                        </View>
-                    </View>
-
-                    {/* Billing History */}
+                    {/* Billing History (Optional placeholder) */}
                     <Text style={styles.sectionTitle}>Billing History</Text>
                     <View style={styles.billingList}>
-                        <BillingItem title="Premium Subscription" date="July 1, 2024" price="$19.99" />
-                        <BillingItem title="Premium Subscription" date="June 1, 2024" price="$19.99" />
-                        <BillingItem title="Premium Subscription" date="May 1, 2024" price="$19.99" />
+                        {activeSubscription && (
+                            <BillingItem
+                                title={`Premium ${activeSubscription.plan_type}`}
+                                date={new Date(activeSubscription.created_at).toLocaleDateString()}
+                                price={`₹${activeSubscription.amount}`}
+                            />
+                        )}
+                        {!activeSubscription && (
+                            <Text style={{ color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>No billing history found.</Text>
+                        )}
                     </View>
 
                     <View style={{ height: 40 }} />

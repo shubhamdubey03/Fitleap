@@ -8,11 +8,52 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
-import { useSelector } from 'react-redux';
-
+import { useSelector, useDispatch } from 'react-redux';
+import axios from 'axios';
+import { API_BASE_URL } from '../../config/api';
+import { addNotification, reset } from '../../redux/notificationSlice';
 
 const NotificationScreen = ({ navigation }) => {
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
   const { notifications } = useSelector((state) => state.notifications);
+  const [loading, setLoading] = React.useState(false);
+  const [dbNotifications, setDbNotifications] = React.useState([]);
+
+  const fetchNotifications = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API_BASE_URL}/notifications`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      if (res.data.success) {
+        setDbNotifications(res.data.data);
+      }
+    } catch (e) {
+      console.error("Fetch notifications error:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchNotifications();
+    const markAll = async () => {
+      try {
+        await axios.put(
+          `${API_BASE_URL}/notifications/read-all`,
+          {},
+          { headers: { Authorization: `Bearer ${user.token}` } }
+        );
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    markAll();
+    dispatch(reset()); // Reset unread count when viewing history
+  }, []);
 
   return (
     <LinearGradient
@@ -25,9 +66,8 @@ const NotificationScreen = ({ navigation }) => {
           <Ionicons name="chevron-back" size={22} color="#fff" />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Notification</Text>
+        <Text style={styles.headerTitle}>Notifications</Text>
 
-        {/* Placeholder for spacing if needed, or just empty View to balance flex */}
         <View style={{ width: 40 }} />
       </View>
 
@@ -35,8 +75,8 @@ const NotificationScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 60 }}
       >
-        {notifications && notifications.length > 0 ? (
-          notifications.map((item, index) => (
+        {dbNotifications.length > 0 ? (
+          dbNotifications.map((item, index) => (
             <View key={index} style={[styles.notificationCard, { borderColor: '#FFD700', borderWidth: 1 }]}>
               <View style={styles.iconBox}>
                 <Ionicons name="notifications-outline" size={20} color="#fff" />
@@ -45,18 +85,24 @@ const NotificationScreen = ({ navigation }) => {
               <View style={{ flex: 1 }}>
                 <Text style={styles.title}>{item.title}</Text>
                 <Text style={styles.desc}>{item.body}</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, marginTop: 5 }}>
+                  {new Date(item.created_at).toLocaleString()}
+                </Text>
               </View>
             </View>
           ))
         ) : (
           <View style={{ marginTop: 50, alignItems: 'center' }}>
-            <Text style={{ color: 'rgba(255,255,255,0.6)' }}>No new notifications</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.6)' }}>
+              {loading ? 'Loading notifications...' : 'No notifications found'}
+            </Text>
           </View>
         )}
       </ScrollView>
     </LinearGradient>
   );
 };
+
 
 export default NotificationScreen;
 

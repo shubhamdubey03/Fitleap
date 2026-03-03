@@ -15,7 +15,7 @@ const ConsultationNavigator = () => {
                 headerShown: false,
             }}
         >
-            <Stack.Screen name="CoachingHome" component={CoachingScreen} />
+            <Stack.Screen name="Coaching" component={CoachingScreen} />
             <Stack.Screen name="VideoConsultation" component={VideoConsultationScreen} />
             <Stack.Screen name="VideoCall" component={VideoCallScreen} />
         </Stack.Navigator>

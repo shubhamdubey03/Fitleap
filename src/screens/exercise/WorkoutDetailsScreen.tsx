@@ -7,10 +7,12 @@ import {
     ScrollView,
     TouchableOpacity,
     ActivityIndicator,
+    Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { API_BASE_URL } from '../../config/api';
 
@@ -25,6 +27,15 @@ import { API_BASE_URL } from '../../config/api';
 const WorkoutDetailsScreen = ({ navigation, route }: any) => {
     const insets = useSafeAreaInsets();
     const { workout: initialWorkout } = route.params;
+    const { user } = useSelector((state: any) => state.auth);
+    const isSubscribed = user?.role !== 'User' || user?.subscription || user?.is_premium || user?.is_subscribed || false;
+
+    useEffect(() => {
+        if (!isSubscribed) {
+            Alert.alert('Subscription Required', 'Please subscribe to access workouts.');
+            navigation.goBack();
+        }
+    }, [isSubscribed]);
 
     const [workout, setWorkout] = useState<any>(initialWorkout);
     const [loading, setLoading] = useState(false);

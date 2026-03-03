@@ -29,13 +29,6 @@ const DashboardScreen = ({ navigation }) => {
 
   const [products, setProducts] = useState([]);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      dispatch(getProfile());
-      fetchProducts();
-    }, [dispatch]),
-  );
-
   const fetchProducts = async () => {
     try {
       const token = user?.token || user?.access_token;
@@ -49,12 +42,38 @@ const DashboardScreen = ({ navigation }) => {
           },
         }
       );
-      // Show only top 5-6 products on home
       setProducts(response.data.slice(0, 6));
     } catch (error) {
       console.error("Failed to fetch products for dashboard:", error);
     }
   };
+
+  const fetchNotificationCount = async () => {
+    try {
+      const token = user?.token || user?.access_token;
+      if (!token) return;
+
+      const res = await axios.get(`${API_BASE_URL}/notifications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        // Simple logic: count unread ones or just set count as total new if needed
+        const unread = res.data.data.filter(n => !n.is_read).length;
+        dispatch({ type: 'notifications/setCount', payload: unread });
+      }
+    } catch (e) {
+      console.error("Fetch notification count error:", e);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      dispatch(getProfile());
+      fetchProducts();
+      fetchNotificationCount();
+    }, [dispatch, user]),
+  );
+
 
   return (
     <LinearGradient colors={['#1a0033', '#4b0066']} style={styles.container}>
@@ -178,7 +197,7 @@ const DashboardScreen = ({ navigation }) => {
         {/* Coaching */}
         <TouchableOpacity
           style={styles.coachCard}
-          onPress={() => navigation.navigate('Exercise', { screen: 'Coaching' })}
+          onPress={() => navigation.navigate('Consultation', { screen: 'Coaching' })}
         >
           <Text style={styles.cardTitle}>Coaching</Text>
           <Text style={styles.coach}>{user?.coach_name || 'No Coach Assigned'}</Text>

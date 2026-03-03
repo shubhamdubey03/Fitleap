@@ -19,8 +19,6 @@ const ExerciseNavigator = () => {
         >
             <Stack.Screen name="ExerciseLibrary" component={ExerciseLibraryScreen} />
             <Stack.Screen name="WorkoutDetails" component={WorkoutDetailsScreen} />
-            <Stack.Screen name="Coaching" component={CoachingScreen} />
-            <Stack.Screen name="VideoConsultation" component={VideoConsultationScreen} />
             <Stack.Screen name="ActiveWorkout" component={ActiveWorkoutScreen} />
         </Stack.Navigator>
     );

@@ -49,7 +49,7 @@ const VideoConsultationScreen = ({ navigation, route }) => {
 
             if (subRes.data && subRes.data.length > 0) {
                 if (coachId) {
-                    const targetSub = subRes.data.find(s => s.coach?.id === coachId);
+                    const targetSub = subRes.data.find(s => s.coach?.user_id === coachId);
                     if (targetSub) {
                         setCoach(targetSub.coach);
                     } else {

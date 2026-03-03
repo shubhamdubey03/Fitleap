@@ -29,7 +29,7 @@ const ExerciseLibraryScreen = ({ navigation }: any) => {
 
     // User data from Redux
     const { user } = useSelector((state: any) => state.auth);
-    const isSubscribed = user?.subscription || user?.is_premium || user?.is_subscribed || false;
+    const isSubscribed = user?.role !== 'User' || user?.subscription || user?.is_premium || user?.is_subscribed || false;
 
     // API Data
     const [workouts, setWorkouts] = useState([]);

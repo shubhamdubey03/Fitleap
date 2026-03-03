@@ -20,6 +20,14 @@ const ActiveWorkoutScreen = ({ navigation, route }) => {
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
     const { workout } = route.params;
+    const isSubscribed = user?.role !== 'User' || user?.subscription || user?.is_premium || user?.is_subscribed || false;
+
+    useEffect(() => {
+        if (!isSubscribed) {
+            Alert.alert('Subscription Required', 'Please subscribe to access workouts.');
+            navigation.goBack();
+        }
+    }, [isSubscribed]);
 
     const [seconds, setSeconds] = useState(Number(workout.time) * 60);
     const [isActive, setIsActive] = useState(true);

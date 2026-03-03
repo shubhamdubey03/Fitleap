@@ -19,7 +19,6 @@ const { width, height } = Dimensions.get('window');
 const settingsData = [
     { icon: 'person-outline', title: 'Edit Profile', subtitle: 'Edit your profile information' },
     { icon: 'chatbubble-ellipses-outline', title: 'Feedback And Review', subtitle: 'Share your thoughts and experiences' },
-    { icon: 'gift-outline', title: 'Event & Rewards', subtitle: 'View upcoming events and earned rewards' },
     { icon: 'trophy-outline', title: 'Programs & Challenges', subtitle: 'Join programs and compete in challenges' },
     { icon: 'settings-outline', title: 'Add Habits', subtitle: 'Build and track new healthy habits' },
     { icon: 'card-outline', title: 'Payments & Bills', subtitle: 'Manage your subscriptions and payment methods' },

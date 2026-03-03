@@ -38,6 +38,8 @@ const ChatScreen = ({ route, navigation }) => {
                 { coach_id: receiverId },
                 { headers: { Authorization: `Bearer ${user.token}` } }
             );
+            console.log('Chat response:', response.data);
+            console.log("jjjj", receiverId)
             if (response.data.success) {
                 const id = response.data.data.id;
                 setChatId(id);
@@ -196,7 +198,7 @@ const ChatScreen = ({ route, navigation }) => {
             <KeyboardStickyView
                 offset={{ closed: 0, opened: 0 }}
             >
-                {user.role === 'User' && !user.is_subscribed ? (
+                {user.role === 'User' && (!user.is_subscribed || (user.subscribed_coach_ids && !user.subscribed_coach_ids.includes(receiverId))) ? (
                     <View style={[styles.inputContainer, { justifyContent: 'center', flexDirection: 'column', gap: 10 }]}>
                         <Text style={{ color: '#fff', textAlign: 'center' }}>
                             No active subscription found for this coach.

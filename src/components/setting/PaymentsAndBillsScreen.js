@@ -25,9 +25,7 @@ const PaymentsAndBillsScreen = ({ navigation }) => {
                         <Ionicons name="chevron-back" size={24} color="#fff" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Payments & Bills</Text>
-                    <View style={styles.coinIcon}>
-                        <View style={styles.coinInner} />
-                    </View>
+                    <View style={{ width: 40 }} />
                 </View>
 
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -79,10 +77,10 @@ const PaymentsAndBillsScreen = ({ navigation }) => {
                     {/* Transaction History */}
                     <Text style={styles.sectionTitle}>Transaction History</Text>
                     <View style={styles.historyList}>
-                        <HistoryItem title="Monthly Subscription" date="July 15, 2024" amount="-$19.99" />
-                        <HistoryItem title="Monthly Subscription" date="June 15, 2024" amount="-$19.99" />
-                        <HistoryItem title="Coach Session" date="June 10, 2024" amount="-$45.00" />
-                        <HistoryItem title="Monthly Subscription" date="May 15, 2024" amount="-$19.99" />
+                        <HistoryItem title="Monthly Subscription" date="July 15, 2024" amount="-₹299" />
+                        <HistoryItem title="Monthly Subscription" date="June 15, 2024" amount="-₹299" />
+                        <HistoryItem title="Coach Session" date="June 10, 2024" amount="-₹450" />
+                        <HistoryItem title="Monthly Subscription" date="May 15, 2024" amount="-₹299" />
                     </View>
 
                 </ScrollView>
