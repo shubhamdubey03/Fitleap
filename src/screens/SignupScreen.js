@@ -292,17 +292,19 @@ const SignupScreen = ({ navigation }) => {
             />
           </View>
 
-          <View style={styles.inputBox}>
-            <Ionicons name="gift-outline" size={22} color="#fff" style={styles.icon} />
-            <TextInput
-              placeholder="Referral Code (Optional)"
-              placeholderTextColor="#ccc"
-              style={styles.input}
-              value={referralByCode}
-              onChangeText={setReferralByCode}
-              autoCapitalize="characters"
-            />
-          </View>
+          {role === 'user' && (
+            <View style={styles.inputBox}>
+              <Ionicons name="gift-outline" size={22} color="#fff" style={styles.icon} />
+              <TextInput
+                placeholder="Referral Code (Optional)"
+                placeholderTextColor="#ccc"
+                style={styles.input}
+                value={referralByCode}
+                onChangeText={setReferralByCode}
+                autoCapitalize="characters"
+              />
+            </View>
+          )}
         </View>
 
         {/* Coach Specific Fields */}

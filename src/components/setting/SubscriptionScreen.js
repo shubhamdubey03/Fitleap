@@ -172,14 +172,25 @@ const SubscriptionScreen = ({ navigation, route }) => {
                         <View style={styles.planIconBox}>
                             <Ionicons name="star" size={24} color="#FFD700" />
                         </View>
-                        <View>
+                        <View style={{ flex: 1 }}>
                             <Text style={styles.planName}>
-                                {activeSubscription ? `Premium (${activeSubscription.plan_type})` : 'Free Tier'}
+                                {activeSubscription ? `Premium (${activeSubscription.plan_type || 'Active'})` : 'Free Tier'}
                             </Text>
                             <Text style={styles.planExpiry}>
                                 {activeSubscription ? `Expires on ${new Date(activeSubscription.end_date).toLocaleDateString()}` : 'Subscribe to unlock all features'}
                             </Text>
                         </View>
+                        {/* {activeSubscription && (
+                            <TouchableOpacity
+                                style={styles.feedbackIconBtn}
+                                onPress={() => navigation.navigate('FeedbackProgressScreen', {
+                                    coachId: activeSubscription.coach_id,
+                                    subscriptionId: activeSubscription.id
+                                })}
+                            >
+                                <Ionicons name="chatbubble-ellipses-outline" size={20} color="#fff" />
+                            </TouchableOpacity>
+                        )} */}
                     </View>
 
                     {/* Upgrade Your Plan */}
@@ -454,6 +465,15 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 14,
         fontWeight: '500',
+    },
+    feedbackIconBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 10,
     },
 });
 

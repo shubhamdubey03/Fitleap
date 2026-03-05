@@ -51,6 +51,7 @@ import VideoCallScreen from './src/screens/exercise/VideoCallScreen';
 // import CoachAvailabilityScreen from './src/screens/CoachAvailabilityScreen';
 import VideoConsultationScreen from './src/screens/exercise/VideoConsultationScreen';
 import { initNotifications } from './src/services/Notifications';
+import CoachFeedbackScreen from './src/screens/CoachFeedbackScreen';
 
 
 
@@ -151,6 +152,7 @@ const MainNav = () => {
           <Stack.Screen name="VideoCall" component={VideoCallScreen} />
           {/* <Stack.Screen name="CoachAvailability" component={CoachAvailabilityScreen} /> */}
           <Stack.Screen name="VideoConsultation" component={VideoConsultationScreen} />
+          <Stack.Screen name="CoachFeedback" component={CoachFeedbackScreen} />
 
         </Stack.Navigator>
       </NavigationContainer>

@@ -19,27 +19,88 @@ import { API_BASE_URL } from '../../config/api';
 
 const FeedbackProgressScreen = ({ navigation }) => {
   const { user } = useSelector((state) => state.auth);
-
+  const [activeTab, setActiveTab] = useState('coach'); // 'coach' or 'product'
   const [modalVisible, setModalVisible] = useState(false);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
-  const [userFeedbacks, setUserFeedbacks] = useState([]);
 
-  const fetchUserFeedbacks = async () => {
+  const [coaches, setCoaches] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [selectedItem, setSelectedItem] = useState(null); // The coach or product we are giving feedback for
+  const [pastFeedbacks, setPastFeedbacks] = useState([]);
+  const [fetchingList, setFetchingList] = useState(true);
+
+  useEffect(() => {
+    fetchLists();
+  }, []);
+  useEffect(() => {
+    if (selectedItem) {
+      fetchPastFeedbacks(selectedItem.id);
+    } else {
+      setPastFeedbacks([]);
+    }
+  }, [selectedItem, activeTab]);
+
+  const fetchLists = async () => {
+    setFetchingList(true);
     try {
-      const userId = user?.id || user?._id;
-      if (!userId) return;
-      const response = await axios.get(`${API_BASE_URL}/user-feedback/${userId}`);
-      setUserFeedbacks(response.data);
+      // Fetch Coaches (Subscriptions)
+      const subRes = await axios.get(`${API_BASE_URL}/v1/subscriptions`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      console.log("subRes", subRes.data)
+      const activeCoaches = subRes.data
+        .filter(s => s.status === 'active' && s.coach)
+        .map(s => ({
+          id: s.coach_id,
+          subscription_id: s.id,
+          name: s.coach.name,
+          image: s.coach.profile_image,
+          type: 'coach'
+        }));
+      setCoaches(activeCoaches);
+
+      // Fetch Products (Orders)
+      const orderRes = await axios.get(`${API_BASE_URL}/orders/user`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      console.log("orderReswwwwwwwwwww", orderRes.data)
+      const deliveredProducts = orderRes.data
+        .filter(o => o.delivery_status === 'delivered' && o.products)
+        .map(o => ({
+          id: o.products.id,
+          order_id: o.id,
+          name: o.products.name,
+          image: o.products.image_url,
+          type: 'product'
+        }));
+      setProducts(deliveredProducts);
+
+      // Set default selected item
+      if (activeTab === 'coach' && activeCoaches.length > 0) {
+        setSelectedItem(activeCoaches[0]);
+      } else if (activeTab === 'product' && deliveredProducts.length > 0) {
+        setSelectedItem(deliveredProducts[0]);
+      }
+    } catch (error) {
+      console.log("Error fetching lists:", error);
+    } finally {
+      setFetchingList(false);
+    }
+  };
+
+  const fetchPastFeedbacks = async (id) => {
+    try {
+      const endpoint = activeTab === 'coach'
+        ? `${API_BASE_URL}/coach/${id}/feedback`
+        : `${API_BASE_URL}/product/${id}/review`;
+      const response = await axios.get(endpoint);
+      setPastFeedbacks(response.data);
     } catch (error) {
       console.log("Error fetching feedbacks:", error);
     }
   };
-
-  useEffect(() => {
-    fetchUserFeedbacks();
-  }, [user]);
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -51,32 +112,64 @@ const FeedbackProgressScreen = ({ navigation }) => {
       return;
     }
 
+    if (!selectedItem) {
+      Alert.alert('Error', 'Please select an item to review');
+      return;
+    }
+
     setLoading(true);
     try {
-      const payload = {
-        user_id: user?.id || user?._id, // Handle different ID fields
-        rating,
-        comment,
-        // Optional: send null for product/order if backend allows
-        product_id: null,
-        order_id: null,
-      };
+      let endpoint, payload;
+      if (activeTab === 'coach') {
+        endpoint = `${API_BASE_URL}/coach/${selectedItem.id}/feedback`;
+        payload = {
+          rating,
+          review: comment,
+          subscription_id: selectedItem.subscription_id
+        };
+      } else {
+        endpoint = `${API_BASE_URL}/product/${selectedItem.id}/review`;
+        payload = {
+          rating,
+          review: comment,
+          order_id: selectedItem.order_id
+        };
+      }
 
-      await axios.post(`${API_BASE_URL}/feedback`, payload);
+      await axios.post(endpoint, payload, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
 
       Alert.alert('Success', 'Thank you for your feedback!');
       setModalVisible(false);
       setRating(0);
       setComment('');
-      fetchUserFeedbacks(); // Refresh list
+      fetchPastFeedbacks(selectedItem.id);
 
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'Failed to submit feedback. Please try again.');
+      Alert.alert('Error', error.response?.data?.error || 'Failed to submit feedback. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  const renderItem = (item) => (
+    <TouchableOpacity
+      key={item.id + (item.order_id || item.subscription_id)}
+      style={[styles.itemCard, selectedItem?.id === item.id && styles.selectedCard]}
+      onPress={() => setSelectedItem(item)}
+    >
+      <View style={styles.itemAvatar}>
+        {item.image ? (
+          <Image source={{ uri: item.image }} style={{ width: '100%', height: '100%', borderRadius: 10 }} />
+        ) : (
+          <Ionicons name={activeTab === 'coach' ? "person" : "cube"} size={20} color="#fff" />
+        )}
+      </View>
+      <Text style={[styles.itemName, selectedItem?.id === item.id && styles.selectedItemName]} numberOfLines={1}>{item.name}</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <LinearGradient
@@ -88,57 +181,94 @@ const FeedbackProgressScreen = ({ navigation }) => {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={22} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Feedback & Progress</Text>
+        <Text style={styles.headerTitle}>Feedback & Reviews</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-
-        {/* Submit Button Area */}
-        <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
-          <Text style={styles.buttonText}>Write Detailed Feedback</Text>
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'coach' && styles.activeTab]}
+          onPress={() => {
+            setActiveTab('coach');
+            setSelectedItem(coaches[0] || null);
+          }}
+        >
+          <Text style={[styles.tabText, activeTab === 'coach' && styles.activeTabText]}>Coaches</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'product' && styles.activeTab]}
+          onPress={() => {
+            setActiveTab('product');
+            setSelectedItem(products[0] || null);
+          }}
+        >
+          <Text style={[styles.tabText, activeTab === 'product' && styles.activeTabText]}>Products</Text>
+        </TouchableOpacity>
+      </View>
 
-        <Text style={styles.sectionTitle}>My Past Feedbacks</Text>
+      {fetchingList ? (
+        <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator color="#fff" size="large" /></View>
+      ) : (
+        <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
 
-        {userFeedbacks.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>You haven't submitted any feedback yet.</Text>
-          </View>
-        ) : (
-          userFeedbacks.map((item, index) => (
-            <View key={index} style={styles.reviewCard}>
-              <View style={styles.row}>
-                {/* User Avatar */}
-                <View style={styles.avatarSmall}>
-                  {user?.profile_image ? (
-                    <Image source={{ uri: user.profile_image }} style={{ width: '100%', height: '100%', borderRadius: 16 }} />
-                  ) : (
-                    <View style={{ width: '100%', height: '100%', borderRadius: 16, backgroundColor: '#aaa' }} />
-                  )}
+          <Text style={styles.subTitle}>Select {activeTab === 'coach' ? 'Coach' : 'Product'}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalList}>
+            {activeTab === 'coach' ? coaches.map(renderItem) : products.map(renderItem)}
+            {(activeTab === 'coach' ? coaches : products).length === 0 && (
+              <Text style={styles.emptyText}>No eligible {activeTab}es found.</Text>
+            )}
+          </ScrollView>
+
+          {selectedItem && (
+            <>
+              <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
+                <Text style={styles.buttonText}>Write Review for {selectedItem.name}</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.sectionTitle}>Past Reviews</Text>
+
+              {pastFeedbacks.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No reviews yet for this {activeTab}.</Text>
                 </View>
+              ) : (
+                pastFeedbacks.map((item, index) => (
+                  <View key={index} style={styles.reviewCard}>
+                    <View style={styles.row}>
+                      <View style={styles.avatarSmall}>
+                        {item.user?.profile_image ? (
+                          <Image source={{ uri: item.user.profile_image }} style={{ width: '100%', height: '100%', borderRadius: 16 }} />
+                        ) : (
+                          <View style={{ width: '100%', height: '100%', borderRadius: 16, backgroundColor: '#8a2be2', justifyContent: 'center', alignItems: 'center' }}>
+                            <Text style={{ color: '#fff', fontSize: 10 }}>{item.user?.name?.charAt(0) || 'U'}</Text>
+                          </View>
+                        )}
+                      </View>
 
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.boldText}>{user?.name || 'Me'}</Text>
-                  <Text style={styles.subText}>{item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Just now'}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.boldText}>{item.user?.name || 'User'}</Text>
+                        <Text style={styles.subText}>{item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Just now'}</Text>
 
-                  <View style={styles.starRow}>
-                    {[...Array(5)].map((_, i) => (
-                      <Ionicons key={i} name={i < item.rating ? "star" : "star-outline"} size={14} color="#FFD700" />
-                    ))}
+                        <View style={styles.starRow}>
+                          {[...Array(5)].map((_, i) => (
+                            <Ionicons key={i} name={i < item.rating ? "star" : "star-outline"} size={14} color="#FFD700" />
+                          ))}
+                        </View>
+
+                        <Text style={styles.reviewText}>
+                          {item.review}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
+                ))
+              )}
+            </>
+          )}
 
-                  <Text style={styles.reviewText}>
-                    {item.comment}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          ))
-        )}
-
-        <View style={{ height: 30 }} />
-      </ScrollView>
+          <View style={{ height: 30 }} />
+        </ScrollView>
+      )}
 
       {/* Helper Modal for Submission */}
       <Modal
@@ -150,6 +280,7 @@ const FeedbackProgressScreen = ({ navigation }) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Rate Your Experience</Text>
+            {selectedItem && <Text style={styles.modalSubTitle}>{selectedItem.name}</Text>}
 
             {/* Star Rating Input */}
             <View style={styles.inputStarRow}>
@@ -222,6 +353,70 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 20,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  activeTab: {
+    backgroundColor: '#5b2d8b',
+  },
+  tabText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontWeight: '600',
+  },
+  activeTabText: {
+    color: '#fff',
+  },
+  subTitle: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 14,
+    marginBottom: 10,
+    fontWeight: '500',
+  },
+  horizontalList: {
+    marginBottom: 20,
+  },
+  itemCard: {
+    width: 100,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    padding: 10,
+    alignItems: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  selectedCard: {
+    backgroundColor: 'rgba(91, 45, 139, 0.3)',
+    borderColor: '#5b2d8b',
+  },
+  itemAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  itemName: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  selectedItemName: {
+    color: '#fff',
+    fontWeight: '600',
+  },
   sectionTitle: {
     color: '#fff',
     fontSize: 15,
@@ -229,79 +424,83 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   reviewCard: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 12,
     padding: 14,
-    marginTop: 12,
+    marginBottom: 12,
   },
-  row: { flexDirection: 'row', alignItems: 'center' },
+  row: { flexDirection: 'row', alignItems: 'flex-start' },
   avatarSmall: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#aaa',
     marginRight: 10,
     overflow: 'hidden',
   },
-  boldText: { color: '#fff', fontWeight: '600' },
-  subText: { color: 'rgba(255,255,255,0.6)', fontSize: 12 },
+  boldText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  subText: { color: 'rgba(255,255,255,0.6)', fontSize: 11 },
   starRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginVertical: 4 },
-  reviewText: { color: '#fff', fontSize: 13, marginTop: 2 },
+  reviewText: { color: 'rgba(255,255,255,0.9)', fontSize: 12, marginTop: 4, lineHeight: 18 },
   button: {
     backgroundColor: '#5b2d8b',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 10,
     marginBottom: 20,
   },
   buttonText: { color: '#fff', fontWeight: '600' },
 
-  // Empty State
   emptyContainer: {
     alignItems: 'center',
-    marginTop: 40,
+    paddingVertical: 30,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
   },
   emptyText: {
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(255,255,255,0.4)',
     fontStyle: 'italic',
+    fontSize: 13,
   },
 
-  // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
     justifyContent: 'center',
     padding: 20,
   },
   modalContent: {
     backgroundColor: '#2a0a40',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 20,
+    padding: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: 'rgba(255,255,255,0.15)',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 20,
     textAlign: 'center',
+  },
+  modalSubTitle: {
+    color: 'rgba(255,255,255,0.6)',
+    textAlign: 'center',
+    marginBottom: 20,
+    marginTop: 5,
   },
   inputStarRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 10,
-    marginBottom: 20,
+    gap: 12,
+    marginBottom: 24,
   },
   textInput: {
     backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 12,
+    padding: 16,
     color: '#fff',
     textAlignVertical: 'top',
-    minHeight: 100,
-    marginBottom: 20,
+    minHeight: 120,
+    marginBottom: 24,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -309,12 +508,12 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
   },
   cancelButton: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   submitButton: {
     backgroundColor: '#5b2d8b',

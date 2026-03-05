@@ -88,12 +88,23 @@ const PaymentsAndBillsScreen = ({ navigation }) => {
                                         Ends: {new Date(activeSub.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                     </Text>
                                 </View>
-                                <TouchableOpacity
-                                    style={styles.manageButton}
-                                    onPress={() => navigation.navigate('SubscriptionScreen')}
-                                >
-                                    <Text style={styles.manageButtonText}>Manage</Text>
-                                </TouchableOpacity>
+                                <View style={{ flexDirection: 'row', gap: 8 }}>
+                                    <TouchableOpacity
+                                        style={styles.feedbackIconBtn}
+                                        onPress={() => navigation.navigate('FeedbackProgressScreen', {
+                                            coachId: activeSub.coach_id,
+                                            subscriptionId: activeSub.id
+                                        })}
+                                    >
+                                        <Ionicons name="chatbubble-ellipses-outline" size={18} color="#fff" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.manageButton}
+                                        onPress={() => navigation.navigate('SubscriptionScreen')}
+                                    >
+                                        <Text style={styles.manageButtonText}>Manage</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                         ) : (
                             <View style={styles.emptyCard}>
@@ -136,6 +147,11 @@ const PaymentsAndBillsScreen = ({ navigation }) => {
                                         title={item.products?.name || 'Order Item'}
                                         date={new Date(item.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                                         amount={`-₹${item.total_price}`}
+                                        isDelivered={item.delivery_status === 'delivered'}
+                                        onPressFeedback={() => navigation.navigate('FeedbackProgressScreen', {
+                                            productId: item.products?.id,
+                                            orderId: item.id
+                                        })}
                                     />
                                 ))
                             ) : (
@@ -150,7 +166,7 @@ const PaymentsAndBillsScreen = ({ navigation }) => {
     );
 };
 
-const HistoryItem = ({ title, date, amount }) => (
+const HistoryItem = ({ title, date, amount, isDelivered, onPressFeedback }) => (
     <View style={styles.historyItem}>
         <View style={styles.historyIcon}>
             <Ionicons name="receipt-outline" size={18} color="#fff" />
@@ -159,7 +175,14 @@ const HistoryItem = ({ title, date, amount }) => (
             <Text style={styles.historyTitle} numberOfLines={1}>{title}</Text>
             <Text style={styles.historyDate}>{date}</Text>
         </View>
-        <Text style={styles.historyAmount}>{amount}</Text>
+        <View style={{ alignItems: 'flex-end', gap: 4 }}>
+            <Text style={styles.historyAmount}>{amount}</Text>
+            {isDelivered && (
+                <TouchableOpacity onPress={onPressFeedback}>
+                    <Text style={{ color: '#4CC9F0', fontSize: 11, fontWeight: '600' }}>Rate Product</Text>
+                </TouchableOpacity>
+            )}
+        </View>
     </View>
 );
 
@@ -234,6 +257,14 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         paddingHorizontal: 12,
         borderRadius: 6,
+    },
+    feedbackIconBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     manageButtonText: { color: '#fff', fontSize: 12, fontWeight: '500' },
     cardItem: {

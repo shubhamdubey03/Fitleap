@@ -32,6 +32,11 @@ const ChatScreen = ({ route, navigation }) => {
 
     // Get or Create Chat Room
     const initializeChat = async () => {
+        if (!user?.token) {
+            console.log('No user token for initializing chat');
+            setLoading(false);
+            return;
+        }
         try {
             setLoading(true);
             const response = await axios.post(CHAT_URL,
@@ -46,8 +51,19 @@ const ChatScreen = ({ route, navigation }) => {
                 fetchMessages(id);
             }
         } catch (error) {
-            console.error('Error initializing chat:', error);
+            console.error('Error initializing chat:', error.response?.data || error.message);
             setLoading(false);
+        }
+    };
+
+    const markMessagesAsRead = async (id) => {
+        try {
+            await axios.patch(`${MESSAGE_URL}/read`,
+                { chat_id: id },
+                { headers: { Authorization: `Bearer ${user.token}` } }
+            );
+        } catch (error) {
+            console.error('Error marking messages as read:', error);
         }
     };
 
@@ -60,6 +76,7 @@ const ChatScreen = ({ route, navigation }) => {
             if (response.data.success) {
                 // Reverse if the backend sends descending order (which it does in messageController)
                 setMessages(response.data.data.reverse());
+                markMessagesAsRead(id);
             }
             setLoading(false);
         } catch (error) {
@@ -93,6 +110,8 @@ const ChatScreen = ({ route, navigation }) => {
                     if (prevMessages.find(m => m.id === newMessage.id)) return prevMessages;
                     return [...prevMessages, newMessage];
                 });
+                // If we are in the chat, mark it as read
+                markMessagesAsRead(chatId);
             }
         });
 

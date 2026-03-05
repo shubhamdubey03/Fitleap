@@ -15,20 +15,22 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../redux/authSlice';
+import { logout, setUser } from '../redux/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import DashboardSidebar from '../components/dashboard/DashboardSidebar';
+
+import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_URL, CHAT_URL, AUTH_URL } from '../config/api';
 const AGORA_APP_ID = '3d217b929db1457ab9e1166c7a0f2e37';
 
 const { width } = Dimensions.get('window');
 
 const CoachDashboardScreen = ({ navigation }) => {
-    const [isSidebarVisible, setSidebarVisible] = useState(false);
+
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     const user = useSelector(state => state.auth.user);
     const dispatch = useDispatch();
@@ -48,6 +50,43 @@ const CoachDashboardScreen = ({ navigation }) => {
             setRefreshing(false);
         }
     }, [user?.token]);
+
+    const fetchUnreadCount = useCallback(async () => {
+        if (!user?.token) return;
+        try {
+            const response = await axios.get(`${CHAT_URL}/conversations`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            if (response.data.success) {
+                const totalUnread = response.data.data.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
+                setUnreadCount(totalUnread);
+            }
+        } catch (error) {
+            console.error('Fetch unread count error:', error);
+        }
+    }, [user?.token]);
+
+    const fetchUserProfile = useCallback(async () => {
+        if (!user?.token) return;
+        try {
+            const response = await axios.get(`${AUTH_URL}/profile`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            const userData = response.data.user || response.data;
+            const updatedUser = { ...user, ...userData };
+            dispatch(setUser(updatedUser));
+            await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        } catch (error) {
+            console.error('Fetch profile error:', error);
+        }
+    }, [user?.token, dispatch]);
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchUnreadCount();
+            fetchUserProfile();
+        }, [fetchUnreadCount, fetchUserProfile])
+    );
 
     console.log("appointmentslllllllll", appointments);
 
@@ -77,6 +116,8 @@ const CoachDashboardScreen = ({ navigation }) => {
     const onRefresh = () => {
         setRefreshing(true);
         fetchAppointments();
+        fetchUnreadCount();
+        fetchUserProfile();
     };
 
     const handleLogout = async () => {
@@ -227,12 +268,19 @@ const CoachDashboardScreen = ({ navigation }) => {
                         </View>
                     </TouchableOpacity>
                     <View style={styles.headerIcons}>
+                        <TouchableOpacity onPress={() => navigation.navigate('CoachFeedback')} style={styles.iconBtn}>
+                            <Ionicons name="star-outline" size={24} color="#fff" />
+                        </TouchableOpacity>
+
                         <TouchableOpacity onPress={() => navigation.navigate('ChatList')} style={styles.iconBtn}>
                             <Ionicons name="chatbubbles-outline" size={24} color="#fff" />
+                            {unreadCount > 0 && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>{unreadCount}</Text>
+                                </View>
+                            )}
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.iconBtn}>
-                            <Ionicons name="menu-outline" size={26} color="#fff" />
-                        </TouchableOpacity>
+
                         <TouchableOpacity onPress={handleLogout} style={styles.iconBtn}>
                             <Ionicons name="log-out-outline" size={24} color="#FF6B3D" />
                         </TouchableOpacity>
@@ -316,11 +364,7 @@ const CoachDashboardScreen = ({ navigation }) => {
                     )}
                 </View>
 
-                <DashboardSidebar
-                    visible={isSidebarVisible}
-                    onClose={() => setSidebarVisible(false)}
-                    navigation={navigation}
-                />
+
             </ScrollView>
         </LinearGradient >
     );
@@ -484,6 +528,26 @@ const styles = StyleSheet.create({
     statusText: {
         fontSize: 10,
         fontWeight: 'bold',
+    },
+    badge: {
+        position: 'absolute',
+        right: -2,
+        top: -2,
+        backgroundColor: '#FF6B3D',
+        borderRadius: 10,
+        minWidth: 18,
+        height: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1.5,
+        borderColor: '#000',
+        paddingHorizontal: 4,
+    },
+    badgeText: {
+        color: '#fff',
+        fontSize: 10,
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
 });
 

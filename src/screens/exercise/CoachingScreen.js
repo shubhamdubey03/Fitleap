@@ -211,8 +211,8 @@ const CoachingScreen = ({ navigation }) => {
                                 <View key={c.id} style={styles.coachProfileCard}>
                                     <View style={styles.profileRow}>
                                         <View style={styles.coachAvatarLarge}>
-                                            {c.users?.profile_image ? (
-                                                <Image source={{ uri: c.users.profile_image }} style={{ width: '100%', height: '100%', borderRadius: 25 }} />
+                                            {c.profile_image ? (
+                                                <Image source={{ uri: c.profile_image }} style={{ width: '100%', height: '100%', borderRadius: 25 }} />
                                             ) : (
                                                 <Ionicons name="person" size={30} color="#fff" />
                                             )}

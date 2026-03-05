@@ -87,8 +87,10 @@ const EditProfileScreen = ({ navigation }) => {
                     ? { uri: userData.profile_image }
                     : null,
             });
-            dispatch(setUser(userData));
-            return userData;
+            const updatedUser = { ...user, ...userData };
+            dispatch(setUser(updatedUser));
+            await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+            return updatedUser;
 
         } catch (error) {
             console.error('Refresh Profile Error:', error.message);
@@ -194,7 +196,10 @@ const EditProfileScreen = ({ navigation }) => {
             );
 
             // ✅ Backend should return updated user
-            dispatch(setUser(data));
+            // ✅ Preserve token and merge
+            const updatedUser = { ...user, ...data };
+            dispatch(setUser(updatedUser));
+            await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
 
             // ✅ Update local UI instantly
             setProfile(prev => ({ ...prev, profileImage: { uri: data.profile_image } }));

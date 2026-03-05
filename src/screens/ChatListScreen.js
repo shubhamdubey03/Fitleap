@@ -25,16 +25,25 @@ const ChatListScreen = ({ navigation }) => {
     const API_URL = CHAT_URL;
 
     const fetchConversations = async () => {
+        if (!user?.token) {
+            console.log('No user token available for fetching conversations');
+            setLoading(false);
+            return;
+        }
         try {
+            console.log(`Fetching conversations from ${CHAT_URL} with token: ${user.token.substring(0, 10)}...`);
             const response = await axios.get(`${CHAT_URL}/conversations`, {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
+            console.log('Conversations response:', response.data);
             if (response.data.success) {
-                setConversations(response.data.data);
+                // Filter out any invalid items
+                const validConversations = (response.data.data || []).filter(item => item.other_user);
+                setConversations(validConversations);
             }
             setLoading(false);
         } catch (error) {
-            console.error('Error fetching conversations:', error);
+            console.error('Error fetching conversations:', error.response?.data || error.message);
             setLoading(false);
         }
     };
@@ -49,6 +58,8 @@ const ChatListScreen = ({ navigation }) => {
         const otherUser = item.other_user;
         const lastMsg = item.last_message;
 
+        if (!otherUser) return null;
+
         return (
             <TouchableOpacity
                 style={styles.chatItem}
@@ -61,7 +72,7 @@ const ChatListScreen = ({ navigation }) => {
                     {otherUser.profile_image ? (
                         <Image source={{ uri: otherUser.profile_image }} style={styles.avatarImage} />
                     ) : (
-                        <Text style={styles.avatarText}>{otherUser.name.charAt(0)}</Text>
+                        <Text style={styles.avatarText}>{otherUser.name?.charAt(0) || '?'}</Text>
                     )}
                 </View>
                 <View style={styles.chatContent}>
@@ -71,9 +82,16 @@ const ChatListScreen = ({ navigation }) => {
                             {lastMsg ? new Date(lastMsg.created_at).toLocaleDateString() : ''}
                         </Text>
                     </View>
-                    <Text style={styles.lastMessage} numberOfLines={1}>
-                        {lastMsg ? lastMsg.message : 'No messages yet'}
-                    </Text>
+                    <View style={styles.messageRow}>
+                        <Text style={styles.lastMessage} numberOfLines={1}>
+                            {lastMsg ? lastMsg.message : 'No messages yet'}
+                        </Text>
+                        {item.unread_count > 0 && (
+                            <View style={styles.unreadBadge}>
+                                <Text style={styles.unreadCountText}>{item.unread_count}</Text>
+                            </View>
+                        )}
+                    </View>
                 </View>
             </TouchableOpacity>
         );
@@ -96,7 +114,7 @@ const ChatListScreen = ({ navigation }) => {
                 <FlatList
                     data={conversations}
                     renderItem={renderItem}
-                    keyExtractor={item => item.userId}
+                    keyExtractor={item => item.chat_id?.toString() || Math.random().toString()}
                     contentContainerStyle={styles.listContent}
                     ListEmptyComponent={
                         <Text style={styles.emptyText}>No conversations yet.</Text>
@@ -186,7 +204,27 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: 50,
         fontSize: 16,
-    }
+    },
+    messageRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    unreadBadge: {
+        backgroundColor: '#FF6B3D',
+        minWidth: 20,
+        height: 20,
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 6,
+        marginLeft: 10,
+    },
+    unreadCountText: {
+        color: '#fff',
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
 });
 
 export default ChatListScreen;
