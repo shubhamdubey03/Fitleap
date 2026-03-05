@@ -65,7 +65,8 @@ const ChatListScreen = ({ navigation }) => {
                 style={styles.chatItem}
                 onPress={() => navigation.navigate('Chat', {
                     receiverId: otherUser.id,
-                    receiverName: otherUser.name
+                    receiverName: otherUser.name,
+                    receiverImage: otherUser.profile_image
                 })}
             >
                 <View style={styles.avatar}>

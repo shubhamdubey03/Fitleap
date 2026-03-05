@@ -11,6 +11,7 @@ import {
     ActivityIndicator,
     Alert,
     RefreshControl,
+    TextInput,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -31,6 +32,13 @@ const CoachDashboardScreen = ({ navigation }) => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
+
+    // Diet Modal States
+    const [isDietModalVisible, setIsDietModalVisible] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState(null);
+    const [foodName, setFoodName] = useState('');
+    const [foodType, setFoodType] = useState('');
+    const [dietLoading, setDietLoading] = useState(false);
 
     const user = useSelector(state => state.auth.user);
     const dispatch = useDispatch();
@@ -190,6 +198,41 @@ const CoachDashboardScreen = ({ navigation }) => {
         );
     };
 
+    const selectStudentForDiet = (student) => {
+        setSelectedStudent(student);
+    };
+
+    const handleAddDiet = async () => {
+        if (!foodName || !foodType) {
+            Alert.alert('Error', 'Please fill all fields');
+            return;
+        }
+
+        setDietLoading(true);
+        try {
+            const response = await axios.post(`${API_BASE_URL}/diet/add`, {
+                user_id: selectedStudent.user?.id || selectedStudent.user_id,
+                coach_id: user.id,
+                food_name: foodName,
+                food_type: foodType
+            }, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+
+            if (response.data.success) {
+                Alert.alert('Success', 'Diet added successfully');
+                setSelectedStudent(null);
+                setFoodName('');
+                setFoodType('');
+            }
+        } catch (error) {
+            console.error('Add diet error:', error);
+            Alert.alert('Error', error.response?.data?.message || 'Failed to add diet. User might not have an active subscription.');
+        } finally {
+            setDietLoading(false);
+        }
+    };
+
     const requested = appointments.filter(a => a.status === 'requested');
     const accepted = appointments.filter(a => a.status === 'accepted');
 
@@ -231,9 +274,11 @@ const CoachDashboardScreen = ({ navigation }) => {
                         </TouchableOpacity>
                     </View>
                 ) : (
-                    <Text style={[styles.statusText, { color: item.status === 'expired' ? '#F1C40F' : '#E74C3C' }]}>
-                        {item.status.toUpperCase()}
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        <Text style={[styles.statusText, { color: item.status === 'expired' ? '#F1C40F' : '#E74C3C' }]}>
+                            {item.status.toUpperCase()}
+                        </Text>
+                    </View>
                 )}
             </View>
         </View>
@@ -349,6 +394,97 @@ const CoachDashboardScreen = ({ navigation }) => {
                     )}
                 </ScrollView>
 
+                {/* Add Diet Toggle Button */}
+                <TouchableOpacity
+                    style={styles.mainAddDietBtn}
+                    onPress={() => setIsDietModalVisible(!isDietModalVisible)}
+                >
+                    <LinearGradient
+                        colors={['#F39C12', '#E67E22']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.mainAddDietBtnGradient}
+                    >
+                        <Ionicons name="restaurant" size={20} color="#fff" />
+                        <Text style={styles.mainAddDietBtnText}>
+                            {isDietModalVisible ? 'Close Diet Form' : 'Add New Diet Plan'}
+                        </Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+
+                {/* Inline Diet Form */}
+                {isDietModalVisible && (
+                    <View style={styles.inlineDietContainer}>
+                        <View style={styles.nestedFormBody}>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.label}>Select Student</Text>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.studentSelector}>
+                                    {Array.from(new Set(appointments.map(a => a.user?.id)))
+                                        .map(userId => appointments.find(a => a.user?.id === userId))
+                                        .filter(Boolean)
+                                        .map(appt => (
+                                            <TouchableOpacity
+                                                key={appt.user.id}
+                                                onPress={() => setSelectedStudent(appt)}
+                                                style={[
+                                                    styles.studentSelectorItem,
+                                                    selectedStudent?.user?.id === appt.user.id && styles.studentSelectorItemActive
+                                                ]}
+                                            >
+                                                <Text style={[
+                                                    styles.studentSelectorText,
+                                                    selectedStudent?.user?.id === appt.user.id && styles.studentSelectorTextActive
+                                                ]}>
+                                                    {appt.user.name}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))
+                                    }
+                                </ScrollView>
+                                {!selectedStudent && (
+                                    <Text style={{ color: '#E74C3C', fontSize: 12, marginTop: 5 }}>
+                                        Please select a student first
+                                    </Text>
+                                )}
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.label}>Food Name</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={foodName}
+                                    onChangeText={setFoodName}
+                                    placeholder="e.g. Grilled Chicken Salad"
+                                    placeholderTextColor="rgba(255,255,255,0.4)"
+                                />
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.label}>Food Type</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={foodType}
+                                    onChangeText={setFoodType}
+                                    placeholder="e.g. Lunch / High Protein"
+                                    placeholderTextColor="rgba(255,255,255,0.4)"
+                                />
+                            </View>
+
+                            <TouchableOpacity
+                                style={[styles.submitBtn, (dietLoading || !selectedStudent) && { opacity: 0.7 }]}
+                                onPress={handleAddDiet}
+                                disabled={dietLoading || !selectedStudent}
+                            >
+                                {dietLoading ? (
+                                    <ActivityIndicator color="#fff" />
+                                ) : (
+                                    <Text style={styles.submitBtnText}>Add Diet Plan</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                )}
+
                 {/* Appointment List */}
                 <View style={styles.listHeader}>
                     <Text style={styles.sectionTitle}>All Appointments</Text>
@@ -363,8 +499,6 @@ const CoachDashboardScreen = ({ navigation }) => {
                         <Text style={{ color: '#aaa', textAlign: 'center' }}>No appointments yet</Text>
                     )}
                 </View>
-
-
             </ScrollView>
         </LinearGradient >
     );
@@ -548,6 +682,88 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: 'bold',
         textAlign: 'center',
+    },
+    inlineDietContainer: {
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 20,
+        padding: 20,
+        marginBottom: 30,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    mainAddDietBtn: {
+        marginBottom: 20,
+        borderRadius: 15,
+        overflow: 'hidden',
+    },
+    mainAddDietBtnGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 15,
+        gap: 10,
+    },
+    mainAddDietBtnText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    studentSelector: {
+        flexDirection: 'row',
+        marginTop: 5,
+        marginBottom: 10,
+    },
+    studentSelectorItem: {
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        marginRight: 10,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    studentSelectorItemActive: {
+        backgroundColor: '#F39C12',
+        borderColor: '#F39C12',
+    },
+    studentSelectorText: {
+        color: '#aaa',
+        fontSize: 13,
+    },
+    studentSelectorTextActive: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    nestedFormBody: {
+        marginTop: 5,
+    },
+    inputGroup: {
+        marginBottom: 20,
+    },
+    label: {
+        color: 'rgba(255,255,255,0.6)',
+        fontSize: 14,
+        marginBottom: 8,
+    },
+    input: {
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 12,
+        padding: 15,
+        color: '#fff',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    submitBtn: {
+        backgroundColor: '#FF6B3D',
+        borderRadius: 12,
+        paddingVertical: 15,
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    submitBtnText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 });
 

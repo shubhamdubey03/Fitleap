@@ -8,7 +8,8 @@ import {
     FlatList,
     KeyboardAvoidingView,
     Platform,
-    ActivityIndicator
+    ActivityIndicator,
+    Image,
 } from 'react-native';
 import { io } from 'socket.io-client';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -20,7 +21,7 @@ import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { CHAT_URL, SOCKET_URL, MESSAGE_URL } from '../config/api';
 
 const ChatScreen = ({ route, navigation }) => {
-    const { receiverId, receiverName } = route.params;
+    const { receiverId, receiverName, receiverImage } = route.params;
     const { user } = useSelector(state => state.auth);
     const insets = useSafeAreaInsets();
     const [messages, setMessages] = useState([]);
@@ -188,7 +189,11 @@ const ChatScreen = ({ route, navigation }) => {
                 </TouchableOpacity>
                 <View style={styles.headerTitleContainer}>
                     <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>{receiverName?.charAt(0) || '?'}</Text>
+                        {receiverImage ? (
+                            <Image source={{ uri: receiverImage }} style={styles.avatarImage} />
+                        ) : (
+                            <Text style={styles.avatarText}>{receiverName?.charAt(0) || '?'}</Text>
+                        )}
                     </View>
                     <Text style={styles.headerTitle}>{receiverName}</Text>
                 </View>
@@ -281,6 +286,11 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: 'bold',
         fontSize: 16,
+    },
+    avatarImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 18,
     },
     headerTitle: {
         color: '#fff',

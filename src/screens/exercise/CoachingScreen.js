@@ -77,10 +77,12 @@ const CoachingScreen = ({ navigation }) => {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
             setAppointments(apptRes.data || []);
-
+            console.log("====================================", apptRes.data)
             // 4. Get all potential coaches (for browsing)
             try {
-                const coachesRes = await axios.get(`${API_BASE_URL}/admin/coaches`);
+                const coachesRes = await axios.get(`${API_BASE_URL}/admin/coaches`, {
+                    headers: { Authorization: `Bearer ${user.token}` }
+                });
                 console.log("Potentialsssssssssssss Coaches:", coachesRes);
                 // Backend returns { data: [...] }
                 const coachesData = coachesRes.data.data || [];
@@ -224,7 +226,11 @@ const CoachingScreen = ({ navigation }) => {
                                         <View style={{ flexDirection: 'row', gap: 10 }}>
                                             <TouchableOpacity
                                                 style={styles.chatIconBtn}
-                                                onPress={() => navigation.navigate('Chat', { receiverId: c.id, receiverName: c.name })}
+                                                onPress={() => navigation.navigate('Chat', {
+                                                    receiverId: c.id,
+                                                    receiverName: c.name,
+                                                    receiverImage: c.profile_image
+                                                })}
                                             >
                                                 <Ionicons name="chatbubble-ellipses" size={20} color="#fff" />
                                             </TouchableOpacity>
