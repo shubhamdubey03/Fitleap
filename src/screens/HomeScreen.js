@@ -8,6 +8,7 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
+import Ionicons from '@react-native-vector-icons/ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDispatch, useSelector } from 'react-redux';
@@ -37,25 +38,31 @@ const HomeScreen = ({ navigation }) => {
     }
 
     if (isSuccess && user && isFocused) {
-      const handleSuccess = async () => {
-        Alert.alert('Login Successful', `Welcome ${user.name}`);
-        await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
-        await AsyncStorage.setItem('USER_ROLE', user.role);
+      if (user.token) {
+        const handleSuccess = async () => {
+          Alert.alert('Login Successful', `Welcome ${user.name}`);
+          await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
+          await AsyncStorage.setItem('USER_ROLE', user.role);
 
-        if (user.role === 'vendor' || user.role === 'Vendor') {
-          const vendorName = user.name || 'Vendor';
-          await AsyncStorage.setItem('VENDOR_NAME', vendorName);
-          navigation.replace('VendorDashboard');
-        } else if (user.role === 'coach' || user.role === 'Coach') {
-          const coachName = user.name || 'Coach';
-          await AsyncStorage.setItem('COACH_NAME', coachName);
-          navigation.replace('CoachDashboard');
-        } else {
-          navigation.replace('Dashboard');
-        }
+          if (user.role === 'vendor' || user.role === 'Vendor') {
+            const vendorName = user.name || 'Vendor';
+            await AsyncStorage.setItem('VENDOR_NAME', vendorName);
+            navigation.replace('VendorDashboard');
+          } else if (user.role === 'coach' || user.role === 'Coach') {
+            const coachName = user.name || 'Coach';
+            await AsyncStorage.setItem('COACH_NAME', coachName);
+            navigation.replace('CoachDashboard');
+          } else {
+            navigation.replace('Dashboard');
+          }
+          dispatch(reset());
+        };
+        handleSuccess();
+      } else {
+        // Successful signup/action but no token (e.g., pending approval)
+        // Reset state so we don't trigger this again on focus
         dispatch(reset());
-      };
-      handleSuccess();
+      }
     }
   }, [isError, isSuccess, user, message, navigation, dispatch, isFocused]);
 
@@ -112,18 +119,25 @@ const HomeScreen = ({ navigation }) => {
 
           <Text style={styles.btnText}>Continue With Google</Text>
         </TouchableOpacity>
-        {/* College */}
+
         <TouchableOpacity
-          style={styles.optionBtn}
-          onPress={() => navigation.navigate('CollegeStudentLogin')}
+          style={styles.googleBtn}
+          onPress={() => navigation.navigate('StudentLogin')}
         >
-          <Text style={styles.optionText}>Continue As College Student</Text>
+          <View style={styles.googleCircle}>
+            <Ionicons name="school-outline" size={22} color="#fff" />
+          </View>
+          <Text style={styles.btnText}>Continue as School Student</Text>
         </TouchableOpacity>
 
-        {/* School */}
-        <TouchableOpacity style={styles.optionBtn}
-          onPress={() => navigation.navigate('StudentLogin')}>
-          <Text style={styles.optionText}>Continue As School Student</Text>
+        <TouchableOpacity
+          style={styles.googleBtn}
+          onPress={() => navigation.navigate('CollegeStudentLogin')}
+        >
+          <View style={styles.googleCircle}>
+            <Ionicons name="business-outline" size={22} color="#fff" />
+          </View>
+          <Text style={styles.btnText}>Continue as College Student</Text>
         </TouchableOpacity>
 
         <Text style={styles.orText}>Or</Text>

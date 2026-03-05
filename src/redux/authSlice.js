@@ -26,17 +26,18 @@ export const register = createAsyncThunk(
     'auth/register',
     async (userData, thunkAPI) => {
         try {
-            console.log(`Sending User signup (JSON) to: ${API_URL}/signup-user`);
+            const isFormData = userData instanceof FormData;
+            console.log(`Sending User signup (${isFormData ? 'FormData' : 'JSON'}) to: ${API_URL}/signup-user`);
 
             const response = await axios.post(
                 `${API_URL}/signup-user`,
                 userData,
                 {
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': isFormData ? 'multipart/form-data' : 'application/json',
                         'Accept': 'application/json'
                     },
-                    timeout: 10000,
+                    timeout: isFormData ? 60000 : 10000,
                 }
             );
 
@@ -90,7 +91,13 @@ export const login = createAsyncThunk(
     'auth/login',
     async (userData, thunkAPI) => {
         try {
-            const { data } = await axios.post(`${API_URL}/login`, userData);
+            const isFormData = userData instanceof FormData;
+            const config = {
+                headers: {
+                    'Content-Type': isFormData ? 'multipart/form-data' : 'application/json',
+                }
+            };
+            const { data } = await axios.post(`${API_URL}/login`, userData, config);
             await saveUser(data);
             return data;
         } catch (error) {

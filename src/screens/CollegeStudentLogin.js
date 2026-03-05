@@ -11,13 +11,16 @@ import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDispatch } from 'react-redux';
-import { login } from '../redux/authSlice';
+import { login, setUser } from '../redux/authSlice';
+import axios from 'axios';
+import { AUTH_URL } from '../config/api';
 
 const CollegeStudentLogin = ({ navigation }) => {
   const [secure, setSecure] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [collegeId, setCollegeId] = useState('');
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [otp, setOtp] = useState('');
   const dispatch = useDispatch();
 
   const handleLogin = async () => {
@@ -32,20 +35,59 @@ const CollegeStudentLogin = ({ navigation }) => {
     const userData = {
       email: trimmedEmail,
       password: trimmedPassword,
-      collegeId,
     };
 
     dispatch(login(userData))
       .unwrap()
-      .then(async (user) => {
+      .then(async (response) => {
+        if (response.requireOtp) {
+          setShowOtpInput(true);
+          Alert.alert('Verification', response.message || 'OTP sent to your email.');
+          return;
+        }
+
         Alert.alert('Success', 'Login successful');
         await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
-        await AsyncStorage.setItem('USER_ROLE', user.role || 'student');
+        await AsyncStorage.setItem('USER_ROLE', response.role || 'student');
         navigation.replace('Dashboard');
       })
       .catch((error) => {
         Alert.alert('Error', typeof error === 'string' ? error : 'Login failed');
       });
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp || otp.length !== 6) {
+      Alert.alert('Error', 'Please enter a valid 6-digit OTP');
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${AUTH_URL}/verify-otp`, {
+        email: email.trim().toLowerCase(),
+        otp: otp
+      });
+
+      if (response.data.token) {
+        Alert.alert('Success', 'Email verified successfully');
+        await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
+        await AsyncStorage.setItem('USER_ROLE', response.data.role || 'student');
+        dispatch(setUser(response.data));
+        navigation.replace('Dashboard');
+      }
+    } catch (error) {
+      console.log('OTP Verification Error:', error);
+      Alert.alert('Error', error.response?.data?.message || 'Verification failed');
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      await axios.post(`${AUTH_URL}/send-otp`, { email: email.trim().toLowerCase() });
+      Alert.alert('Success', 'OTP resent successfully');
+    } catch (error) {
+      Alert.alert('Error', error.response?.data?.message || 'Failed to resend OTP');
+    }
   };
 
   return (
@@ -55,66 +97,81 @@ const CollegeStudentLogin = ({ navigation }) => {
     >
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => showOtpInput ? setShowOtpInput(false) : navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerText}>College Student Login</Text>
+        <Text style={styles.headerText}>{showOtpInput ? 'Verification' : 'College Student Login'}</Text>
       </View>
 
-      {/* College Email */}
+      {/* Content */}
       <View style={styles.content}>
-        <View style={styles.inputBox}>
-          <TextInput
-            placeholder="College Email"
-            placeholderTextColor="#ccc"
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-        </View>
+        {showOtpInput ? (
+          <>
+            <View style={styles.inputBox}>
+              <TextInput
+                placeholder="Enter 6-digit OTP"
+                placeholderTextColor="#ccc"
+                style={styles.input}
+                value={otp}
+                onChangeText={setOtp}
+                keyboardType="numeric"
+                maxLength={6}
+              />
+            </View>
 
-        {/* Password */}
-        <View style={styles.inputBox}>
-          <TextInput
-            placeholder="Password"
-            placeholderTextColor="#ccc"
-            secureTextEntry={secure}
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-          />
-          <TouchableOpacity onPress={() => setSecure(!secure)}>
-            <Ionicons
-              name={secure ? 'eye-off-outline' : 'eye-outline'}
-              size={22}
-              color="#fff"
-              style={styles.cameraIcon}
-            />
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity style={styles.loginBtn} onPress={handleVerifyOtp}>
+              <Text style={styles.loginText}>Verify OTP</Text>
+            </TouchableOpacity>
 
-        {/* College ID */}
-        <View style={styles.inputBox}>
-          <TextInput
-            placeholder="College ID (Optional)"
-            placeholderTextColor="#ccc"
-            style={styles.input}
-            value={collegeId}
-            onChangeText={setCollegeId}
-          />
-        </View>
+            <TouchableOpacity onPress={handleResendOtp}>
+              <Text style={styles.resendText}>Resend OTP</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <View style={styles.inputBox}>
+              <TextInput
+                placeholder="College Email"
+                placeholderTextColor="#ccc"
+                style={styles.input}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
+            </View>
 
-        {/* Login Button */}
-        <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-          <Text style={styles.loginText}>Login</Text>
-        </TouchableOpacity>
+            {/* Password */}
+            <View style={styles.inputBox}>
+              <TextInput
+                placeholder="Password"
+                placeholderTextColor="#ccc"
+                secureTextEntry={secure}
+                style={styles.input}
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TouchableOpacity onPress={() => setSecure(!secure)}>
+                <Ionicons
+                  name={secure ? 'eye-off-outline' : 'eye-outline'}
+                  size={22}
+                  color="#fff"
+                  style={styles.cameraIcon}
+                />
+              </TouchableOpacity>
+            </View>
 
-        {/* Signup */}
-        <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-          <Text style={styles.signupText}>Don’t have an account? Sign up</Text>
-        </TouchableOpacity>
+            {/* Login Button */}
+            <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
+              <Text style={styles.loginText}>Login</Text>
+            </TouchableOpacity>
+
+            {/* Signup */}
+            <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+              <Text style={styles.signupText}>Don’t have an account? Sign up</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </LinearGradient>
   );
@@ -184,9 +241,14 @@ const styles = StyleSheet.create({
     marginTop: 140,
   },
   cameraIcon: {
-    // re-adding cameraIcon style as it was referenced but might be missing/renamed in previous view
-    // assuming it shares style with generic icons
     width: 24,
     height: 24,
-  }
+  },
+  resendText: {
+    color: '#fff',
+    textAlign: 'center',
+    marginTop: 20,
+    opacity: 0.8,
+    textDecorationLine: 'underline',
+  },
 });
