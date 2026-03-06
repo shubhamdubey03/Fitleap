@@ -116,16 +116,61 @@ const ProfileScreen = () => {
                 <ProfileItem icon="person-outline" label="Age" value={userProfile?.age ? `${userProfile.age} Years` : 'N/A'} />
                 <ProfileItem icon="male-female-outline" label="Gender" value={userProfile?.gender || 'N/A'} />
 
-                {/* Hardcoded placeholders for now as these fields are not in DB */}
-                <ProfileItem icon="resize-outline" label="Height" value="5'6" />
-                <ProfileItem icon="barbell-outline" label="Weight" value="65 Kg" />
+                {/* Dynamic Height and Weight from DB */}
+                <ProfileItem icon="resize-outline" label="Height" value={userProfile?.height ? `${userProfile.height} cm` : 'N/A'} />
+                <ProfileItem icon="barbell-outline" label="Weight" value={userProfile?.weight ? `${userProfile.weight} Kg` : 'N/A'} />
 
                 {/* Calculated Metrics */}
                 <Text style={styles.sectionTitle}>Calculated Metrics</Text>
 
-                <ProfileItem icon="calculator-outline" label="BMI" value="22.5" />
-                <ProfileItem icon="flame-outline" label="BMR" value="1400 Kcal" />
-                <ProfileItem icon="pulse-outline" label="TGEE" value="1800 Kcal" />
+                {(() => {
+                    const weight = parseFloat(userProfile?.weight);
+                    const height = parseFloat(userProfile?.height);
+                    const age = parseInt(userProfile?.age);
+                    const gender = userProfile?.gender?.toLowerCase();
+
+                    if (!weight || !height || !age) {
+                        return (
+                            <>
+                                <ProfileItem icon="calculator-outline" label="BMI" value="N/A" />
+                                <ProfileItem icon="flame-outline" label="BMR" value="N/A" />
+                                <ProfileItem icon="pulse-outline" label="TDEE" value="N/A" />
+                            </>
+                        );
+                    }
+
+                    // BMI = weight (kg) / (height in meter * height in meter)
+                    const heightInMeter = height / 100;
+                    const bmi = (weight / (heightInMeter * heightInMeter)).toFixed(1);
+
+                    // BMR = 10 × weight + 6.25 × height − 5 × age + 5 (male)
+                    // BMR = 10 × weight + 6.25 × height − 5 × age − 161 (female)
+                    let bmr = (10 * weight) + (6.25 * height) - (5 * age);
+                    if (gender === 'female' || gender === 'f') {
+                        bmr -= 161;
+                    } else {
+                        bmr += 5;
+                    }
+
+                    // TDEE = BMR × Activity Level
+                    const multipliers = {
+                        'Sedentary': 1.2,
+                        'Light': 1.375,
+                        'Moderate': 1.55,
+                        'Heavy': 1.725
+                    };
+                    const multiplier = multipliers[userProfile?.activity_level] || 1.55;
+                    const tdee = Math.round(bmr * multiplier);
+
+                    return (
+                        <>
+                            <ProfileItem icon="analytics-outline" label="Activity" value={userProfile?.activity_level || 'Moderate'} />
+                            <ProfileItem icon="calculator-outline" label="BMI" value={bmi} />
+                            <ProfileItem icon="flame-outline" label="BMR" value={`${Math.round(bmr)} Kcal`} />
+                            <ProfileItem icon="pulse-outline" label="TDEE" value={`${tdee} Kcal`} />
+                        </>
+                    );
+                })()}
 
                 <TouchableOpacity
                     style={[styles.logoutBtn, { backgroundColor: 'rgba(255,107,61,0.1)', borderColor: '#FF6B3D', marginTop: 20 }]}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -9,13 +9,23 @@ import {
     StatusBar,
     TextInput,
     Switch,
+    Alert,
+    ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import axios from 'axios';
+import { useSelector } from 'react-redux';
+import { API_BASE_URL } from '../../config/api';
 
 const AddHabitScreen = ({ navigation }) => {
+    const { user } = useSelector((state) => state.auth);
     const [habitName, setHabitName] = useState('');
-    const [frequency, setFrequency] = useState('Daily');
+    const [frequency, setFrequency] = useState('daily');
+    const [loading, setLoading] = useState(false);
+    const [habits, setHabits] = useState([]);
+    const [fetching, setFetching] = useState(false);
+    const [editingHabit, setEditingHabit] = useState(null); // track which habit is being edited
 
     const [reminders, setReminders] = useState({
         morning: true,
@@ -23,10 +33,179 @@ const AddHabitScreen = ({ navigation }) => {
         evening: true,
     });
 
-    const [selectedColor, setSelectedColor] = useState('cyan');
-
     const toggleReminder = (key) => {
         setReminders(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    useEffect(() => {
+        fetchHabits();
+    }, []);
+
+    const fetchHabits = async () => {
+        setFetching(true);
+        try {
+            const response = await axios.get(`${API_BASE_URL}/habits`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            if (response.data.success) {
+                setHabits(response.data.data);
+            }
+        } catch (error) {
+            console.error('Fetch habits error:', error);
+        } finally {
+            setFetching(false);
+        }
+    };
+
+    const handleDeleteHabit = async (id) => {
+        Alert.alert(
+            'Delete Habit',
+            'Are you sure you want to delete this habit?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const response = await axios.delete(`${API_BASE_URL}/habits/${id}`, {
+                                headers: { Authorization: `Bearer ${user.token}` }
+                            });
+                            if (response.data.success) {
+                                fetchHabits();
+                            }
+                        } catch (error) {
+                            Alert.alert('Error', 'Failed to delete habit');
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleToggleStatus = async (id, currentStatus) => {
+        const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
+        try {
+            const response = await axios.patch(`${API_BASE_URL}/habits/${id}/status`,
+                { status: newStatus },
+                { headers: { Authorization: `Bearer ${user.token}` } }
+            );
+            if (response.data.success) {
+                fetchHabits();
+            }
+        } catch (error) {
+            Alert.alert('Error', 'Failed to update status');
+        }
+    };
+
+    const handleAddHabit = async () => {
+        if (!habitName.trim()) {
+            Alert.alert('Validation Error', 'Habit name is missing! Please fill in the habit name.');
+            return;
+        }
+
+        if (!frequency) {
+            Alert.alert('Validation Error', 'Frequency is missing! Please select a frequency.');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            let response;
+            if (editingHabit) {
+                // Update existing habit
+                response = await axios.put(`${API_BASE_URL}/habits/${editingHabit.id}`, {
+                    habit_name: habitName,
+                    frequency: frequency
+                }, {
+                    headers: { Authorization: `Bearer ${user.token}` }
+                });
+            } else {
+                // Create new habit
+                response = await axios.post(`${API_BASE_URL}/habits`, {
+                    habit_name: habitName,
+                    frequency: frequency
+                }, {
+                    headers: { Authorization: `Bearer ${user.token}` }
+                });
+            }
+
+            if (response.data.success) {
+                const habitId = response.data.data.id;
+
+                // If adding/updating succeeded, handle reminders
+                await handleReminders(habitId);
+
+                Alert.alert('Success', editingHabit ? 'Habit updated successfully' : 'Habit added successfully');
+                setHabitName('');
+                setEditingHabit(null);
+                fetchHabits();
+            } else {
+                Alert.alert('Error', response.data.message || 'Failed to process habit');
+            }
+        } catch (error) {
+            console.error('Habit process error:', error);
+            Alert.alert('Error', error.response?.data?.message || 'Something went wrong');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleReminders = async (habitId) => {
+        try {
+            // First, clear existing reminders for this habit
+            await axios.delete(`${API_BASE_URL}/reminders/${habitId}`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+
+            const selectedReminders = [];
+            const today = new Date();
+            today.setSeconds(0);
+            today.setMilliseconds(0);
+
+            if (reminders.morning) {
+                const morningTime = new Date(today);
+                morningTime.setHours(8, 0);
+                selectedReminders.push(morningTime.toISOString());
+            }
+            if (reminders.afternoon) {
+                const afternoonTime = new Date(today);
+                afternoonTime.setHours(12, 0);
+                selectedReminders.push(afternoonTime.toISOString());
+            }
+            if (reminders.evening) {
+                const eveningTime = new Date(today);
+                eveningTime.setHours(18, 0); // Evening is 6:00 PM as per UI
+                selectedReminders.push(eveningTime.toISOString());
+            }
+
+            // Call reminder API for each selected time
+            for (const datetime of selectedReminders) {
+                await axios.post(`${API_BASE_URL}/reminders`, {
+                    habit_id: habitId,
+                    reminder_datetime: datetime
+                }, {
+                    headers: { Authorization: `Bearer ${user.token}` }
+                });
+            }
+        } catch (error) {
+            console.error('Reminder integration error:', error);
+            // We don't block the habit creation if only reminders fail, but log it
+        }
+    };
+
+    const handleEditPress = (habit) => {
+        setEditingHabit(habit);
+        setHabitName(habit.habit_name);
+        setFrequency(habit.frequency);
+        // Scroll to top
+        // This would require a ref to ScrollView, let's keep it simple for now
+    };
+
+    const cancelEdit = () => {
+        setEditingHabit(null);
+        setHabitName('');
+        setFrequency('daily');
     };
 
     return (
@@ -41,13 +220,19 @@ const AddHabitScreen = ({ navigation }) => {
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                         <Ionicons name="chevron-back" size={24} color="#fff" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Add Habit</Text>
-                    <View style={styles.coinIcon}>
-                        <View style={styles.coinInner} />
-                    </View>
+                    <Text style={styles.headerTitle}>{editingHabit ? 'Edit Habit' : 'Add Habit'}</Text>
+                    <View style={{ width: 40 }} />
                 </View>
 
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                    {editingHabit && (
+                        <View style={styles.editingBanner}>
+                            <Text style={styles.editingText}>Editing: {editingHabit.habit_name}</Text>
+                            <TouchableOpacity onPress={cancelEdit}>
+                                <Text style={styles.cancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
 
                     {/* Habit Name Input */}
                     <View style={styles.inputContainer}>
@@ -63,7 +248,7 @@ const AddHabitScreen = ({ navigation }) => {
                     {/* Frequency */}
                     <Text style={styles.sectionTitle}>Frequency</Text>
                     <View style={styles.frequencyContainer}>
-                        {['Daily', 'Weekly', 'Monthly'].map((opt) => (
+                        {['daily', 'weekly', 'monthly'].map((opt) => (
                             <TouchableOpacity
                                 key={opt}
                                 style={[styles.freqOption, frequency === opt && styles.freqOptionSelected]}
@@ -120,24 +305,56 @@ const AddHabitScreen = ({ navigation }) => {
                     </View>
 
 
-                    {/* Icon / Color Picker */}
-                    <Text style={styles.sectionTitle}>Icon</Text>
-                    <View style={styles.colorRow}>
-                        {['#0055FF', '#330099', '#00CCFF', '#9900CC', '#FF00CC'].map((color, idx) => (
-                            <TouchableOpacity
-                                key={idx}
-                                style={[styles.colorCircle, { backgroundColor: color }, selectedColor === color && styles.colorSelected]}
-                                onPress={() => setSelectedColor(color)}
-                            >
-                                {selectedColor === color && <View style={styles.whiteRing} />}
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-
                     {/* Add Button */}
-                    <TouchableOpacity style={styles.addButton}>
-                        <Text style={styles.addButtonText}>Add Habit</Text>
+                    <TouchableOpacity
+                        style={styles.addButton}
+                        onPress={handleAddHabit}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.addButtonText}>{editingHabit ? 'Update Habit' : 'Add Habit'}</Text>
+                        )}
                     </TouchableOpacity>
+
+                    {/* Habits List */}
+                    <View style={styles.habitsListContainer}>
+                        <Text style={styles.sectionTitle}>Your Habits</Text>
+                        {fetching ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : habits.length > 0 ? (
+                            habits.map((item) => (
+                                <View key={item.id} style={styles.habitItem}>
+                                    <View style={styles.habitInfo}>
+                                        <TouchableOpacity onPress={() => handleToggleStatus(item.id, item.status)}>
+                                            <Ionicons
+                                                name={item.status === 'completed' ? "checkmark-circle" : "ellipse-outline"}
+                                                size={24}
+                                                color={item.status === 'completed' ? "#4caf50" : "#fff"}
+                                            />
+                                        </TouchableOpacity>
+                                        <View style={styles.habitTextContainer}>
+                                            <Text style={[styles.habitName, item.status === 'completed' && styles.habitTextCompleted]}>
+                                                {item.habit_name}
+                                            </Text>
+                                            <Text style={styles.habitFreq}>{item.frequency}</Text>
+                                        </View>
+                                    </View>
+                                    <View style={styles.actionButtons}>
+                                        <TouchableOpacity onPress={() => handleEditPress(item)} style={styles.actionBtn}>
+                                            <Ionicons name="create-outline" size={20} color="#fff" />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={() => handleDeleteHabit(item.id)} style={styles.actionBtn}>
+                                            <Ionicons name="trash-outline" size={20} color="#ff4444" />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            ))
+                        ) : (
+                            <Text style={styles.emptyText}>No habits added yet.</Text>
+                        )}
+                    </View>
 
                 </ScrollView>
             </SafeAreaView>
@@ -173,23 +390,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#fff',
         fontFamily: 'serif',
-    },
-    coinIcon: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: '#FFD700',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: '#B8860B',
-    },
-    coinInner: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.2)',
     },
     scrollContent: {
         paddingHorizontal: 20,
@@ -251,26 +451,6 @@ const styles = StyleSheet.create({
         color: 'rgba(255,255,255,0.6)',
         fontSize: 12,
     },
-    colorRow: {
-        flexDirection: 'row',
-        marginBottom: 40,
-    },
-    colorCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        marginRight: 15,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    whiteRing: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        borderWidth: 2,
-        borderColor: '#fff',
-        position: 'absolute',
-    },
     addButton: {
         backgroundColor: '#3b0a57',
         borderRadius: 10,
@@ -285,6 +465,75 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
+    },
+    habitsListContainer: {
+        marginTop: 10,
+        paddingBottom: 40,
+    },
+    habitItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        padding: 15,
+        borderRadius: 12,
+        marginBottom: 12,
+    },
+    habitInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    habitTextContainer: {
+        marginLeft: 12,
+    },
+    habitName: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    habitTextCompleted: {
+        textDecorationLine: 'line-through',
+        color: 'rgba(255,255,255,0.5)',
+    },
+    habitFreq: {
+        color: 'rgba(255,255,255,0.6)',
+        fontSize: 12,
+        textTransform: 'capitalize',
+    },
+    actionButtons: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    actionBtn: {
+        padding: 5,
+        marginLeft: 10,
+    },
+    editingBanner: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: 'rgba(59, 10, 87, 0.5)',
+        padding: 10,
+        borderRadius: 8,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    editingText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    cancelText: {
+        color: '#ff4444',
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    emptyText: {
+        color: 'rgba(255,255,255,0.5)',
+        textAlign: 'center',
+        marginTop: 10,
     },
 });
 

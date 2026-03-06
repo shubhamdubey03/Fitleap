@@ -34,6 +34,10 @@ const EditProfileScreen = ({ navigation }) => {
         email: '',
         phone: '',
         gender: '',
+        age: '',
+        height: '',
+        weight: '',
+        activity_level: '',
         profileImage: null
     });
     // UI State
@@ -45,7 +49,7 @@ const EditProfileScreen = ({ navigation }) => {
 
 
     // Destructure profile state for easier access
-    const { name, email, phone, gender } = profile;
+    const { name, email, phone, gender, age, height, weight, activity_level } = profile;
 
     // Fetch user profile on component mount
     useEffect(() => {
@@ -55,6 +59,10 @@ const EditProfileScreen = ({ navigation }) => {
                 email: user.email || '',
                 phone: user.phone || '',
                 gender: user.gender || '',
+                age: user.age?.toString() || '',
+                height: user.height?.toString() || '',
+                weight: user.weight?.toString() || '',
+                activity_level: user.activity_level || 'Moderate',
                 profileImage: user.profile_image ? { uri: user.profile_image } : null
             });
         }
@@ -83,6 +91,10 @@ const EditProfileScreen = ({ navigation }) => {
                 email: userData.email || '',
                 phone: userData.phone || '',
                 gender: userData.gender || '',
+                age: userData.age?.toString() || '',
+                height: userData.height?.toString() || '',
+                weight: userData.weight?.toString() || '',
+                activity_level: userData.activity_level || 'Moderate',
                 profileImage: userData.profile_image
                     ? { uri: userData.profile_image }
                     : null,
@@ -241,6 +253,10 @@ const EditProfileScreen = ({ navigation }) => {
                 name: name.trim(),
                 phone: phone.trim(),
                 gender: gender.trim(),
+                age: age.trim(),
+                height: height.trim(),
+                weight: weight.trim(),
+                activity_level: activity_level.trim(),
             };
 
             // ✅ CORRECT ENDPOINT for profile data!
@@ -570,6 +586,68 @@ const EditProfileScreen = ({ navigation }) => {
                             />
                         </View>
 
+                        {/* Age, Height, Weight Fields */}
+                        <View style={styles.row}>
+                            <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
+                                <Text style={styles.label}>Age</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={age}
+                                    onChangeText={(text) => setProfile(prev => ({ ...prev, age: text }))}
+                                    keyboardType="numeric"
+                                    placeholder="Age"
+                                    placeholderTextColor="rgba(255,255,255,0.4)"
+                                    editable={!isLoading}
+                                />
+                            </View>
+                            <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
+                                <Text style={styles.label}>Height (cm)</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={height}
+                                    onChangeText={(text) => setProfile(prev => ({ ...prev, height: text }))}
+                                    keyboardType="numeric"
+                                    placeholder="Height"
+                                    placeholderTextColor="rgba(255,255,255,0.4)"
+                                    editable={!isLoading}
+                                />
+                            </View>
+                            <View style={[styles.inputGroup, { flex: 1 }]}>
+                                <Text style={styles.label}>Weight (kg)</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={weight}
+                                    onChangeText={(text) => setProfile(prev => ({ ...prev, weight: text }))}
+                                    keyboardType="numeric"
+                                    placeholder="Weight"
+                                    placeholderTextColor="rgba(255,255,255,0.4)"
+                                    editable={!isLoading}
+                                />
+                            </View>
+                        </View>
+
+                        {/* Activity Level Field */}
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Activity Level</Text>
+                            <View style={[styles.row, { flexWrap: 'wrap', gap: 10, marginTop: 5 }]}>
+                                {['Sedentary', 'Light', 'Moderate', 'Heavy'].map((item) => (
+                                    <TouchableOpacity
+                                        key={item}
+                                        style={[
+                                            styles.activityOption,
+                                            activity_level === item && styles.activityActiveOption
+                                        ]}
+                                        onPress={() => setProfile(prev => ({ ...prev, activity_level: item }))}
+                                    >
+                                        <Text style={[
+                                            styles.activityText,
+                                            activity_level === item && styles.activityActiveText
+                                        ]}>{item}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+
                     </View>
 
                     {/* Save Button */}
@@ -605,6 +683,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         marginTop: 50,
         marginBottom: 20,
+        justifyContent: 'space-between',
+    },
+    row: {
+        flexDirection: 'row',
         justifyContent: 'space-between',
     },
     backButton: {
@@ -742,6 +824,29 @@ const styles = StyleSheet.create({
         fontSize: 16,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
+    },
+    activityOption: {
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        minWidth: 100,
+        alignItems: 'center',
+    },
+    activityActiveOption: {
+        backgroundColor: '#7b1fa2',
+        borderColor: '#fff',
+    },
+    activityText: {
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    activityActiveText: {
+        color: '#fff',
+        fontWeight: 'bold',
     },
     uploadButton: {
         flexDirection: 'row',

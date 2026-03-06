@@ -12,7 +12,8 @@
     "src/screens/ProfileScreen.js",
     "src/screens/exercise/VideoConsultationScreen.js",
     "src/screens/exercise/CoachingScreen.js",
-    "src/screens/marketplace/TrackOrderScreen.js"
+    "src/screens/marketplace/TrackOrderScreen.js",
+    "src/screens/exercise/ActiveWorkoutScreen.js"
   ],
   "exclude": [
     "**/node_modules",
