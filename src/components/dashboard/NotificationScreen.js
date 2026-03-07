@@ -37,21 +37,45 @@ const NotificationScreen = ({ navigation }) => {
     }
   };
 
+  const [habits, setHabits] = React.useState([]);
+
+  const fetchHabits = async () => {
+    if (!user) return;
+    try {
+      const res = await axios.get(`${API_BASE_URL}/habits`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      console.log("habitsaaaaaaaaaaaaaaaaaaaaaa", res.data)
+      if (res.data.success) {
+        setHabits(res.data.data);
+      }
+    } catch (e) {
+      console.error("Fetch habits error:", e);
+    }
+  };
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      const res = await axios.put(
+        `${API_BASE_URL}/notifications/${id}/read`,
+        {},
+        { headers: { Authorization: `Bearer ${user.token}` } }
+      );
+      if (res.data.success) {
+        setDbNotifications(prev =>
+          prev.map(notif =>
+            notif.id === id ? { ...notif, is_read: true } : notif
+          )
+        );
+      }
+    } catch (e) {
+      console.error("Mark as read error:", e);
+    }
+  };
+
   React.useEffect(() => {
     fetchNotifications();
-    const markAll = async () => {
-      try {
-        await axios.put(
-          `${API_BASE_URL}/notifications/read-all`,
-          {},
-          { headers: { Authorization: `Bearer ${user.token}` } }
-        );
-      } catch (e) {
-        console.error(e);
-      }
-    };
-
-    markAll();
+    fetchHabits();
     dispatch(reset()); // Reset unread count when viewing history
   }, []);
 
@@ -77,17 +101,31 @@ const NotificationScreen = ({ navigation }) => {
       >
         {dbNotifications.length > 0 ? (
           dbNotifications.map((item, index) => (
-            <View key={index} style={[styles.notificationCard, { borderColor: '#FFD700', borderWidth: 1 }]}>
+            <View key={index} style={[styles.notificationCard, { borderColor: item.is_read ? 'rgba(255,255,255,0.1)' : '#FFD700', borderWidth: 1 }]}>
               <View style={styles.iconBox}>
-                <Ionicons name="notifications-outline" size={20} color="#fff" />
+                <Ionicons name={item.is_read ? "notifications-outline" : "notifications"} size={20} color={item.is_read ? "#aaa" : "#fff"} />
               </View>
 
               <View style={{ flex: 1 }}>
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.desc}>{item.body}</Text>
-                <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, marginTop: 5 }}>
-                  {new Date(item.created_at).toLocaleString()}
-                </Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={[styles.title, { color: item.is_read ? 'rgba(255,255,255,0.6)' : '#fff' }]}>{item.title}</Text>
+                  {!item.is_read && <View style={styles.unreadDot} />}
+                </View>
+                <Text numberOfLines={3} style={[styles.desc, { color: item.is_read ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.7)' }]}>{item.body}</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                  <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10 }}>
+                    {new Date(item.created_at).toLocaleString()}
+                  </Text>
+
+                  {!item.is_read && (
+                    <TouchableOpacity
+                      style={styles.markReadBtn}
+                      onPress={() => handleMarkAsRead(item.id)}
+                    >
+                      <Text style={styles.markReadText}>Mark as read</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             </View>
           ))
@@ -168,5 +206,24 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
     fontSize: 12,
     marginTop: 4,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FFD700',
+  },
+  markReadBtn: {
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 0.5,
+    borderColor: '#FFD700',
+  },
+  markReadText: {
+    color: '#FFD700',
+    fontSize: 10,
+    fontWeight: '600',
   },
 });

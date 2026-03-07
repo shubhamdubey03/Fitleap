@@ -56,6 +56,7 @@ const DashboardScreen = ({ navigation }) => {
       const res = await axios.get(`${API_BASE_URL}/notifications`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      console.log("Notification Data", res.data);
       if (res.data.success) {
         // Simple logic: count unread ones or just set count as total new if needed
         const unread = res.data.data.filter(n => !n.is_read).length;

@@ -29,6 +29,7 @@ const ExerciseLibraryScreen = ({ navigation }: any) => {
 
     // User data from Redux
     const { user } = useSelector((state: any) => state.auth);
+    const token = user?.token || user?.access_token;
     const isSubscribed = user?.role !== 'User' || user?.subscription || user?.is_premium || user?.is_subscribed || false;
 
     // API Data
@@ -41,9 +42,11 @@ const ExerciseLibraryScreen = ({ navigation }: any) => {
     const fetchData = async () => {
         try {
             setLoading(true);
+            const headers = { Authorization: `Bearer ${token}` };
+
             const [workoutRes, categoryRes] = await Promise.all([
-                axios.get(`${API_BASE_URL}/workouts`),
-                axios.get(`${API_BASE_URL}/workout-categories`)
+                axios.get(`${API_BASE_URL}/workouts`, { headers }),
+                axios.get(`${API_BASE_URL}/workout-categories`, { headers })
             ]);
 
             if (workoutRes.data) setWorkouts(workoutRes.data.data);

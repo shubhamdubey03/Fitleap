@@ -18,9 +18,6 @@ const settingsData = [
   { icon: 'card-outline', title: 'Payments & Bills', subtitle: 'Manage your subscriptions and payment methods' },
   { icon: 'document-text-outline', title: 'Invoice', subtitle: 'View and download your payment history' },
   { icon: 'notifications-outline', title: 'Subscription', subtitle: 'Manage your premium plan' },
-  { icon: 'help-circle-outline', title: 'Help Center', subtitle: 'Get help and support' },
-  { icon: 'bug-outline', title: 'Report Issue', subtitle: 'Report a bug or issue' },
-  { icon: 'location-outline', title: 'Address', subtitle: 'Manage your delivery address' },
 ];
 
 const SettingsScreen = ({ navigation }) => {
@@ -53,30 +50,16 @@ const SettingsScreen = ({ navigation }) => {
                 navigation.navigate('FeedbackProgressScreen');
               } else if (item.title === 'Event & Rewards') {
                 navigation.navigate('EventsRewardsScreen');
-              }
-              else if (item.title === 'Report Issue') {
-                navigation.navigate('ReportIssueScreen');
-              }
-              else if (item.title === 'Payments & Bills') {
+              } else if (item.title === 'Payments & Bills') {
                 navigation.navigate('PaymentsAndBillsScreen');
-              }
-              else if (item.title === 'Add Habits') {
+              } else if (item.title === 'Add Habits') {
                 navigation.navigate('AddHabitScreen');
-              }
-              else if (item.title === 'Help Center') {
-                navigation.navigate('HelpCenterScreen');
-              }
-              else if (item.title === 'Invoice') {
+              } else if (item.title === 'Invoice') {
                 navigation.navigate('InvoiceHistoryScreen');
-              }
-              else if (item.title === 'Programs & Challenges') {
+              } else if (item.title === 'Programs & Challenges') {
                 navigation.navigate('ProgramsAndChallenges');
-              }
-              else if (item.title === 'Subscription') {
+              } else if (item.title === 'Subscription') {
                 navigation.navigate('SubscriptionScreen');
-              }
-              else if (item.title === 'Address') {
-                navigation.navigate('AddressScreen');
               }
             }}
           >

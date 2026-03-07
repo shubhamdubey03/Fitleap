@@ -34,7 +34,11 @@ const AddHabitScreen = ({ navigation }) => {
     });
 
     const toggleReminder = (key) => {
-        setReminders(prev => ({ ...prev, [key]: !prev[key] }));
+        setReminders(prev => {
+            const newState = { ...prev, [key]: !prev[key] };
+            // console.log("New reminders state:", newState);
+            return newState;
+        });
     };
 
     useEffect(() => {
@@ -116,7 +120,11 @@ const AddHabitScreen = ({ navigation }) => {
                 // Update existing habit
                 response = await axios.put(`${API_BASE_URL}/habits/${editingHabit.id}`, {
                     habit_name: habitName,
-                    frequency: frequency
+                    frequency: frequency,
+                    is_morning: Boolean(reminders.morning),
+                    is_afternoon: Boolean(reminders.afternoon),
+                    is_evening: Boolean(reminders.evening),
+                    reminder_datetime: new Date().toISOString()
                 }, {
                     headers: { Authorization: `Bearer ${user.token}` }
                 });
@@ -124,21 +132,25 @@ const AddHabitScreen = ({ navigation }) => {
                 // Create new habit
                 response = await axios.post(`${API_BASE_URL}/habits`, {
                     habit_name: habitName,
-                    frequency: frequency
+                    frequency: frequency,
+                    is_morning: Boolean(reminders.morning),
+                    is_afternoon: Boolean(reminders.afternoon),
+                    is_evening: Boolean(reminders.evening),
+                    reminder_datetime: new Date().toISOString()
                 }, {
                     headers: { Authorization: `Bearer ${user.token}` }
                 });
             }
 
             if (response.data.success) {
-                const habitId = response.data.data.id;
-
-                // If adding/updating succeeded, handle reminders
-                await handleReminders(habitId);
-
                 Alert.alert('Success', editingHabit ? 'Habit updated successfully' : 'Habit added successfully');
                 setHabitName('');
                 setEditingHabit(null);
+                setReminders({
+                    morning: true,
+                    afternoon: true,
+                    evening: true,
+                });
                 fetchHabits();
             } else {
                 Alert.alert('Error', response.data.message || 'Failed to process habit');
@@ -151,53 +163,16 @@ const AddHabitScreen = ({ navigation }) => {
         }
     };
 
-    const handleReminders = async (habitId) => {
-        try {
-            // First, clear existing reminders for this habit
-            await axios.delete(`${API_BASE_URL}/reminders/${habitId}`, {
-                headers: { Authorization: `Bearer ${user.token}` }
-            });
-
-            const selectedReminders = [];
-            const today = new Date();
-            today.setSeconds(0);
-            today.setMilliseconds(0);
-
-            if (reminders.morning) {
-                const morningTime = new Date(today);
-                morningTime.setHours(8, 0);
-                selectedReminders.push(morningTime.toISOString());
-            }
-            if (reminders.afternoon) {
-                const afternoonTime = new Date(today);
-                afternoonTime.setHours(12, 0);
-                selectedReminders.push(afternoonTime.toISOString());
-            }
-            if (reminders.evening) {
-                const eveningTime = new Date(today);
-                eveningTime.setHours(18, 0); // Evening is 6:00 PM as per UI
-                selectedReminders.push(eveningTime.toISOString());
-            }
-
-            // Call reminder API for each selected time
-            for (const datetime of selectedReminders) {
-                await axios.post(`${API_BASE_URL}/reminders`, {
-                    habit_id: habitId,
-                    reminder_datetime: datetime
-                }, {
-                    headers: { Authorization: `Bearer ${user.token}` }
-                });
-            }
-        } catch (error) {
-            console.error('Reminder integration error:', error);
-            // We don't block the habit creation if only reminders fail, but log it
-        }
-    };
-
     const handleEditPress = (habit) => {
+
         setEditingHabit(habit);
         setHabitName(habit.habit_name);
         setFrequency(habit.frequency);
+        setReminders({
+            morning: !!habit.is_morning,
+            afternoon: !!habit.is_afternoon,
+            evening: !!habit.is_evening,
+        });
         // Scroll to top
         // This would require a ref to ScrollView, let's keep it simple for now
     };
@@ -206,6 +181,11 @@ const AddHabitScreen = ({ navigation }) => {
         setEditingHabit(null);
         setHabitName('');
         setFrequency('daily');
+        setReminders({
+            morning: true,
+            afternoon: true,
+            evening: true,
+        });
     };
 
     return (
@@ -262,47 +242,25 @@ const AddHabitScreen = ({ navigation }) => {
                     {/* Reminders */}
                     <Text style={styles.sectionTitle}>Reminders</Text>
 
-                    <View style={styles.reminderRow}>
-                        <View>
-                            <Text style={styles.reminderLabel}>Morning</Text>
-                            <Text style={styles.reminderTime}>8:00 AM</Text>
+                    {[
+                        { key: 'morning', label: 'Morning', time: '8:00 AM' },
+                        { key: 'afternoon', label: 'Afternoon', time: '12:00 PM' },
+                        { key: 'evening', label: 'Evening', time: '6:00 PM' },
+                    ].map((item) => (
+                        <View key={item.key} style={styles.reminderRow}>
+                            <View>
+                                <Text style={styles.reminderLabel}>{item.label}</Text>
+                                <Text style={styles.reminderTime}>{item.time}</Text>
+                            </View>
+                            <Switch
+                                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                                thumbColor={reminders[item.key] ? "#f4f3f4" : "#f4f3f4"}
+                                ios_backgroundColor="#3e3e3e"
+                                onValueChange={() => toggleReminder(item.key)}
+                                value={!!reminders[item.key]}
+                            />
                         </View>
-                        <Switch
-                            trackColor={{ false: "#767577", true: "#81b0ff" }} // Light blue/white active track
-                            thumbColor={reminders.morning ? "#f4f3f4" : "#f4f3f4"}
-                            ios_backgroundColor="#3e3e3e"
-                            onValueChange={() => toggleReminder('morning')}
-                            value={reminders.morning}
-                        />
-                    </View>
-
-                    <View style={styles.reminderRow}>
-                        <View>
-                            <Text style={styles.reminderLabel}>Afternoon</Text>
-                            <Text style={styles.reminderTime}>12:00 PM</Text>
-                        </View>
-                        <Switch
-                            trackColor={{ false: "#767577", true: "#81b0ff" }}
-                            thumbColor={reminders.afternoon ? "#f4f3f4" : "#f4f3f4"}
-                            ios_backgroundColor="#3e3e3e"
-                            onValueChange={() => toggleReminder('afternoon')}
-                            value={reminders.afternoon}
-                        />
-                    </View>
-
-                    <View style={styles.reminderRow}>
-                        <View>
-                            <Text style={styles.reminderLabel}>Evening</Text>
-                            <Text style={styles.reminderTime}>6:00 PM</Text>
-                        </View>
-                        <Switch
-                            trackColor={{ false: "#767577", true: "#81b0ff" }}
-                            thumbColor={reminders.evening ? "#f4f3f4" : "#f4f3f4"}
-                            ios_backgroundColor="#3e3e3e"
-                            onValueChange={() => toggleReminder('evening')}
-                            value={reminders.evening}
-                        />
-                    </View>
+                    ))}
 
 
                     {/* Add Button */}

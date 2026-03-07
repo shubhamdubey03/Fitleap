@@ -46,7 +46,11 @@ const WorkoutDetailsScreen = ({ navigation, route }: any) => {
             if (!initialWorkout?.id) return;
             try {
                 setLoading(true);
-                const response = await axios.get(`${API_BASE_URL}/workouts/${initialWorkout.id}`);
+                const token = user?.token || user?.access_token;
+                const response = await axios.get(
+                    `${API_BASE_URL}/workouts/${initialWorkout.id}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
                 if (response.data?.data) {
                     const fetchedWorkout = response.data.data;
                     setWorkout(fetchedWorkout);

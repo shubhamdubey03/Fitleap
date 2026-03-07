@@ -27,8 +27,8 @@ import CaloriesScreen from './src/components/dashboard/CaloriesScreen';
 import SettingsScreen from './src/components/setting/SettingsScreen';
 import FeedbackProgressScreen from './src/components/setting/FeedbackProgressScreen';
 import EventsRewardsScreen from './src/components/setting/EventsRewardsScreen';
-import ReportIssueScreen from './src/components/setting/ReportIssueScreen';
-import HelpCenterScreen from './src/components/setting/HelpCenterScreen';
+// import ReportIssueScreen from './src/components/setting/ReportIssueScreen';
+// import HelpCenterScreen from './src/components/setting/HelpCenterScreen';
 
 import NotificationScreen from './src/components/dashboard/NotificationScreen';
 import RecipesScreen from './src/components/dashboard/RecipesScreen';
@@ -128,8 +128,8 @@ const MainNav = () => {
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="FeedbackProgressScreen" component={FeedbackProgressScreen} />
           <Stack.Screen name="EventsRewardsScreen" component={EventsRewardsScreen} />
-          <Stack.Screen name="ReportIssueScreen" component={ReportIssueScreen} />
-          <Stack.Screen name="HelpCenterScreen" component={HelpCenterScreen} />
+          {/* <Stack.Screen name="ReportIssueScreen" component={ReportIssueScreen} /> */}
+          {/* <Stack.Screen name="HelpCenterScreen" component={HelpCenterScreen} /> */}
           <Stack.Screen name="NotificationScreen" component={NotificationScreen} />
           <Stack.Screen name="Recipes" component={RecipesScreen} />
           <Stack.Screen name="MealDetails" component={MealDetailsScreen} />

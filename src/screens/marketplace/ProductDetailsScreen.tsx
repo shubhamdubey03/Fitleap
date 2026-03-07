@@ -20,7 +20,7 @@ const ProductDetailsScreen = ({ navigation, route }: { navigation: any, route: a
     const insets = useSafeAreaInsets();
     const initialProduct = route.params?.product;
     const user = useSelector((state: any) => state.auth.user);
-    const token = useSelector((state: any) => state.auth.token);
+    const token = user?.token || user?.access_token;
 
     const [product, setProduct] = useState<any>(initialProduct || null);
     const [loading, setLoading] = useState(true);
@@ -34,6 +34,9 @@ const ProductDetailsScreen = ({ navigation, route }: { navigation: any, route: a
     const fetchProductDetails = async () => {
         try {
             const productId = initialProduct?.id || initialProduct?._id;
+            console.log("Fetching details with token:", token);
+            console.log("Full user object in state:", JSON.stringify(user));
+
             if (!productId) {
                 setLoading(false);
                 return;
