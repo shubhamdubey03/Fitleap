@@ -105,11 +105,11 @@ const OrdersScreen = ({ navigation }: { navigation: any }) => {
     };
 
     const filteredOrders = orders; // For now show all, can implement status filter later
-
+    console.log("orders", orders);
     const renderOrder = ({ item }: { item: any }) => {
         // Prioritize delivery_status for fulfillment stages
         const currentDeliveryStatus = item.delivery_status || item.status;
-
+        console.log("item", item)
         // Match backend structure (products is an object)
         const productTitle = item.products?.name || 'Order Item';
         const productImage = item.products?.image_url || 'https://images.unsplash.com/photo-1624456729094-1a938c5d1e2e';

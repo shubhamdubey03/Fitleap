@@ -39,6 +39,7 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
     // Prediction for UI only - Backend does the real math
     const predictedCoins = useCoins ? Math.min(walletBalance * 0.25, totalAmount) : 0;
     const predictedFinal = Math.max(0, totalAmount - predictedCoins);
+    console.log("predictedFinal", predictedFinal)
 
     const handlePayment = async () => {
         if (selectedMethod !== 'razorpay') {
@@ -136,6 +137,7 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
                     coins_used: walletUsed || 0
                 }
             };
+            console.log("Razorpay Options:", options);
 
             // ⚡ OPTIMIZATION: Wait for UI thread to settle and keyboard to hide
             setTimeout(() => {
@@ -149,8 +151,11 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
                     .catch((error: any) => {
                         console.log("Razorpay Error/Cancel:", error);
                         const errorDesc = error.description || error.error?.description || "Payment Cancelled";
-                        if (errorDesc !== "Payment Cancelled") {
-                            Alert.alert('Payment Failed', errorDesc);
+
+                        if (errorDesc === "Payment Cancelled" || errorDesc === "undefined") {
+                            Alert.alert("Information", "You have cancelled the payment process.");
+                        } else {
+                            Alert.alert('Payment Failed', typeof errorDesc === 'string' ? errorDesc : "An unknown error occurred");
                         }
                     });
             }, 600); // 600ms is safer for older Android devices to avoid ANR
@@ -209,11 +214,7 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
                     </View>
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Payment Options</Text>
-                <TouchableOpacity>
-                    <View style={styles.iconButton}>
-                        <Ionicons name="ellipsis-vertical" size={20} color="#fff" />
-                    </View>
-                </TouchableOpacity>
+                <View style={{ width: 36 }} />
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>

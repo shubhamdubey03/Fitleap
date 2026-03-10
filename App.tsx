@@ -52,6 +52,9 @@ import VideoCallScreen from './src/screens/exercise/VideoCallScreen';
 import VideoConsultationScreen from './src/screens/exercise/VideoConsultationScreen';
 import { initNotifications } from './src/services/Notifications';
 import CoachFeedbackScreen from './src/screens/CoachFeedbackScreen';
+import ProgramActiveScreen from './src/screens/ProgramActiveScreen';
+import ProgramSubscriptionPlansScreen from './src/screens/ProgramSubscriptionPlansScreen';
+
 
 
 
@@ -135,7 +138,10 @@ const MainNav = () => {
           <Stack.Screen name="MealDetails" component={MealDetailsScreen} />
           <Stack.Screen name="YourCoins" component={YourCoinsScreen} />
           <Stack.Screen name="ProgramsAndChallenges" component={ProgramsAndChallengesScreen} />
+          <Stack.Screen name="ProgramActive" component={ProgramActiveScreen} />
+          <Stack.Screen name="ProgramSubscriptionPlans" component={ProgramSubscriptionPlansScreen} />
           <Stack.Screen name="SubscriptionScreen" component={SubscriptionScreen} />
+
           <Stack.Screen name="InvoiceHistoryScreen" component={InvoiceHistoryScreen} />
           <Stack.Screen name="AddHabitScreen" component={AddHabitScreen} />
           <Stack.Screen name="PaymentsAndBillsScreen" component={PaymentsAndBillsScreen} />

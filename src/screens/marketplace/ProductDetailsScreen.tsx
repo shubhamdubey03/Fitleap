@@ -106,11 +106,7 @@ const ProductDetailsScreen = ({ navigation, route }: { navigation: any, route: a
                     </View>
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Listing Details</Text>
-                <TouchableOpacity>
-                    <View style={styles.iconButton}>
-                        <Ionicons name="ellipsis-vertical" size={20} color="#fff" />
-                    </View>
-                </TouchableOpacity>
+                <View style={{ width: 36 }} />
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -129,13 +125,8 @@ const ProductDetailsScreen = ({ navigation, route }: { navigation: any, route: a
 
                 <Text style={styles.sellerLabel}>Seller</Text>
                 <View style={styles.sellerRow}>
-                    <Image
-                        source={{ uri: 'https://i.pravatar.cc/150?u=' + (product.seller || 'default') }}
-                        style={styles.sellerAvatar}
-                    />
                     <View>
                         <Text style={styles.sellerName}>{product.seller || 'FitLeap Vendor'}</Text>
-                        <Text style={styles.sellerRating}>4.8 (127 reviews)</Text>
                     </View>
                 </View>
 
