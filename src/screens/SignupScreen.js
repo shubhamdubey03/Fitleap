@@ -191,7 +191,7 @@ const SignupScreen = ({ navigation }) => {
 
     // If no token, it means account is pending approval
     alert(response.message || 'Signup successful. Your student account is pending admin approval.');
-    navigation.replace('Login');
+    navigation.replace('Home');
   };
 
   const handleVerifyOtp = async () => {
