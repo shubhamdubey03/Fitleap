@@ -98,11 +98,11 @@ const MainNav = () => {
             setInitialRoute('Dashboard');
           }
         } else {
-          setInitialRoute('Login');
+          setInitialRoute('Home');
         }
       } catch (e) {
         console.log('Auth error:', e);
-        setInitialRoute('Login');
+        setInitialRoute('Home');
       }
     };
 
