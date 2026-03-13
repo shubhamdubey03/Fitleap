@@ -7,9 +7,9 @@ const LOCALHOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
 
 // export const API_BASE_URL = `http://${LOCALHOST}:5000/api`;
 // export const API_BASE_URL = 'http://localhost:5000/api';
-export const API_BASE_URL = `http://192.168.88.11:5000/api`;
-export const API_V1_URL = `http://192.168.88.11:5000/api/v1`;
+export const API_BASE_URL = `https://fitleap-backend.onrender.com/api`;
+export const API_V1_URL = `https://fitleap-backend.onrender.com/api/v1`;
 export const AUTH_URL = `${API_BASE_URL}/auth`;
 export const CHAT_URL = `${API_V1_URL}/chats`;
 export const MESSAGE_URL = `${API_V1_URL}/messages`;
-export const SOCKET_URL = `http://192.168.88.11:5000`;
+export const SOCKET_URL = `https://fitleap-backend.onrender.com`;
