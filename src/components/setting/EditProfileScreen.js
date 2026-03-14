@@ -327,6 +327,14 @@ const EditProfileScreen = ({ navigation }) => {
                 throw new Error('Phone number is required');
             }
 
+            // Validate age and weight
+            if (age && parseFloat(age) < 0) {
+                throw new Error('Age cannot be negative');
+            }
+            if (weight && parseFloat(weight) < 0) {
+                throw new Error('Weight cannot be negative');
+            }
+
             let imageUpdated = false;
             let profileUpdated = false;
 
@@ -593,7 +601,13 @@ const EditProfileScreen = ({ navigation }) => {
                                 <TextInput
                                     style={styles.input}
                                     value={age}
-                                    onChangeText={(text) => setProfile(prev => ({ ...prev, age: text }))}
+                                    onChangeText={(text) => {
+                                        if (text.startsWith('-')) {
+                                            Alert.alert('Invalid Input', 'Age cannot be negative');
+                                            return;
+                                        }
+                                        setProfile(prev => ({ ...prev, age: text }));
+                                    }}
                                     keyboardType="numeric"
                                     placeholder="Age"
                                     placeholderTextColor="rgba(255,255,255,0.4)"
@@ -617,7 +631,13 @@ const EditProfileScreen = ({ navigation }) => {
                                 <TextInput
                                     style={styles.input}
                                     value={weight}
-                                    onChangeText={(text) => setProfile(prev => ({ ...prev, weight: text }))}
+                                    onChangeText={(text) => {
+                                        if (text.startsWith('-')) {
+                                            Alert.alert('Invalid Input', 'Weight cannot be negative');
+                                            return;
+                                        }
+                                        setProfile(prev => ({ ...prev, weight: text }));
+                                    }}
                                     keyboardType="numeric"
                                     placeholder="Weight"
                                     placeholderTextColor="rgba(255,255,255,0.4)"
