@@ -334,6 +334,9 @@ const EditProfileScreen = ({ navigation }) => {
             if (weight && parseFloat(weight) < 0) {
                 throw new Error('Weight cannot be negative');
             }
+            if (height && parseFloat(height) < 0) {
+                throw new Error('Height cannot be negative');
+            }
 
             let imageUpdated = false;
             let profileUpdated = false;
@@ -619,7 +622,13 @@ const EditProfileScreen = ({ navigation }) => {
                                 <TextInput
                                     style={styles.input}
                                     value={height}
-                                    onChangeText={(text) => setProfile(prev => ({ ...prev, height: text }))}
+                                    onChangeText={(text) => {
+                                        if (text.startsWith('-')) {
+                                            Alert.alert('Invalid Input', 'Height cannot be negative');
+                                            return;
+                                        }
+                                        setProfile(prev => ({ ...prev, height: text }));
+                                    }}
                                     keyboardType="numeric"
                                     placeholder="Height"
                                     placeholderTextColor="rgba(255,255,255,0.4)"

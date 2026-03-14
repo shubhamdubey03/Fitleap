@@ -8,6 +8,17 @@ import { increment, addNotification } from '../redux/notificationSlice';
 
 // ✅ Ask permission
 export const requestNotificationPermission = async () => {
+    // For iOS and Android (FCM standard)
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+    if (enabled) {
+        console.log('Authorization status:', authStatus);
+    }
+
+    // Android 13+ specific permission
     if (Platform.OS === 'android' && Platform.Version >= 33) {
         await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
