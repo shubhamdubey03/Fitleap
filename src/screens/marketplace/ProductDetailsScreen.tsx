@@ -68,9 +68,6 @@ const ProductDetailsScreen = ({ navigation, route }: { navigation: any, route: a
         }
     };
 
-    const handleAddToCart = () => {
-        Alert.alert("Success", "Item added to cart successfully!");
-    };
 
     if (loading && !product) {
         return (
@@ -137,9 +134,6 @@ const ProductDetailsScreen = ({ navigation, route }: { navigation: any, route: a
                     </View>
                 ) : (
                     <View style={styles.actionButtons}>
-                        <TouchableOpacity style={styles.addToCartBtn} onPress={handleAddToCart}>
-                            <Text style={styles.addToCartBtnText}>Add to Cart</Text>
-                        </TouchableOpacity>
 
                         <TouchableOpacity
                             style={styles.buyBtn}
@@ -244,20 +238,6 @@ const styles = StyleSheet.create({
     actionButtons: {
         flexDirection: 'row',
         gap: 15,
-    },
-    addToCartBtn: {
-        flex: 1,
-        backgroundColor: 'rgba(255,255,255,0.15)',
-        paddingVertical: 15,
-        borderRadius: 12,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.3)'
-    },
-    addToCartBtnText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
     },
     buyBtn: {
         flex: 1,
