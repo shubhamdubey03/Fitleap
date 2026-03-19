@@ -347,7 +347,7 @@ const ShippingScreen = ({ navigation, route }: { navigation: any, route: any }) 
 
     return (
         <LinearGradient
-            colors={['#1a0033', '#3a005f']} // Dark purple gradient
+            colors={['#1a0033', '#3b014f', '#5a015a']} // Dark purple gradient
             style={[styles.container, { paddingTop: insets.top }]}
         >
             {/* Header */}

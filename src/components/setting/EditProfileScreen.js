@@ -432,7 +432,7 @@ const EditProfileScreen = ({ navigation }) => {
     if (isFetching) {
         return (
             <LinearGradient
-                colors={['#1a0033', '#3b0a57', '#6a0f6b']}
+                colors={['#1a0033', '#3b014f', '#5a015a']}
                 style={styles.container}
             >
                 <View style={styles.loadingContainer}>
@@ -445,7 +445,7 @@ const EditProfileScreen = ({ navigation }) => {
 
     return (
         <LinearGradient
-            colors={['#1a0033', '#3b0a57', '#6a0f6b']}
+            colors={['#1a0033', '#3b014f', '#5a015a']}
             style={styles.container}
         >
             <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />

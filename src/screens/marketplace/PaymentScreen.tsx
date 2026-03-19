@@ -204,7 +204,7 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
     };
     return (
         <LinearGradient
-            colors={['#1a0033', '#3a005f']}
+            colors={['#1a0033', '#3b014f', '#5a015a']}
             style={[styles.container, { paddingTop: insets.top }]}
         >
             <View style={styles.header}>

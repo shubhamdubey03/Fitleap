@@ -86,7 +86,7 @@ const VendorDashboardScreen = ({ navigation }) => {
 
     return (
         <LinearGradient
-            colors={['#1a0b2e', '#2b0040', '#130026']}
+            colors={['#1a0033', '#3b014f', '#5a015a']}
             style={styles.container}
         >
             <StatusBar barStyle="light-content" backgroundColor="#1a0b2e" />

@@ -286,7 +286,7 @@ const VideoCallScreen = ({ route, navigation }) => {
     return (
         <View style={styles.container}>
             {/* Background while loading or waiting */}
-            <LinearGradient colors={['#1a0033', '#3a005f']} style={styles.background}>
+            <LinearGradient colors={['#1a0033', '#3b014f', '#5a015a']} style={styles.background}>
                 {loading && (
                     <View style={styles.centerContent}>
                         <ActivityIndicator size="large" color="#fff" />

@@ -72,7 +72,7 @@ const ProductDetailsScreen = ({ navigation, route }: { navigation: any, route: a
     if (loading && !product) {
         return (
             <LinearGradient
-                colors={['#1a0033', '#3a005f']}
+                colors={['#1a0033', '#3b014f', '#5a015a']}
                 style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}
             >
                 <ActivityIndicator size="large" color="#fff" />
@@ -83,7 +83,7 @@ const ProductDetailsScreen = ({ navigation, route }: { navigation: any, route: a
     if (!product) {
         return (
             <LinearGradient
-                colors={['#1a0033', '#3a005f']}
+                colors={['#1a0033', '#3b014f', '#5a015a']}
                 style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}
             >
                 <Text style={{ color: '#fff' }}>Product not found</Text>
@@ -93,7 +93,7 @@ const ProductDetailsScreen = ({ navigation, route }: { navigation: any, route: a
 
     return (
         <LinearGradient
-            colors={['#1a0033', '#3a005f']}
+            colors={['#1a0033', '#3b014f', '#5a015a']}
             style={[styles.container, { paddingTop: insets.top }]}
         >
             <View style={styles.header}>

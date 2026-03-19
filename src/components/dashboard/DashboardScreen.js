@@ -18,6 +18,43 @@ import { useSelector, useDispatch } from 'react-redux';
 
 import DashboardSidebar from './DashboardSidebar';
 import { reset } from '../../redux/notificationSlice';
+
+const CoinIcon = ({ size = 26, style }) => (
+  <View style={[{
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      backgroundColor: '#FFD700',
+      borderWidth: 2,
+      borderColor: '#DAA520',
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+    }, style]}>
+    <View style={{
+        width: size - 6,
+        height: size - 6,
+        borderRadius: (size - 6) / 2,
+        borderWidth: 1,
+        borderColor: 'rgba(218, 165, 32, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    }}>
+      <Text style={{
+        color: '#B8860B',
+        fontSize: size * 0.55,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        includeFontPadding: false,
+        textAlignVertical: 'center',
+      }}>$</Text>
+    </View>
+  </View>
+);
 import { getProfile } from '../../redux/authSlice';
 import { AUTH_URL, API_BASE_URL } from '../../config/api';
 
@@ -77,7 +114,7 @@ const DashboardScreen = ({ navigation }) => {
 
 
   return (
-    <LinearGradient colors={['#1a0033', '#4b0066']} style={styles.container}>
+    <LinearGradient colors={['#1a0033', '#3b014f', '#5a015a']} style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
       <DashboardSidebar
@@ -105,7 +142,7 @@ const DashboardScreen = ({ navigation }) => {
 
           <View style={styles.headerIcons}>
             <TouchableOpacity onPress={() => navigation.navigate('YourCoinsScreen')}>
-              <Ionicons name="cash-outline" size={22} color="#F5C542" style={{ marginRight: 15 }} />
+              <CoinIcon size={26} style={{ marginRight: 15 }} />
             </TouchableOpacity>
 
 

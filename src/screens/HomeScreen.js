@@ -100,7 +100,7 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <LinearGradient
-      colors={['#1a0033', '#3a005f', '#6a006a']}
+      colors={['#1a0033', '#3b014f', '#5a015a']}
       style={styles.container}
     >
       <StatusBar barStyle="light-content" />

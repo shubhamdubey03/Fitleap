@@ -91,7 +91,7 @@ const ProgramSubscriptionPlansScreen = ({ navigation }) => {
 
     if (loading) {
         return (
-            <LinearGradient colors={['#1a0033', '#3b014f']} style={styles.container}>
+            <LinearGradient colors={['#1a0033', '#3b014f', '#5a015a']} style={styles.container}>
                 <ActivityIndicator size="large" color="#fff" style={{ flex: 1 }} />
             </LinearGradient>
         );
