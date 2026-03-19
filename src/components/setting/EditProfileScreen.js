@@ -11,7 +11,9 @@ import {
     Alert,
     ActivityIndicator,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    Modal,
+    FlatList
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -48,6 +50,7 @@ const EditProfileScreen = ({ navigation }) => {
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [isFetching, setIsFetching] = useState(true);
+    const [genderModalVisible, setGenderModalVisible] = useState(false);
 
 
     // Destructure profile state for easier access
@@ -594,14 +597,16 @@ const EditProfileScreen = ({ navigation }) => {
                         {/* Gender Field */}
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>Gender</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={gender}
-                                onChangeText={(text) => setProfile(prev => ({ ...prev, gender: text }))}
-                                placeholder="Male/Female/Other"
-                                placeholderTextColor="rgba(255,255,255,0.4)"
-                                editable={!isLoading}
-                            />
+                            <TouchableOpacity 
+                                style={styles.dropdownSelector} 
+                                onPress={() => setGenderModalVisible(true)}
+                                disabled={isLoading}
+                            >
+                                <Text style={{ color: gender ? '#fff' : 'rgba(255,255,255,0.4)' }}>
+                                    {gender || 'Select Gender'}
+                                </Text>
+                                <Ionicons name="chevron-down" size={18} color="rgba(255,255,255,0.6)" />
+                            </TouchableOpacity>
                         </View>
 
                         {/* Age, Height, Weight Fields */}
@@ -702,6 +707,44 @@ const EditProfileScreen = ({ navigation }) => {
 
                     </ScrollView>
                 </KeyboardAvoidingView>
+
+                {/* Gender Selection Modal */}
+                <Modal
+                    visible={genderModalVisible}
+                    transparent={true}
+                    animationType="slide"
+                    onRequestClose={() => setGenderModalVisible(false)}
+                >
+                    <TouchableOpacity 
+                        style={styles.modalOverlay} 
+                        activeOpacity={1} 
+                        onPress={() => setGenderModalVisible(false)}
+                    >
+                        <View style={styles.modalContent}>
+                            <View style={styles.modalHeader}>
+                                <Text style={styles.modalTitle}>Select Gender</Text>
+                                <TouchableOpacity onPress={() => setGenderModalVisible(false)}>
+                                    <Ionicons name="close" size={24} color="#333" />
+                                </TouchableOpacity>
+                            </View>
+                            {['Male', 'Female', 'Other'].map((item) => (
+                                <TouchableOpacity
+                                    key={item}
+                                    style={styles.modalItem}
+                                    onPress={() => {
+                                        setProfile(prev => ({ ...prev, gender: item }));
+                                        setGenderModalVisible(false);
+                                    }}
+                                >
+                                    <Text style={styles.modalItemText}>{item}</Text>
+                                    {gender === item && (
+                                        <Ionicons name="checkmark" size={20} color="#7b1fa2" />
+                                    )}
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </TouchableOpacity>
+                </Modal>
             </SafeAreaView>
         </LinearGradient>
     );
@@ -862,6 +905,17 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
     },
+    dropdownSelector: {
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderRadius: 12,
+        paddingHorizontal: 15,
+        paddingVertical: 12,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
     activityOption: {
         backgroundColor: 'rgba(255,255,255,0.1)',
         paddingHorizontal: 15,
@@ -920,6 +974,44 @@ const styles = StyleSheet.create({
         color: 'rgba(255,255,255,0.6)',
         fontSize: 11,
         marginTop: 4,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 20,
+        paddingBottom: 40,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+        paddingBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    modalItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    },
+    modalItemText: {
+        fontSize: 16,
+        color: '#333',
     },
 });
 

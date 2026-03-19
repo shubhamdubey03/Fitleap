@@ -9,6 +9,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -24,6 +25,7 @@ const SignupScreen = ({ navigation }) => {
   const [countryCode, setCountryCode] = useState('IN');
   const [callingCode, setCallingCode] = useState('91');
   const [countryVisible, setCountryVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Role Selection
   const [role, setRole] = useState('user'); // 'user', 'student', or 'coach'
@@ -88,6 +90,8 @@ const SignupScreen = ({ navigation }) => {
       alert('Please fill all common fields (Name, Email, Password, Phone)');
       return;
     }
+
+    setLoading(true);
 
     let userData;
     if (role === 'user') {
@@ -180,6 +184,7 @@ const SignupScreen = ({ navigation }) => {
     if (response.token) {
       await AsyncStorage.setItem('authToken', response.token);
       dispatch(setUser(response));
+      setLoading(false);
       navigation.replace('Dashboard');
       return;
     }
@@ -187,11 +192,13 @@ const SignupScreen = ({ navigation }) => {
     if (response.requireOtp) {
       setTempUserEmail(response.email);
       setShowOtpInput(true);
+      setLoading(false);
       alert(response.message || 'OTP sent to your email.');
       return;
     }
 
     // If no token, it means account is pending approval
+    setLoading(false);
     alert(response.message || 'Signup successful. Your student account is pending admin approval.');
     navigation.replace('Home');
   };
@@ -201,7 +208,7 @@ const SignupScreen = ({ navigation }) => {
       alert('Please enter a valid 6-digit OTP');
       return;
     }
-
+    setLoading(true);
     try {
       const response = await axios.post(`${AUTH_URL}/verify-otp`, {
         email: tempUserEmail,
@@ -211,10 +218,12 @@ const SignupScreen = ({ navigation }) => {
       if (response.data.token) {
         await AsyncStorage.setItem('authToken', response.data.token);
         dispatch(setUser(response.data));
+        setLoading(false);
         alert('Email verified successfully!');
         navigation.replace('Dashboard');
       }
     } catch (error) {
+      setLoading(false);
       console.log('OTP Verification Error:', error);
       alert(error.response?.data?.message || 'Verification failed');
     }
@@ -230,6 +239,7 @@ const SignupScreen = ({ navigation }) => {
   };
 
   const handleError = (error) => {
+    setLoading(false);
     console.log('Signup Error:', error);
     const errorMessage = typeof error === 'string' ? error : error?.message || 'An unexpected error occurred';
     alert(errorMessage);
@@ -264,8 +274,12 @@ const SignupScreen = ({ navigation }) => {
                 maxLength={6}
               />
             </View>
-            <TouchableOpacity style={styles.nextBtn} onPress={handleVerifyOtp}>
-              <Text style={styles.nextText}>Verify OTP</Text>
+            <TouchableOpacity style={styles.nextBtn} onPress={handleVerifyOtp} disabled={loading}>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.nextText}>Verify OTP</Text>
+              )}
             </TouchableOpacity>
             <TouchableOpacity onPress={handleResendOtp}>
               <Text style={styles.resendText}>Resend Code</Text>
@@ -439,8 +453,12 @@ const SignupScreen = ({ navigation }) => {
               </View>
             )}
 
-            <TouchableOpacity style={styles.nextBtn} onPress={handleSignup}>
-              <Text style={styles.nextText}>{role === 'coach' ? 'Submit Application' : 'Next'}</Text>
+            <TouchableOpacity style={styles.nextBtn} onPress={handleSignup} disabled={loading}>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.nextText}>{role === 'coach' ? 'Submit Application' : 'Next'}</Text>
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.replace('Home')}>

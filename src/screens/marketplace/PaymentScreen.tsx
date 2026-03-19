@@ -153,7 +153,7 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
                         const errorDesc = error.description || error.error?.description || "Payment Cancelled";
 
                         if (errorDesc === "Payment Cancelled" || errorDesc === "undefined") {
-                            Alert.alert("Information", "You have cancelled the payment process.");
+                            Alert.alert("Payment Failed", "You have cancelled the payment process.");
                         } else {
                             Alert.alert('Payment Failed', typeof errorDesc === 'string' ? errorDesc : "An unknown error occurred");
                         }

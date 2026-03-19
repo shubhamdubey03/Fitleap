@@ -308,7 +308,7 @@ const CoachingScreen = ({ navigation }) => {
                         <Text style={styles.sectionTitle}>Manage Calls</Text>
                         <TouchableOpacity
                             style={styles.bookSessionCard}
-                            onPress={() => navigation.navigate('VideoConsultation', { coachId: selectedCoachId })}
+                            onPress={() => navigation.navigate('SubscriptionScreen', { coachId: selectedCoachId })}
                         >
                             <View style={styles.bookIconData}>
                                 <Ionicons name="videocam" size={24} color="#fff" />

@@ -36,12 +36,14 @@ const ProgramSubscriptionPlansScreen = ({ navigation }) => {
     const handleSelectPlan = async (plan) => {
         try {
             // 1. Create Order on Backend
+
+            console.log("api started")
             const orderRes = await axios.post(
                 `${API_BASE_URL}/pc/subscribe/create-order`,
                 { plan_id: plan.id },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-
+            console.log("??????????wwwww??", orderRes)
             const { order, key: rzpKey } = orderRes.data;
 
             // 2. Open Razorpay Checkout
@@ -64,6 +66,8 @@ const ProgramSubscriptionPlansScreen = ({ navigation }) => {
             RazorpayCheckout.open(options)
                 .then(async (data) => {
                     // 3. Verify Payment
+
+                    console.log("verify started")
                     const verifyRes = await axios.post(
                         `${API_BASE_URL}/pc/subscribe/verify`,
                         { ...data, plan_id: plan.id },
@@ -77,14 +81,19 @@ const ProgramSubscriptionPlansScreen = ({ navigation }) => {
                     }
                 })
                 .catch((error) => {
-                    console.error('Razorpay Error:', error);
-                    if (error.description !== 'Payment Cancelled') {
-                        Alert.alert('Error', error.description || 'Payment failed');
+                    console.log('Razorpay Error/Cancel:', JSON.stringify(error, null, 2));
+                    const errorDesc = error.description || error.error?.description || "Payment Cancelled";
+                    if (errorDesc === "Payment Cancelled" || errorDesc === "undefined") {
+                        Alert.alert("Payment Failed", "You have cancelled the payment process.");
+                    } else {
+                        Alert.alert('Payment Failed', typeof errorDesc === 'string' ? errorDesc : "Payment failed");
                     }
                 });
 
         } catch (error) {
             console.error('Selection Error:', error);
+            console.log("ERROR RESPONSE:", error.response?.data);
+            console.log("ERROR STATUS:", error.response?.status);
             Alert.alert('Error', 'Failed to initiate purchase.');
         }
     };

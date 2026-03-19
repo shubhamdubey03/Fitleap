@@ -8,6 +8,8 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  BackHandler,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -119,6 +121,27 @@ const DashboardScreen = ({ navigation }) => {
       fetchProducts();
       fetchNotificationCount();
     }, [dispatch]),
+  );
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        if (activeTab === 'Home') {
+          Alert.alert('Exit App', 'Are you sure you want to exit?', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Yes', onPress: () => BackHandler.exitApp() },
+          ]);
+          return true;
+        } else {
+          setActiveTab('Home');
+          return true;
+        }
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => subscription.remove();
+    }, [activeTab])
   );
 
   return (
