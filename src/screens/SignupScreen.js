@@ -7,6 +7,8 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -238,8 +240,12 @@ const SignupScreen = ({ navigation }) => {
       colors={['#1a0033', '#3b014f', '#5a015a']}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>{showOtpInput ? 'Verify\nEmail' : 'Create\nAccount'}</Text>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          <Text style={styles.title}>{showOtpInput ? 'Verify\nEmail' : 'Create\nAccount'}</Text>
 
         {showOtpInput ? (
           <View style={styles.formSection}>
@@ -442,7 +448,8 @@ const SignupScreen = ({ navigation }) => {
             </TouchableOpacity>
           </>
         )}
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </LinearGradient>
   );
 };
@@ -506,16 +513,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 12,
+    borderRadius: 10,
     paddingHorizontal: 15,
-    paddingVertical: 12,
+    paddingVertical: 6,
     marginBottom: 15,
   },
   input: {
     flex: 1,
     color: '#fff',
     marginLeft: 10,
-    fontSize: 16,
+    paddingVertical: 10,
+    fontSize: 15,
   },
   icon: {
     marginRight: 5,
@@ -524,9 +532,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 12,
+    borderRadius: 10,
     paddingHorizontal: 15,
-    paddingVertical: 12,
+    paddingVertical: 6,
     marginBottom: 15,
   },
   callingCodeBtn: {
@@ -536,14 +544,15 @@ const styles = StyleSheet.create({
   },
   callingCode: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     marginLeft: 6,
   },
   phoneInput: {
     flex: 1,
     color: '#fff',
-    fontSize: 16,
+    paddingVertical: 10,
+    fontSize: 15,
   },
   coachSection: {
     marginTop: 10,
@@ -554,7 +563,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 15,
   },
@@ -582,14 +591,14 @@ const styles = StyleSheet.create({
   },
   nextBtn: {
     backgroundColor: '#12002b',
-    paddingVertical: 16,
-    borderRadius: 14,
+    paddingVertical: 12,
+    borderRadius: 10,
     marginTop: 20,
   },
   nextText: {
     color: '#fff',
     textAlign: 'center',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
   cancel: {

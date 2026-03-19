@@ -10,6 +10,8 @@ import {
     TextInput,
     Alert,
     ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -253,9 +255,9 @@ const EditProfileScreen = ({ navigation }) => {
                 name: name.trim(),
                 phone: phone.trim(),
                 gender: gender.trim(),
-                age: age.trim(),
-                height: height.trim(),
-                weight: weight.trim(),
+                age: age.trim() ? Number(age.trim()) : null,
+                height: height.trim() ? Number(height.trim()) : null,
+                weight: weight.trim() ? Number(weight.trim()) : null,
                 activity_level: activity_level.trim(),
             };
 
@@ -476,10 +478,15 @@ const EditProfileScreen = ({ navigation }) => {
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={styles.scrollContent}
+                <KeyboardAvoidingView 
+                    style={{ flex: 1 }} 
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 >
+                    <ScrollView
+                        style={{ flex: 1 }}
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={[styles.scrollContent, { flexGrow: 1 }]}
+                    >
                     {/* Error Message */}
                     {error ? (
                         <View style={styles.errorContainer}>
@@ -693,7 +700,8 @@ const EditProfileScreen = ({ navigation }) => {
                     </TouchableOpacity>
 
 
-                </ScrollView>
+                    </ScrollView>
+                </KeyboardAvoidingView>
             </SafeAreaView>
         </LinearGradient>
     );

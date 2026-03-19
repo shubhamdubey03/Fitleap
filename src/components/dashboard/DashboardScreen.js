@@ -171,39 +171,39 @@ const DashboardScreen = ({ navigation }) => {
       <View style={styles.stickyTabsWrapper}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stickyTabsContainer}>
           {/* Home */}
-          <TouchableOpacity style={[styles.tabButton, activeTab === 'Home' && styles.activeTabButton]} onPress={() => setActiveTab('Home')}>
+          <TouchableOpacity style={[styles.tabButton, activeTab === 'Home' && { backgroundColor: 'rgba(0, 230, 118, 0.15)' }]} onPress={() => setActiveTab('Home')}>
             <Ionicons name="home-outline" size={20} color={activeTab === 'Home' ? "#00E676" : "#ccc"} style={styles.tabIcon} />
-            <Text style={[styles.tabText, activeTab === 'Home' && styles.activeTabText]}>Home</Text>
+            <Text style={[styles.tabText, activeTab === 'Home' && { color: '#00E676' }]}>Home</Text>
           </TouchableOpacity>
 
           {/* Exercise */}
-          <TouchableOpacity style={[styles.tabButton, activeTab === 'Exercise' && styles.activeTabButton]} onPress={() => setActiveTab('Exercise')}>
-            <Ionicons name="fitness-outline" size={20} color={activeTab === 'Exercise' ? "#00E676" : "#ccc"} style={styles.tabIcon} />
-            <Text style={[styles.tabText, activeTab === 'Exercise' && styles.activeTabText]}>Exercise</Text>
+          <TouchableOpacity style={[styles.tabButton, activeTab === 'Exercise' && { backgroundColor: 'rgba(255, 107, 61, 0.15)' }]} onPress={() => setActiveTab('Exercise')}>
+            <Ionicons name="fitness-outline" size={20} color={activeTab === 'Exercise' ? "#FF6B3D" : "#ccc"} style={styles.tabIcon} />
+            <Text style={[styles.tabText, activeTab === 'Exercise' && { color: '#FF6B3D' }]}>Exercise</Text>
           </TouchableOpacity>
 
           {/* Consultation */}
-          <TouchableOpacity style={[styles.tabButton, activeTab === 'Consultation' && styles.activeTabButton]} onPress={() => setActiveTab('Consultation')}>
-            <Ionicons name="chatbubbles-outline" size={20} color={activeTab === 'Consultation' ? "#00E676" : "#ccc"} style={styles.tabIcon} />
-            <Text style={[styles.tabText, activeTab === 'Consultation' && styles.activeTabText]}>Consultation</Text>
+          <TouchableOpacity style={[styles.tabButton, activeTab === 'Consultation' && { backgroundColor: 'rgba(33, 150, 243, 0.15)' }]} onPress={() => setActiveTab('Consultation')}>
+            <Ionicons name="chatbubbles-outline" size={20} color={activeTab === 'Consultation' ? "#2196F3" : "#ccc"} style={styles.tabIcon} />
+            <Text style={[styles.tabText, activeTab === 'Consultation' && { color: '#2196F3' }]}>Consultation</Text>
           </TouchableOpacity>
 
           {/* Marketplace */}
-          <TouchableOpacity style={[styles.tabButton, activeTab === 'Marketplace' && styles.activeTabButton]} onPress={() => setActiveTab('Marketplace')}>
-            <Ionicons name="cart-outline" size={20} color={activeTab === 'Marketplace' ? "#00E676" : "#ccc"} style={styles.tabIcon} />
-            <Text style={[styles.tabText, activeTab === 'Marketplace' && styles.activeTabText]}>Marketplace</Text>
+          <TouchableOpacity style={[styles.tabButton, activeTab === 'Marketplace' && { backgroundColor: 'rgba(233, 30, 99, 0.15)' }]} onPress={() => setActiveTab('Marketplace')}>
+            <Ionicons name="cart-outline" size={20} color={activeTab === 'Marketplace' ? "#E91E63" : "#ccc"} style={styles.tabIcon} />
+            <Text style={[styles.tabText, activeTab === 'Marketplace' && { color: '#E91E63' }]}>Marketplace</Text>
           </TouchableOpacity>
 
           {/* Profile */}
-          <TouchableOpacity style={[styles.tabButton, activeTab === 'Profile' && styles.activeTabButton]} onPress={() => setActiveTab('Profile')}>
-            <Ionicons name="person-outline" size={20} color={activeTab === 'Profile' ? "#00E676" : "#ccc"} style={styles.tabIcon} />
-            <Text style={[styles.tabText, activeTab === 'Profile' && styles.activeTabText]}>Profile</Text>
+          <TouchableOpacity style={[styles.tabButton, activeTab === 'Profile' && { backgroundColor: 'rgba(156, 39, 176, 0.15)' }]} onPress={() => setActiveTab('Profile')}>
+            <Ionicons name="person-outline" size={20} color={activeTab === 'Profile' ? "#9C27B0" : "#ccc"} style={styles.tabIcon} />
+            <Text style={[styles.tabText, activeTab === 'Profile' && { color: '#9C27B0' }]}>Profile</Text>
           </TouchableOpacity>
 
           {/* Programs & Challenges */}
-          <TouchableOpacity style={[styles.tabButton, activeTab === 'ProgramsAndChallenges' && styles.activeTabButton]} onPress={() => setActiveTab('ProgramsAndChallenges')}>
-            <Ionicons name="trophy-outline" size={20} color={activeTab === 'ProgramsAndChallenges' ? "#00E676" : "#ccc"} style={styles.tabIcon} />
-            <Text style={[styles.tabText, activeTab === 'ProgramsAndChallenges' && styles.activeTabText]}>Programs</Text>
+          <TouchableOpacity style={[styles.tabButton, activeTab === 'ProgramsAndChallenges' && { backgroundColor: 'rgba(255, 193, 7, 0.15)' }]} onPress={() => setActiveTab('ProgramsAndChallenges')}>
+            <Ionicons name="trophy-outline" size={20} color={activeTab === 'ProgramsAndChallenges' ? "#FFC107" : "#ccc"} style={styles.tabIcon} />
+            <Text style={[styles.tabText, activeTab === 'ProgramsAndChallenges' && { color: '#FFC107' }]}>Programs</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
