@@ -1,3 +1,4 @@
+// ... Imports
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -19,30 +20,37 @@ import { useSelector, useDispatch } from 'react-redux';
 import DashboardSidebar from './DashboardSidebar';
 import { reset } from '../../redux/notificationSlice';
 
+// Imported Navigators for SPA mode
+import ExerciseStack from '../../navigation/ExerciseNavigator';
+import ConsultationNavigator from '../../navigation/ConsultationNavigator';
+import MarketplaceNavigator from '../../navigation/MarketplaceNavigator';
+import ProfileScreen from '../../screens/ProfileScreen';
+import ProgramsAndChallengesScreen from '../../screens/ProgramsAndChallengesScreen';
+
 const CoinIcon = ({ size = 26, style }) => (
   <View style={[{
-      width: size,
-      height: size,
-      borderRadius: size / 2,
-      backgroundColor: '#FFD700',
-      borderWidth: 2,
-      borderColor: '#DAA520',
+    width: size,
+    height: size,
+    borderRadius: size / 2,
+    backgroundColor: '#FFD700',
+    borderWidth: 2,
+    borderColor: '#DAA520',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  }, style]}>
+    <View style={{
+      width: size - 6,
+      height: size - 6,
+      borderRadius: (size - 6) / 2,
+      borderWidth: 1,
+      borderColor: 'rgba(218, 165, 32, 0.5)',
       justifyContent: 'center',
       alignItems: 'center',
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 3.84,
-      elevation: 5,
-    }, style]}>
-    <View style={{
-        width: size - 6,
-        height: size - 6,
-        borderRadius: (size - 6) / 2,
-        borderWidth: 1,
-        borderColor: 'rgba(218, 165, 32, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
     }}>
       <Text style={{
         color: '#B8860B',
@@ -65,6 +73,7 @@ const DashboardScreen = ({ navigation }) => {
   const { user } = useSelector((state) => state.auth);
 
   const [products, setProducts] = useState([]);
+  const [activeTab, setActiveTab] = useState('Home'); // SPA tab state
 
   const fetchProducts = async () => {
     try {
@@ -112,191 +121,254 @@ const DashboardScreen = ({ navigation }) => {
     }, [dispatch]),
   );
 
-
   return (
     <LinearGradient colors={['#1a0033', '#3b014f', '#5a015a']} style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="light-content" backgroundColor="#1a0033" />
 
       <DashboardSidebar
         visible={isSidebarVisible}
         onClose={() => setSidebarVisible(false)}
         navigation={navigation}
       />
-      <ScrollView showsVerticalScrollIndicator={false}>
 
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
+      {/* Static Header above scrollable areas */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={() => setSidebarVisible(true)}>
+            <Image
+              source={{ uri: user?.profile_image || 'https://i.pravatar.cc/150?img=3' }}
+              style={styles.avatar}
+            />
+          </TouchableOpacity>
+          <View>
+            <Text style={styles.hello}>Hello {user?.name || 'User'}</Text>
+            <Text style={styles.title}>Let's Explore</Text>
+          </View>
+        </View>
 
-            <TouchableOpacity onPress={() => setSidebarVisible(true)}>
-              <Image
-                source={{ uri: user?.profile_image || 'https://i.pravatar.cc/150?img=3' }}
-                style={styles.avatar}
-              />
-            </TouchableOpacity>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity onPress={() => navigation.navigate('YourCoinsScreen')}>
+            <CoinIcon size={26} style={{ marginRight: 15 }} />
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => {
+            dispatch(reset());
+            navigation.navigate('NotificationScreen');
+          }}>
             <View>
-              <Text style={styles.hello}>Hello {user?.name || 'User'}</Text>
-              <Text style={styles.title}>Let's Explore</Text>
+              <Ionicons name="notifications" size={22} color="#FF6B3D" />
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadCount}</Text>
+                </View>
+              )}
             </View>
-          </View>
-
-          <View style={styles.headerIcons}>
-            <TouchableOpacity onPress={() => navigation.navigate('YourCoinsScreen')}>
-              <CoinIcon size={26} style={{ marginRight: 15 }} />
-            </TouchableOpacity>
-
-
-            <TouchableOpacity onPress={() => {
-              dispatch(reset());
-              navigation.navigate('NotificationScreen');
-            }}>
-              <View>
-                <Ionicons name="notifications" size={22} color="#FF6B3D" />
-                {unreadCount > 0 && (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{unreadCount}</Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Progress Card */}
-        <View style={styles.card}>
-          <View style={styles.progressCircleContainer}>
-            <View style={styles.progressCircle}>
-              <Text style={styles.percent}>81%</Text>
-              <Text style={styles.label}>Calories</Text>
-            </View>
-          </View>
-
-          <View style={styles.statsContainer}>
-            <View style={styles.statRow}>
-              <View style={{ marginTop: 14 }}>
-                <Ionicons name="nutrition-outline" size={26} color="#2F80ED" />
-              </View>
-              <View>
-                <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Carbs</Text>
-                <Text style={styles.stat}> 89/140g</Text>
-              </View>
-            </View>
-            <View style={styles.statRow}>
-              <View style={{ marginTop: 14 }}>
-                <Ionicons name="fish-outline" size={26} color="#FF6B3D" />
-              </View>
-              <View>
-                <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Protein</Text>
-                <Text style={styles.stat}> 45/80g</Text>
-              </View>
-            </View>
-            <View style={styles.statRow}>
-              <View style={{ marginTop: 14 }}>
-                <Image
-                  source={require('../../assets/images/flower.png')}
-                  style={styles.flowerIcon}
-                />
-              </View>
-              <View>
-                <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Fiber</Text>
-                <Text style={styles.stat}> 20/50g</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Middle Cards */}
-        <View style={styles.row}>
-          <TouchableOpacity
-            style={styles.progressCircleWrapper}
-            onPress={() => navigation.navigate('Exercise')}
-          >
-            <Text style={styles.cardTitle}>Exercise</Text>
-            <SafeProgressCircle
-              // percent={75}
-              radius={55}
-              borderWidth={8}
-              color="#2ECC71"
-              bgColor="#fff"
-            >
-              <Text style={styles.stepsNumber}>5460</Text>
-              <Text style={styles.stepsLabel}>Steps</Text>
-            </SafeProgressCircle>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.smallCard}
-            onPress={() => navigation.navigate('Calories')}
-          >
-            <Text style={styles.cardTitle}>Calories</Text>
-            <Text style={styles.kcal}>540 kcal</Text>
           </TouchableOpacity>
         </View>
+      </View>
 
-        {/* Coaching */}
-        <TouchableOpacity
-          style={styles.coachCard}
-          onPress={() => navigation.navigate('Consultation', { screen: 'Coaching' })}
-        >
-          <Text style={styles.cardTitle}>Coaching</Text>
-          <Text style={styles.coach}>{user?.coach_name || 'No Coach Assigned'}</Text>
-        </TouchableOpacity>
+      {/* Scrollable Top Navigation Header - SPA Controller */}
+      <View style={styles.stickyTabsWrapper}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stickyTabsContainer}>
+          {/* Home */}
+          <TouchableOpacity style={[styles.tabButton, activeTab === 'Home' && styles.activeTabButton]} onPress={() => setActiveTab('Home')}>
+            <Ionicons name="home-outline" size={20} color={activeTab === 'Home' ? "#00E676" : "#ccc"} style={styles.tabIcon} />
+            <Text style={[styles.tabText, activeTab === 'Home' && styles.activeTabText]}>Home</Text>
+          </TouchableOpacity>
 
-        {/* Daily Intake */}
-        <TouchableOpacity onPress={() => navigation.navigate('Recipes')}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={styles.section}>Daily Intake</Text>
-            <Ionicons name="chevron-forward" size={20} color="#fff" />
-          </View>
-        </TouchableOpacity>
-        <View style={styles.intakeRow}>
-          {['Carbs', 'Protein', 'Fat', 'Fiber'].map(item => {
-            let iconName = 'nutrition-outline';
-            if (item === 'Protein') iconName = 'fish-outline';
-            if (item === 'Fat') iconName = 'flame-outline';
-            if (item === 'Fiber') iconName = 'leaf-outline';
-            return (
-              <View key={item} style={styles.intake}>
-                <Ionicons name={iconName} size={18} color="#fff" />
-                <Text style={styles.intakeText}>{item}</Text>
-                <Text style={styles.intakeSub}>50/65g</Text>
-              </View>
-            );
-          })}
-        </View>
+          {/* Exercise */}
+          <TouchableOpacity style={[styles.tabButton, activeTab === 'Exercise' && styles.activeTabButton]} onPress={() => setActiveTab('Exercise')}>
+            <Ionicons name="fitness-outline" size={20} color={activeTab === 'Exercise' ? "#00E676" : "#ccc"} style={styles.tabIcon} />
+            <Text style={[styles.tabText, activeTab === 'Exercise' && styles.activeTabText]}>Exercise</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('Marketplace')}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={styles.section}>Shop Equipment's</Text>
-            <Ionicons name="chevron-forward" size={20} color="#fff" />
-          </View>
-        </TouchableOpacity>
+          {/* Consultation */}
+          <TouchableOpacity style={[styles.tabButton, activeTab === 'Consultation' && styles.activeTabButton]} onPress={() => setActiveTab('Consultation')}>
+            <Ionicons name="chatbubbles-outline" size={20} color={activeTab === 'Consultation' ? "#00E676" : "#ccc"} style={styles.tabIcon} />
+            <Text style={[styles.tabText, activeTab === 'Consultation' && styles.activeTabText]}>Consultation</Text>
+          </TouchableOpacity>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.horizontalScroll}
-        >
-          {products.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.productCard}
-              onPress={() => navigation.navigate('Marketplace', { screen: 'ProductDetails', params: { product: item } })}
-            >
-              <Image
-                source={{ uri: item.image_url || 'https://images.unsplash.com/photo-1599058917212-d750089bc07e' }}
-                style={styles.productImage}
-              />
-              <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
-              <Text style={styles.productPrice}>₹{item.price}</Text>
-            </TouchableOpacity>
-          ))}
-          {products.length === 0 && (
-            <View style={styles.emptyProducts}>
-              <Text style={{ color: '#ccc' }}>No Equipment Available</Text>
-            </View>
-          )}
+          {/* Marketplace */}
+          <TouchableOpacity style={[styles.tabButton, activeTab === 'Marketplace' && styles.activeTabButton]} onPress={() => setActiveTab('Marketplace')}>
+            <Ionicons name="cart-outline" size={20} color={activeTab === 'Marketplace' ? "#00E676" : "#ccc"} style={styles.tabIcon} />
+            <Text style={[styles.tabText, activeTab === 'Marketplace' && styles.activeTabText]}>Marketplace</Text>
+          </TouchableOpacity>
+
+          {/* Profile */}
+          <TouchableOpacity style={[styles.tabButton, activeTab === 'Profile' && styles.activeTabButton]} onPress={() => setActiveTab('Profile')}>
+            <Ionicons name="person-outline" size={20} color={activeTab === 'Profile' ? "#00E676" : "#ccc"} style={styles.tabIcon} />
+            <Text style={[styles.tabText, activeTab === 'Profile' && styles.activeTabText]}>Profile</Text>
+          </TouchableOpacity>
+
+          {/* Programs & Challenges */}
+          <TouchableOpacity style={[styles.tabButton, activeTab === 'ProgramsAndChallenges' && styles.activeTabButton]} onPress={() => setActiveTab('ProgramsAndChallenges')}>
+            <Ionicons name="trophy-outline" size={20} color={activeTab === 'ProgramsAndChallenges' ? "#00E676" : "#ccc"} style={styles.tabIcon} />
+            <Text style={[styles.tabText, activeTab === 'ProgramsAndChallenges' && styles.activeTabText]}>Programs</Text>
+          </TouchableOpacity>
         </ScrollView>
-      </ScrollView>
+      </View>
+
+      {/* View dynamic SPA pages below */}
+      <View style={{ flex: 1 }}>
+
+        {/* HOME COMPONENT CONTENT */}
+        <View style={{ flex: 1, display: activeTab === 'Home' ? 'flex' : 'none' }}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {/* Progress Card */}
+            <View style={styles.card}>
+              <View style={styles.progressCircleContainer}>
+                <View style={styles.progressCircle}>
+                  <Text style={styles.percent}>81%</Text>
+                  <Text style={styles.label}>Calories</Text>
+                </View>
+              </View>
+
+              <View style={styles.statsContainer}>
+                <View style={styles.statRow}>
+                  <View style={{ marginTop: 14 }}>
+                    <Ionicons name="nutrition-outline" size={26} color="#2F80ED" />
+                  </View>
+                  <View>
+                    <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Carbs</Text>
+                    <Text style={styles.stat}> 89/140g</Text>
+                  </View>
+                </View>
+                <View style={styles.statRow}>
+                  <View style={{ marginTop: 14 }}>
+                    <Ionicons name="fish-outline" size={26} color="#FF6B3D" />
+                  </View>
+                  <View>
+                    <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Protein</Text>
+                    <Text style={styles.stat}> 45/80g</Text>
+                  </View>
+                </View>
+                <View style={styles.statRow}>
+                  <View style={{ marginTop: 14 }}>
+                    <Image
+                      source={require('../../assets/images/flower.png')}
+                      style={styles.flowerIcon}
+                    />
+                  </View>
+                  <View>
+                    <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Fiber</Text>
+                    <Text style={styles.stat}> 20/50g</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Middle Cards */}
+            <View style={styles.row}>
+              <TouchableOpacity
+                style={styles.progressCircleWrapper}
+                onPress={() => setActiveTab('Exercise')}
+              >
+                <Text style={styles.cardTitle}>Exercise</Text>
+                <SafeProgressCircle
+                  // percent={75}
+                  radius={55}
+                  borderWidth={8}
+                  color="#2ECC71"
+                  bgColor="#fff"
+                >
+                  <Text style={styles.stepsNumber}>5460</Text>
+                  <Text style={styles.stepsLabel}>Steps</Text>
+                </SafeProgressCircle>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.smallCard}
+                onPress={() => navigation.navigate('Calories')}
+              >
+                <Text style={styles.cardTitle}>Calories</Text>
+                <Text style={styles.kcal}>540 kcal</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Coaching */}
+            <TouchableOpacity
+              style={styles.coachCard}
+              onPress={() => setActiveTab('Consultation')}
+            >
+              <Text style={styles.cardTitle}>Coaching</Text>
+              <Text style={styles.coach}>{user?.coach_name || 'No Coach Assigned'}</Text>
+            </TouchableOpacity>
+
+            {/* Daily Intake */}
+            <TouchableOpacity onPress={() => navigation.navigate('Recipes')}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={styles.section}>Daily Intake</Text>
+                <Ionicons name="chevron-forward" size={20} color="#fff" />
+              </View>
+            </TouchableOpacity>
+            <View style={styles.intakeRow}>
+              {['Carbs', 'Protein', 'Fat', 'Fiber'].map(item => {
+                let iconName = 'nutrition-outline';
+                if (item === 'Protein') iconName = 'fish-outline';
+                if (item === 'Fat') iconName = 'flame-outline';
+                if (item === 'Fiber') iconName = 'leaf-outline';
+                return (
+                  <View key={item} style={styles.intake}>
+                    <Ionicons name={iconName} size={18} color="#fff" />
+                    <Text style={styles.intakeText}>{item}</Text>
+                    <Text style={styles.intakeSub}>50/65g</Text>
+                  </View>
+                );
+              })}
+            </View>
+
+            <TouchableOpacity onPress={() => setActiveTab('Marketplace')}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={styles.section}>Shop Equipment's</Text>
+                <Ionicons name="chevron-forward" size={20} color="#fff" />
+              </View>
+            </TouchableOpacity>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.horizontalScroll}
+            >
+              {products.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.productCard}
+                  onPress={() => navigation.navigate('Marketplace', { screen: 'ProductDetails', params: { product: item } })}
+                >
+                  <Image
+                    source={{ uri: item.image_url || 'https://images.unsplash.com/photo-1599058917212-d750089bc07e' }}
+                    style={styles.productImage}
+                  />
+                  <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
+                  <Text style={styles.productPrice}>₹{item.price}</Text>
+                </TouchableOpacity>
+              ))}
+              {products.length === 0 && (
+                <View style={styles.emptyProducts}>
+                  <Text style={{ color: '#ccc' }}>No Equipment Available</Text>
+                </View>
+              )}
+            </ScrollView>
+          </ScrollView>
+        </View>
+
+        {/* DYNAMIC SCREENS (Rendered when active) */}
+        {activeTab === 'Exercise' && (
+          <ExerciseStack />
+        )}
+        {activeTab === 'Consultation' && (
+          <ConsultationNavigator />
+        )}
+        {activeTab === 'Marketplace' && (
+          <MarketplaceNavigator />
+        )}
+        {activeTab === 'Profile' && (
+          <ProfileScreen navigation={navigation} />
+        )}
+        {activeTab === 'ProgramsAndChallenges' && (
+          <ProgramsAndChallengesScreen navigation={navigation} />
+        )}
+
+      </View>
     </LinearGradient>
   );
 };
@@ -518,6 +590,40 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  stickyTabsWrapper: {
+    backgroundColor: '#1a0033',
+    paddingVertical: 10,
+    marginBottom: 16,
+    zIndex: 10,
+  },
+  stickyTabsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    gap: 15,
+  },
+  tabButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: 'transparent',
+  },
+  activeTabButton: {
+    backgroundColor: 'rgba(0, 230, 118, 0.15)',
+  },
+  tabIcon: {
+    marginRight: 6,
+  },
+  tabText: {
+    color: '#ccc',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  activeTabText: {
+    color: '#00E676',
   },
 });
 

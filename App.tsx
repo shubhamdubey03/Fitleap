@@ -21,8 +21,11 @@ import StudentLogin from './src/screens/StudentLogin';
 import LoginScreen from './src/screens/LoginScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 
-import BottomTabNavigator from './src/navigation/BottomTabNavigator';
-
+import DashboardScreen from './src/components/dashboard/DashboardScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
+import MarketplaceNavigator from './src/navigation/MarketplaceNavigator';
+import ExerciseStack from './src/navigation/ExerciseNavigator';
+import ConsultationNavigator from './src/navigation/ConsultationNavigator';
 import CaloriesScreen from './src/components/dashboard/CaloriesScreen';
 import SettingsScreen from './src/components/setting/SettingsScreen';
 import FeedbackProgressScreen from './src/components/setting/FeedbackProgressScreen';
@@ -125,7 +128,11 @@ const MainNav = () => {
           <Stack.Screen name="StudentLogin" component={StudentLogin} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-          <Stack.Screen name="Dashboard" component={BottomTabNavigator} />
+          <Stack.Screen name="Dashboard" component={DashboardScreen} />
+          <Stack.Screen name="Exercise" component={ExerciseStack} />
+          <Stack.Screen name="Consultation" component={ConsultationNavigator} />
+          <Stack.Screen name="Marketplace" component={MarketplaceNavigator} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
 
           <Stack.Screen name="Calories" component={CaloriesScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />

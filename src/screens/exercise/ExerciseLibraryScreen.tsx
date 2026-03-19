@@ -116,13 +116,6 @@ const ExerciseLibraryScreen = ({ navigation }: any) => {
                     </View>
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Exercise Library</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <TouchableOpacity onPress={() => navigation.navigate('YourCoinsScreen')}>
-                        <View style={styles.iconButton}>
-                            <Ionicons name="cash-outline" size={20} color="#F5C542" />
-                        </View>
-                    </TouchableOpacity>
-                </View>
             </View>
 
             <View style={styles.content}>

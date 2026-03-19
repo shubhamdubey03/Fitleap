@@ -137,11 +137,6 @@ const CoachingScreen = ({ navigation }) => {
         >
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Coaching</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('YourCoinsScreen')}>
-                    <View style={styles.iconButton}>
-                        <Ionicons name="cash-outline" size={20} color="#F5C542" />
-                    </View>
-                </TouchableOpacity>
             </View>
 
             <View style={styles.tabContainer}>

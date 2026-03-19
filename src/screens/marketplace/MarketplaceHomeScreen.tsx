@@ -90,11 +90,6 @@ const MarketplaceHomeScreen = ({ navigation }: any) => {
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Market Place</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <TouchableOpacity onPress={() => navigation.navigate('YourCoinsScreen')}>
-                        <View style={styles.iconButton}>
-                            <Ionicons name="cash-outline" size={20} color="#F5C542" />
-                        </View>
-                    </TouchableOpacity>
                     <TouchableOpacity onPress={() => navigation.navigate('Orders')}>
                         <View style={styles.iconButton}>
                             <Ionicons name="receipt-outline" size={20} color="#fff" />
