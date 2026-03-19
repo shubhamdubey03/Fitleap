@@ -82,12 +82,7 @@ const ProgramSubscriptionPlansScreen = ({ navigation }) => {
                 })
                 .catch((error) => {
                     console.log('Razorpay Error/Cancel:', JSON.stringify(error, null, 2));
-                    const errorDesc = error.description || error.error?.description || "Payment Cancelled";
-                    if (errorDesc === "Payment Cancelled" || errorDesc === "undefined") {
-                        Alert.alert("Payment Failed", "You have cancelled the payment process.");
-                    } else {
-                        Alert.alert('Payment Failed', typeof errorDesc === 'string' ? errorDesc : "Payment failed");
-                    }
+                    Alert.alert('Error', 'Payment failed');
                 });
 
         } catch (error) {

@@ -65,7 +65,7 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
             // 1️⃣ Create Internal Order
             const orderPayload = {
                 total_amount: totalAmount,
-                use_coins: useCoins, // Tell backend to apply coins
+                use_coins: useCoins,
                 address_id: address_id,
                 items: items.map((item: any) => ({
                     product_id: item.id,
@@ -90,7 +90,7 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
             const internalOrderId = orders[0].id;
             const actualPayable = finalPayable ?? totalAmount;
 
-            console.log("Order Created Logic:", { internalOrderId, actualPayable, walletUsed });
+            console.log("Order Created Logic:", { actualPayable, walletUsed });
 
             // ⚡ If actualPayable is 0, we don't need Razorpay
             if (actualPayable <= 0) {
@@ -100,8 +100,8 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
 
             // 2️⃣ Create Razorpay Order
             const paymentRes = await axios.post(`${API_BASE_URL}/payments/create`, {
-                order_id: internalOrderId,
-                amount: actualPayable
+                amount: actualPayable,
+                order_id: internalOrderId
             },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -148,17 +148,30 @@ const PaymentScreen = ({ navigation, route }: { navigation: any, route: any }) =
                         console.log("Razorpay Success:", data);
                         await verifyPayment(data, internalOrderId, token);
                     })
-                    .catch((error: any) => {
+                    .catch(async (error: any) => {
                         console.log("Razorpay Error/Cancel:", error);
+                        try {
+                            await verifyPayment(
+                                {
+                                    razorpay_order_id: options.order_id
+                                    // ❌ no payment_id, no signature → backend samjhega cancel
+                                },
+                                internalOrderId,
+                                token
+                            );
+                        } catch (e) {
+                            console.log("Cancel verify failed:", e);
+                        }
+
                         const errorDesc = error.description || error.error?.description || "Payment Cancelled";
 
                         if (errorDesc === "Payment Cancelled" || errorDesc === "undefined") {
-                            Alert.alert("Payment Failed", "You have cancelled the payment process.");
+                            Alert.alert("Payment Cancelled", "Order has been cancelled.");
                         } else {
                             Alert.alert('Payment Failed', typeof errorDesc === 'string' ? errorDesc : "An unknown error occurred");
                         }
                     });
-            }, 600); // 600ms is safer for older Android devices to avoid ANR
+            }, 600);// 600ms is safer for older Android devices to avoid ANR
 
         } catch (err: any) {
             console.log("Payment Initialization Failed:", err);
