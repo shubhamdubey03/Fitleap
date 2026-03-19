@@ -83,11 +83,15 @@ const MarketplaceHomeScreen = ({ navigation }: any) => {
         >
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <View style={styles.iconButton}>
-                        <Ionicons name="arrow-back" size={20} color="#fff" />
-                    </View>
-                </TouchableOpacity>
+                {navigation.canGoBack() ? (
+                    <TouchableOpacity onPress={() => navigation.goBack()}>
+                        <View style={styles.iconButton}>
+                            <Ionicons name="arrow-back" size={20} color="#fff" />
+                        </View>
+                    </TouchableOpacity>
+                ) : (
+                    <View style={{ width: 36 }} />
+                )}
                 <Text style={styles.headerTitle}>Market Place</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <TouchableOpacity onPress={() => navigation.navigate('Orders')}>

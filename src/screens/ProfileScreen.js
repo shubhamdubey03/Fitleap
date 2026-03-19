@@ -10,7 +10,7 @@ import axios from 'axios';
 import { AUTH_URL } from '../config/api';
 import { logout, setUser } from '../redux/authSlice';
 
-const ProfileScreen = () => {
+const ProfileScreen = ({ hideBack }) => {
     const navigation = useNavigation();
     const dispatch = useDispatch();
 
@@ -91,9 +91,13 @@ const ProfileScreen = () => {
             style={styles.container}
         >
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
-                    <Ionicons name="arrow-back" size={24} color="#fff" />
-                </TouchableOpacity>
+                {!hideBack ? (
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
+                        <Ionicons name="arrow-back" size={24} color="#fff" />
+                    </TouchableOpacity>
+                ) : (
+                    <View style={{ width: 40 }} />
+                )}
                 <Text style={styles.headerTitle}>Profile</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <TouchableOpacity onPress={() => navigation.navigate('EditProfileScreen')}>

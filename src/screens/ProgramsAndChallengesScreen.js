@@ -7,7 +7,7 @@ import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
 import RazorpayCheckout from 'react-native-razorpay';
 
-const ProgramsAndChallengesScreen = ({ navigation }) => {
+const ProgramsAndChallengesScreen = ({ navigation, hideBack }) => {
     const [activeTab, setActiveTab] = useState('Programs');
     const [loading, setLoading] = useState(true);
     const [programs, setPrograms] = useState([]);
@@ -131,9 +131,13 @@ const ProgramsAndChallengesScreen = ({ navigation }) => {
             style={styles.container}
         >
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                    <Ionicons name="chevron-back" size={24} color="#fff" />
-                </TouchableOpacity>
+                {!hideBack ? (
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                        <Ionicons name="chevron-back" size={24} color="#fff" />
+                    </TouchableOpacity>
+                ) : (
+                    <View style={{ width: 34 }} />
+                )}
                 <Text style={styles.headerTitle}>Programs & Challenges</Text>
                 <Image
                     source={{ uri: user?.profile_image || 'https://i.pravatar.cc/150?img=3' }}

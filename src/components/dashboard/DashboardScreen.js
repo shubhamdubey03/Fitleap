@@ -385,10 +385,10 @@ const DashboardScreen = ({ navigation }) => {
           <MarketplaceNavigator />
         )}
         {activeTab === 'Profile' && (
-          <ProfileScreen navigation={navigation} />
+          <ProfileScreen navigation={navigation} hideBack={true} />
         )}
         {activeTab === 'ProgramsAndChallenges' && (
-          <ProgramsAndChallengesScreen navigation={navigation} />
+          <ProgramsAndChallengesScreen navigation={navigation} hideBack={true} />
         )}
 
       </View>
