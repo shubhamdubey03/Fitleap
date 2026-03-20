@@ -11,19 +11,22 @@ import {
     ScrollView,
 } from 'react-native';
 import Ionicons from '@react-native-vector-icons/ionicons';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../../redux/authSlice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
 const settingsData = [
     { icon: 'person-outline', title: 'Edit Profile', subtitle: 'Edit your profile information' },
-    { icon: 'chatbubble-ellipses-outline', title: 'Feedback And Review', subtitle: 'Share your thoughts and experiences' },
+    { icon: 'notifications-outline', title: 'Subscription', subtitle: 'Manage your premium plan' },
     { icon: 'trophy-outline', title: 'Programs & Challenges', subtitle: 'Join programs and compete in challenges' },
     { icon: 'settings-outline', title: 'Add Habits', subtitle: 'Build and track new healthy habits' },
     { icon: 'card-outline', title: 'Payments & Bills', subtitle: 'Manage your subscriptions and payment methods' },
     { icon: 'document-text-outline', title: 'Invoice', subtitle: 'View and download your payment history' },
-    { icon: 'notifications-outline', title: 'Subscription', subtitle: 'Manage your premium plan' },
+    { icon: 'chatbubble-ellipses-outline', title: 'Feedback And Review', subtitle: 'Share your thoughts and experiences' },
+    { icon: 'log-out-outline', title: 'Logout', subtitle: 'Sign out of your account' },
 ];
 
 const DashboardSidebar = ({ visible, onClose, navigation }) => {
@@ -33,7 +36,9 @@ const DashboardSidebar = ({ visible, onClose, navigation }) => {
         navigation.navigate(screen);
     };
 
-    const handleNavigation = (item) => {
+    const dispatch = useDispatch();
+
+    const handleNavigation = async (item) => {
         onClose();
         if (item.title === 'Edit Profile') {
             navigation.navigate('EditProfileScreen');
@@ -51,6 +56,18 @@ const DashboardSidebar = ({ visible, onClose, navigation }) => {
             navigation.navigate('ProgramsAndChallenges');
         } else if (item.title === 'Subscription') {
             navigation.navigate('SubscriptionScreen');
+        } else if (item.title === 'Logout') {
+            try {
+                dispatch(logout());
+                await AsyncStorage.removeItem('authToken');
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }],
+                });
+            } catch (err) {
+                console.log('Logout Error:', err);
+                navigation.navigate('Login');
+            }
         }
     };
 

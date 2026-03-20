@@ -91,6 +91,28 @@ const SignupScreen = ({ navigation }) => {
       return;
     }
 
+    // Name validation: Only alphabets and spaces allowed
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (!nameRegex.test(trimmedName)) {
+      alert('Name must only contain alphbets (no numbers or special characters allowed).');
+      return;
+    }
+
+    // Email Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      alert('Please provide a valid email address.');
+      return;
+    }
+
+    // Password Validation: Strong Password
+    // Requires: At least 8 chars, at least one letter, one number, and one special character
+    const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+    if (!passwordRegex.test(trimmedPassword)) {
+      alert('Password must be at least 8 characters long and include alphabets, numbers, and special characters.');
+      return;
+    }
+
     setLoading(true);
 
     let userData;
