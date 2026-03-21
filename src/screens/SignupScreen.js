@@ -293,6 +293,8 @@ const SignupScreen = ({ navigation }) => {
     try {
       await axios.post(`${AUTH_URL}/send-otp`, { email: trimmedEmail });
       setEmailOtpSent(true);
+
+      console.log("otp", trimmedEmail)
       alert('OTP sent to your email.');
     } catch (error) {
       console.log('Send OTP Error:', error);
@@ -309,7 +311,7 @@ const SignupScreen = ({ navigation }) => {
     }
     setVerifyingEmail(true);
     try {
-      const response = await axios.post(`${AUTH_URL}/verify-otp`, {
+      const response = await axios.post(`${AUTH_URL}/verify-otps`, {
         email: email.trim().toLowerCase(),
         otp: emailOtp
       });
@@ -325,274 +327,275 @@ const SignupScreen = ({ navigation }) => {
       setVerifyingEmail(false);
     }
   };
+  console.log("+++++++", emailOtpSent)
 
   return (
     <LinearGradient
       colors={['#1a0033', '#3b014f', '#5a015a']}
       style={styles.container}
     >
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
           <Text style={styles.title}>{showOtpInput ? 'Verify\nEmail' : 'Create\nAccount'}</Text>
 
-        {showOtpInput ? (
-          <View style={styles.formSection}>
-            <Text style={styles.otpInfoText}>
-              Please enter the 6-digit code sent to {tempUserEmail}
-            </Text>
-            <View style={styles.inputBox}>
-              <Ionicons name="key-outline" size={22} color="#fff" style={styles.icon} />
-              <TextInput
-                placeholder="Enter OTP"
-                placeholderTextColor="#ccc"
-                style={styles.input}
-                value={otp}
-                onChangeText={setOtp}
-                keyboardType="numeric"
-                maxLength={6}
-              />
-            </View>
-            <TouchableOpacity style={styles.nextBtn} onPress={handleVerifyOtp} disabled={loading}>
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.nextText}>Verify OTP</Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleResendOtp}>
-              <Text style={styles.resendText}>Resend Code</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowOtpInput(false)}>
-              <Text style={styles.cancel}>Back to Signup</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <>
-
-            <View style={styles.roleToggleContainer}>
-              <TouchableOpacity
-                style={[styles.roleOption, role === 'user' && styles.roleActive]}
-                onPress={() => setRole('user')}>
-                <View style={styles.radioCircle}>
-                  {role === 'user' && <View style={styles.selectedRb} />}
-                </View>
-                <Text style={styles.roleText}>User</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.roleOption, role === 'student' && styles.roleActive]}
-                onPress={() => setRole('student')}>
-                <View style={styles.radioCircle}>
-                  {role === 'student' && <View style={styles.selectedRb} />}
-                </View>
-                <Text style={styles.roleText}>Student</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.roleOption, role === 'coach' && styles.roleActive]}
-                onPress={() => setRole('coach')}>
-                <View style={styles.radioCircle}>
-                  {role === 'coach' && <View style={styles.selectedRb} />}
-                </View>
-                <Text style={styles.roleText}>Coach</Text>
-              </TouchableOpacity>
-            </View>
-
+          {showOtpInput ? (
             <View style={styles.formSection}>
+              <Text style={styles.otpInfoText}>
+                Please enter the 6-digit code sent to {tempUserEmail}
+              </Text>
               <View style={styles.inputBox}>
-                <Ionicons name="person-outline" size={22} color="#fff" style={styles.icon} />
+                <Ionicons name="key-outline" size={22} color="#fff" style={styles.icon} />
                 <TextInput
-                  placeholder="Full Name"
+                  placeholder="Enter OTP"
                   placeholderTextColor="#ccc"
                   style={styles.input}
-                  value={name}
-                  onChangeText={setName}
+                  value={otp}
+                  onChangeText={setOtp}
+                  keyboardType="numeric"
+                  maxLength={6}
                 />
               </View>
-
-              <View style={styles.inputBox}>
-                <Ionicons name="mail-outline" size={22} color="#fff" style={styles.icon} />
-                <TextInput
-                  placeholder="Email"
-                  placeholderTextColor="#ccc"
-                  style={styles.input}
-                  value={email}
-                  onChangeText={(val) => {
-                    setEmail(val);
-                    if (isEmailVerified) setIsEmailVerified(false);
-                  }}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  editable={!(role === 'user' && isEmailVerified)}
-                />
-                {!isEmailVerified && email.length > 5 && role === 'user' && (
-                  <TouchableOpacity 
-                    style={styles.verifyBtn} 
-                    onPress={handleSendEmailFieldOtp}
-                    disabled={verifyingEmail}
-                  >
-                    {verifyingEmail ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <Text style={styles.verifyBtnText}>{emailOtpSent ? 'Resend' : 'Verify'}</Text>
-                    )}
-                  </TouchableOpacity>
+              <TouchableOpacity style={styles.nextBtn} onPress={handleVerifyOtp} disabled={loading}>
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.nextText}>Verify OTP</Text>
                 )}
-                {isEmailVerified && role === 'user' && (
-                  <Ionicons name="checkmark-circle" size={24} color="#4ade80" style={{ marginLeft: 10 }} />
-                )}
-              </View>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleResendOtp}>
+                <Text style={styles.resendText}>Resend Code</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowOtpInput(false)}>
+                <Text style={styles.cancel}>Back to Signup</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
 
-              {emailOtpSent && !isEmailVerified && role === 'user' && (
-                <View style={styles.inputBox}>
-                  <Ionicons name="key-outline" size={22} color="#fff" style={styles.icon} />
-                  <TextInput
-                    placeholder="Enter OTP"
-                    placeholderTextColor="#ccc"
-                    style={styles.input}
-                    value={emailOtp}
-                    onChangeText={setEmailOtp}
-                    keyboardType="numeric"
-                    maxLength={6}
-                  />
-                  <TouchableOpacity 
-                    style={styles.confirmBtn} 
-                    onPress={handleVerifyEmailFieldOtp}
-                    disabled={verifyingEmail}
-                  >
-                    {verifyingEmail ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <Text style={styles.verifyBtnText}>Confirm</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              )}
+              <View style={styles.roleToggleContainer}>
+                <TouchableOpacity
+                  style={[styles.roleOption, role === 'user' && styles.roleActive]}
+                  onPress={() => setRole('user')}>
+                  <View style={styles.radioCircle}>
+                    {role === 'user' && <View style={styles.selectedRb} />}
+                  </View>
+                  <Text style={styles.roleText}>User</Text>
+                </TouchableOpacity>
 
-              <View style={styles.inputBox}>
-                <Ionicons name="lock-closed-outline" size={22} color="#fff" style={styles.icon} />
-                <TextInput
-                  placeholder="Password"
-                  placeholderTextColor="#ccc"
-                  secureTextEntry={secure}
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                />
-                <TouchableOpacity onPress={() => setSecure(!secure)}>
-                  <Ionicons name={secure ? 'eye-off-outline' : 'eye-outline'} size={22} color="#fff" />
+                <TouchableOpacity
+                  style={[styles.roleOption, role === 'student' && styles.roleActive]}
+                  onPress={() => setRole('student')}>
+                  <View style={styles.radioCircle}>
+                    {role === 'student' && <View style={styles.selectedRb} />}
+                  </View>
+                  <Text style={styles.roleText}>Student</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.roleOption, role === 'coach' && styles.roleActive]}
+                  onPress={() => setRole('coach')}>
+                  <View style={styles.radioCircle}>
+                    {role === 'coach' && <View style={styles.selectedRb} />}
+                  </View>
+                  <Text style={styles.roleText}>Coach</Text>
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.phoneContainer}>
-                <CountryPicker
-                  countryCode={countryCode}
-                  withFlag
-                  withEmoji
-                  withCallingCode
-                  visible={countryVisible}
-                  onSelect={selectedCountry => {
-                    setCountryCode(selectedCountry.cca2);
-                    setCallingCode(selectedCountry.callingCode?.[0] ?? '');
-                    setCountryVisible(false);
-                  }}
-                  onClose={() => setCountryVisible(false)}
-                />
-                <TouchableOpacity onPress={() => setCountryVisible(true)} style={styles.callingCodeBtn}>
-                  <Text style={styles.callingCode}>+{callingCode}</Text>
-                  <Ionicons name="chevron-down" size={14} color="#ccc" style={{ marginLeft: 4 }} />
-                </TouchableOpacity>
-                <TextInput
-                  placeholder="Mobile Number"
-                  placeholderTextColor="#ccc"
-                  keyboardType="phone-pad"
-                  style={styles.phoneInput}
-                  value={phone}
-                  onChangeText={setPhone}
-                />
-              </View>
-
-              {role === 'user' && (
+              <View style={styles.formSection}>
                 <View style={styles.inputBox}>
-                  <Ionicons name="gift-outline" size={22} color="#fff" style={styles.icon} />
+                  <Ionicons name="person-outline" size={22} color="#fff" style={styles.icon} />
                   <TextInput
-                    placeholder="Referral Code (Optional)"
+                    placeholder="Full Name"
                     placeholderTextColor="#ccc"
                     style={styles.input}
-                    value={referralByCode}
-                    onChangeText={setReferralByCode}
-                    autoCapitalize="characters"
+                    value={name}
+                    onChangeText={setName}
                   />
                 </View>
-              )}
 
-              {role === 'student' && (
-                <View style={{ marginTop: 10 }}>
+                <View style={styles.inputBox}>
+                  <Ionicons name="mail-outline" size={22} color="#fff" style={styles.icon} />
+                  <TextInput
+                    placeholder="Email"
+                    placeholderTextColor="#ccc"
+                    style={styles.input}
+                    value={email}
+                    onChangeText={(val) => {
+                      setEmail(val);
+                      if (isEmailVerified) setIsEmailVerified(false);
+                    }}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    editable={!(role === 'user' && isEmailVerified)}
+                  />
+                  {!isEmailVerified && email.length > 5 && role === 'user' && (
+                    <TouchableOpacity
+                      style={styles.verifyBtn}
+                      onPress={handleSendEmailFieldOtp}
+                      disabled={verifyingEmail}
+                    >
+                      {verifyingEmail ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Text style={styles.verifyBtnText}>{emailOtpSent ? 'Resend' : 'Verify'}</Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                  {isEmailVerified && role === 'user' && (
+                    <Ionicons name="checkmark-circle" size={24} color="#4ade80" style={{ marginLeft: 10 }} />
+                  )}
+                </View>
+
+                {emailOtpSent && !isEmailVerified && role === 'user' && (
+                  <View style={styles.inputBox}>
+                    <Ionicons name="key-outline" size={22} color="#fff" style={styles.icon} />
+                    <TextInput
+                      placeholder="Enter OTP"
+                      placeholderTextColor="#ccc"
+                      style={styles.input}
+                      value={emailOtp}
+                      onChangeText={setEmailOtp}
+                      keyboardType="numeric"
+                      maxLength={6}
+                    />
+                    <TouchableOpacity
+                      style={styles.confirmBtn}
+                      onPress={handleVerifyEmailFieldOtp}
+                      disabled={verifyingEmail}
+                    >
+                      {verifyingEmail ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Text style={styles.verifyBtnText}>Confirm</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                <View style={styles.inputBox}>
+                  <Ionicons name="lock-closed-outline" size={22} color="#fff" style={styles.icon} />
+                  <TextInput
+                    placeholder="Password"
+                    placeholderTextColor="#ccc"
+                    secureTextEntry={secure}
+                    style={styles.input}
+                    value={password}
+                    onChangeText={setPassword}
+                  />
+                  <TouchableOpacity onPress={() => setSecure(!secure)}>
+                    <Ionicons name={secure ? 'eye-off-outline' : 'eye-outline'} size={22} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.phoneContainer}>
+                  <CountryPicker
+                    countryCode={countryCode}
+                    withFlag
+                    withEmoji
+                    withCallingCode
+                    visible={countryVisible}
+                    onSelect={selectedCountry => {
+                      setCountryCode(selectedCountry.cca2);
+                      setCallingCode(selectedCountry.callingCode?.[0] ?? '');
+                      setCountryVisible(false);
+                    }}
+                    onClose={() => setCountryVisible(false)}
+                  />
+                  <TouchableOpacity onPress={() => setCountryVisible(true)} style={styles.callingCodeBtn}>
+                    <Text style={styles.callingCode}>+{callingCode}</Text>
+                    <Ionicons name="chevron-down" size={14} color="#ccc" style={{ marginLeft: 4 }} />
+                  </TouchableOpacity>
+                  <TextInput
+                    placeholder="Mobile Number"
+                    placeholderTextColor="#ccc"
+                    keyboardType="phone-pad"
+                    style={styles.phoneInput}
+                    value={phone}
+                    onChangeText={setPhone}
+                  />
+                </View>
+
+                {role === 'user' && (
+                  <View style={styles.inputBox}>
+                    <Ionicons name="gift-outline" size={22} color="#fff" style={styles.icon} />
+                    <TextInput
+                      placeholder="Referral Code (Optional)"
+                      placeholderTextColor="#ccc"
+                      style={styles.input}
+                      value={referralByCode}
+                      onChangeText={setReferralByCode}
+                      autoCapitalize="characters"
+                    />
+                  </View>
+                )}
+
+                {role === 'student' && (
+                  <View style={{ marginTop: 10 }}>
+                    <TouchableOpacity style={styles.uploadBtn} onPress={() => pickDocument(setCertificate)}>
+                      <Ionicons name="cloud-upload-outline" size={24} color="#fff" />
+                      <Text style={styles.uploadText}>{certificate ? 'ID Card Selected' : 'Upload Student ID Card'}</Text>
+                    </TouchableOpacity>
+                    {certificate && <Text style={styles.fileName}>{certificate.name}</Text>}
+                  </View>
+                )}
+              </View>
+
+              {role === 'coach' && (
+                <View style={styles.coachSection}>
+                  <Text style={styles.sectionHeader}>Coach Details</Text>
+
+                  <View style={styles.inputBox}>
+                    <TextInput placeholder="Bank Name" placeholderTextColor="#ccc" style={styles.input} value={bankName} onChangeText={setBankName} />
+                  </View>
+
+                  <View style={styles.inputBox}>
+                    <TextInput placeholder="Bank Account No" placeholderTextColor="#ccc" style={styles.input} value={bankAccountNo} onChangeText={setBankAccountNo} keyboardType="numeric" />
+                  </View>
+
+                  <View style={styles.inputBox}>
+                    <TextInput placeholder="Re-enter Bank Account No" placeholderTextColor="#ccc" style={styles.input} value={reEnterBankAccountNo} onChangeText={setReEnterBankAccountNo} keyboardType="numeric" />
+                  </View>
+
+                  <View style={styles.inputBox}>
+                    <TextInput placeholder="IFSC Code" placeholderTextColor="#ccc" style={styles.input} value={ifscCode} onChangeText={setIfscCode} autoCapitalize="characters" />
+                  </View>
+
                   <TouchableOpacity style={styles.uploadBtn} onPress={() => pickDocument(setCertificate)}>
                     <Ionicons name="cloud-upload-outline" size={24} color="#fff" />
-                    <Text style={styles.uploadText}>{certificate ? 'ID Card Selected' : 'Upload Student ID Card'}</Text>
+                    <Text style={styles.uploadText}>{certificate ? 'Certificate Selected' : 'Upload Nutrition Certificate'}</Text>
                   </TouchableOpacity>
                   {certificate && <Text style={styles.fileName}>{certificate.name}</Text>}
+
+                  <TouchableOpacity style={styles.uploadBtn} onPress={() => pickDocument(setAadharDoc)}>
+                    <Ionicons name="cloud-upload-outline" size={24} color="#fff" />
+                    <Text style={styles.uploadText}>{aadharDoc ? 'Aadhar Card Selected' : 'Upload Aadhar Card'}</Text>
+                  </TouchableOpacity>
+                  {aadharDoc && <Text style={styles.fileName}>{aadharDoc.name}</Text>}
+
+                  <TouchableOpacity style={styles.uploadBtn} onPress={() => pickDocument(setPanDoc)}>
+                    <Ionicons name="cloud-upload-outline" size={24} color="#fff" />
+                    <Text style={styles.uploadText}>{panDoc ? 'PAN Card Selected' : 'Upload PAN Card'}</Text>
+                  </TouchableOpacity>
+                  {panDoc && <Text style={styles.fileName}>{panDoc.name}</Text>}
                 </View>
               )}
-            </View>
 
-            {role === 'coach' && (
-              <View style={styles.coachSection}>
-                <Text style={styles.sectionHeader}>Coach Details</Text>
+              <TouchableOpacity style={styles.nextBtn} onPress={handleSignup} disabled={loading}>
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.nextText}>{role === 'coach' ? 'Submit Application' : 'Next'}</Text>
+                )}
+              </TouchableOpacity>
 
-                <View style={styles.inputBox}>
-                  <TextInput placeholder="Bank Name" placeholderTextColor="#ccc" style={styles.input} value={bankName} onChangeText={setBankName} />
-                </View>
-
-                <View style={styles.inputBox}>
-                  <TextInput placeholder="Bank Account No" placeholderTextColor="#ccc" style={styles.input} value={bankAccountNo} onChangeText={setBankAccountNo} keyboardType="numeric" />
-                </View>
-
-                <View style={styles.inputBox}>
-                  <TextInput placeholder="Re-enter Bank Account No" placeholderTextColor="#ccc" style={styles.input} value={reEnterBankAccountNo} onChangeText={setReEnterBankAccountNo} keyboardType="numeric" />
-                </View>
-
-                <View style={styles.inputBox}>
-                  <TextInput placeholder="IFSC Code" placeholderTextColor="#ccc" style={styles.input} value={ifscCode} onChangeText={setIfscCode} autoCapitalize="characters" />
-                </View>
-
-                <TouchableOpacity style={styles.uploadBtn} onPress={() => pickDocument(setCertificate)}>
-                  <Ionicons name="cloud-upload-outline" size={24} color="#fff" />
-                  <Text style={styles.uploadText}>{certificate ? 'Certificate Selected' : 'Upload Nutrition Certificate'}</Text>
-                </TouchableOpacity>
-                {certificate && <Text style={styles.fileName}>{certificate.name}</Text>}
-
-                <TouchableOpacity style={styles.uploadBtn} onPress={() => pickDocument(setAadharDoc)}>
-                  <Ionicons name="cloud-upload-outline" size={24} color="#fff" />
-                  <Text style={styles.uploadText}>{aadharDoc ? 'Aadhar Card Selected' : 'Upload Aadhar Card'}</Text>
-                </TouchableOpacity>
-                {aadharDoc && <Text style={styles.fileName}>{aadharDoc.name}</Text>}
-
-                <TouchableOpacity style={styles.uploadBtn} onPress={() => pickDocument(setPanDoc)}>
-                  <Ionicons name="cloud-upload-outline" size={24} color="#fff" />
-                  <Text style={styles.uploadText}>{panDoc ? 'PAN Card Selected' : 'Upload PAN Card'}</Text>
-                </TouchableOpacity>
-                {panDoc && <Text style={styles.fileName}>{panDoc.name}</Text>}
-              </View>
-            )}
-
-            <TouchableOpacity style={styles.nextBtn} onPress={handleSignup} disabled={loading}>
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.nextText}>{role === 'coach' ? 'Submit Application' : 'Next'}</Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => navigation.replace('Home')}>
-              <Text style={styles.cancel}>Cancel</Text>
-            </TouchableOpacity>
-          </>
-        )}
+              <TouchableOpacity onPress={() => navigation.replace('Home')}>
+                <Text style={styles.cancel}>Cancel</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>
