@@ -52,6 +52,12 @@ const SignupScreen = ({ navigation }) => {
   const [aadharDoc, setAadharDoc] = useState(null);
   const [panDoc, setPanDoc] = useState(null);
 
+  // Field Verification States
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailOtp, setEmailOtp] = useState('');
+  const [verifyingEmail, setVerifyingEmail] = useState(false);
+
   const dispatch = useDispatch();
 
   const pickDocument = (setter) => {
@@ -91,6 +97,11 @@ const SignupScreen = ({ navigation }) => {
       return;
     }
 
+    if (role === 'user' && !isEmailVerified) {
+      alert('Please verify your email address before signing up.');
+      return;
+    }
+
     // Name validation: Only alphabets and spaces allowed
     const nameRegex = /^[A-Za-z\s]+$/;
     if (!nameRegex.test(trimmedName)) {
@@ -125,6 +136,7 @@ const SignupScreen = ({ navigation }) => {
         countryCode,
         referralByCode: referralByCode.trim(),
         role: 'User',
+        email_verified: isEmailVerified,
       };
     } else if (role === 'student') {
       const formData = new FormData();
@@ -135,6 +147,7 @@ const SignupScreen = ({ navigation }) => {
       formData.append('countryCode', countryCode);
       formData.append('referralByCode', referralByCode.trim());
       formData.append('role', 'Student');
+      formData.append('email_verified', isEmailVerified);
 
       if (certificate) {
         formData.append('idCard', {
@@ -164,6 +177,7 @@ const SignupScreen = ({ navigation }) => {
       formData.append('bankName', trimmedBankName);
       formData.append('bankAccNo', trimmedBankAccNo);
       formData.append('ifscCode', trimmedIfsc);
+      formData.append('email_verified', isEmailVerified);
 
       if (!certificate || !aadharDoc || !panDoc) {
         alert('Please upload all required documents (Certificate, Aadhar, PAN)');
@@ -267,6 +281,51 @@ const SignupScreen = ({ navigation }) => {
     alert(errorMessage);
   };
 
+  const handleSendEmailFieldOtp = async () => {
+    const trimmedEmail = email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      alert('Please enter a valid email address first.');
+      return;
+    }
+
+    setVerifyingEmail(true);
+    try {
+      await axios.post(`${AUTH_URL}/send-otp`, { email: trimmedEmail });
+      setEmailOtpSent(true);
+      alert('OTP sent to your email.');
+    } catch (error) {
+      console.log('Send OTP Error:', error);
+      alert(error.response?.data?.message || 'Failed to send OTP');
+    } finally {
+      setVerifyingEmail(false);
+    }
+  };
+
+  const handleVerifyEmailFieldOtp = async () => {
+    if (!emailOtp || emailOtp.length !== 6) {
+      alert('Please enter a valid 6-digit OTP');
+      return;
+    }
+    setVerifyingEmail(true);
+    try {
+      const response = await axios.post(`${AUTH_URL}/verify-otp`, {
+        email: email.trim().toLowerCase(),
+        otp: emailOtp
+      });
+      if (response.status === 200) {
+        setIsEmailVerified(true);
+        setEmailOtpSent(false);
+        alert('Email verified successfully!');
+      }
+    } catch (error) {
+      console.log('OTP Verification Error:', error);
+      alert(error.response?.data?.message || 'Invalid OTP');
+    } finally {
+      setVerifyingEmail(false);
+    }
+  };
+
   return (
     <LinearGradient
       colors={['#1a0033', '#3b014f', '#5a015a']}
@@ -361,11 +420,57 @@ const SignupScreen = ({ navigation }) => {
                   placeholderTextColor="#ccc"
                   style={styles.input}
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(val) => {
+                    setEmail(val);
+                    if (isEmailVerified) setIsEmailVerified(false);
+                  }}
                   autoCapitalize="none"
                   keyboardType="email-address"
+                  editable={!(role === 'user' && isEmailVerified)}
                 />
+                {!isEmailVerified && email.length > 5 && role === 'user' && (
+                  <TouchableOpacity 
+                    style={styles.verifyBtn} 
+                    onPress={handleSendEmailFieldOtp}
+                    disabled={verifyingEmail}
+                  >
+                    {verifyingEmail ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Text style={styles.verifyBtnText}>{emailOtpSent ? 'Resend' : 'Verify'}</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+                {isEmailVerified && role === 'user' && (
+                  <Ionicons name="checkmark-circle" size={24} color="#4ade80" style={{ marginLeft: 10 }} />
+                )}
               </View>
+
+              {emailOtpSent && !isEmailVerified && role === 'user' && (
+                <View style={styles.inputBox}>
+                  <Ionicons name="key-outline" size={22} color="#fff" style={styles.icon} />
+                  <TextInput
+                    placeholder="Enter OTP"
+                    placeholderTextColor="#ccc"
+                    style={styles.input}
+                    value={emailOtp}
+                    onChangeText={setEmailOtp}
+                    keyboardType="numeric"
+                    maxLength={6}
+                  />
+                  <TouchableOpacity 
+                    style={styles.confirmBtn} 
+                    onPress={handleVerifyEmailFieldOtp}
+                    disabled={verifyingEmail}
+                  >
+                    {verifyingEmail ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Text style={styles.verifyBtnText}>Confirm</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
 
               <View style={styles.inputBox}>
                 <Ionicons name="lock-closed-outline" size={22} color="#fff" style={styles.icon} />
@@ -658,6 +763,25 @@ const styles = StyleSheet.create({
     color: '#a34eff',
     textAlign: 'center',
     marginTop: 20,
+    fontWeight: '600',
+  },
+  verifyBtn: {
+    backgroundColor: '#a34eff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginLeft: 10,
+  },
+  confirmBtn: {
+    backgroundColor: '#4ade80',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginLeft: 10,
+  },
+  verifyBtnText: {
+    color: '#fff',
+    fontSize: 12,
     fontWeight: '600',
   },
 });
