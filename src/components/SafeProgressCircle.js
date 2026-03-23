@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 const SafeProgressCircle = ({
-//   percent = 0,
+  percent = 0,
   radius = 40,
   borderWidth = 6,
   color = '#2ECC71',
@@ -25,9 +25,9 @@ const SafeProgressCircle = ({
       ]}
     >
       <View style={styles.inner}>{children}</View>
-      {/* <View style={styles.percentBadge} pointerEvents="none">
+      <View style={styles.percentBadge} pointerEvents="none">
         <Text style={styles.percentText}>{Math.round(percent)}%</Text>
-      </View> */}
+      </View>
     </View>
   );
 };

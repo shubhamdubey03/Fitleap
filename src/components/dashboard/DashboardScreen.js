@@ -28,6 +28,9 @@ import ConsultationNavigator from '../../navigation/ConsultationNavigator';
 import MarketplaceNavigator from '../../navigation/MarketplaceNavigator';
 import ProfileScreen from '../../screens/ProfileScreen';
 import ProgramsAndChallengesScreen from '../../screens/ProgramsAndChallengesScreen';
+import { initHealth, getTodaySteps, requestStepsPermission } from '../../services/readSteps';
+import { getTodayNutrition, requestNutritionPermission } from '../../services/readNutrition';
+
 
 const CoinIcon = ({ size = 26, style }) => (
   <View style={[{
@@ -76,6 +79,9 @@ const DashboardScreen = ({ navigation }) => {
 
   const [products, setProducts] = useState([]);
   const [activeTab, setActiveTab] = useState('Home'); // SPA tab state
+  const [steps, setSteps] = useState(0);
+  const [nutrition, setNutrition] = useState({ carbs: 0, protein: 0, fiber: 0, calories: 0, fat: 0 });
+
 
   const fetchProducts = async () => {
     try {
@@ -90,6 +96,7 @@ const DashboardScreen = ({ navigation }) => {
           },
         }
       );
+      console.log("------", response)
       setProducts(response.data.slice(0, 6));
     } catch (error) {
       console.error("Failed to fetch products for dashboard:", error);
@@ -115,13 +122,50 @@ const DashboardScreen = ({ navigation }) => {
     }
   };
 
+  const fetchSteps = async () => {
+    try {
+      const success = await initHealth();
+      if (success) {
+        // ✅ Explicitly request permission before fetching steps
+        await requestStepsPermission();
+
+        const stepCount = await getTodaySteps();
+        setSteps(stepCount || 0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch steps:", error);
+    }
+  };
+
+  const fetchNutritionData = async () => {
+    try {
+      const success = await initHealth();
+      if (success) {
+        // ✅ Explicitly request permission before fetching nutrition
+        await requestNutritionPermission();
+
+        const nutritionData = await getTodayNutrition();
+        if (nutritionData) {
+          setNutrition(nutritionData);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch nutrition data:", error);
+    }
+  };
+
+
   useFocusEffect(
     React.useCallback(() => {
       dispatch(getProfile());
       fetchProducts();
       fetchNotificationCount();
+      // Only fetch health data if health is ready, otherwise fetch data will init it
+      fetchSteps();
+      fetchNutritionData();
     }, [dispatch]),
   );
+
 
   useFocusEffect(
     React.useCallback(() => {
@@ -241,7 +285,7 @@ const DashboardScreen = ({ navigation }) => {
             <View style={styles.card}>
               <View style={styles.progressCircleContainer}>
                 <View style={styles.progressCircle}>
-                  <Text style={styles.percent}>81%</Text>
+                  <Text style={styles.percent}>{Math.round(Math.min((nutrition.calories / 2000) * 100, 100))}%</Text>
                   <Text style={styles.label}>Calories</Text>
                 </View>
               </View>
@@ -253,7 +297,7 @@ const DashboardScreen = ({ navigation }) => {
                   </View>
                   <View>
                     <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Carbs</Text>
-                    <Text style={styles.stat}> 89/140g</Text>
+                    <Text style={styles.stat}> {Math.round(nutrition.carbs)}/140g</Text>
                   </View>
                 </View>
                 <View style={styles.statRow}>
@@ -262,7 +306,7 @@ const DashboardScreen = ({ navigation }) => {
                   </View>
                   <View>
                     <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Protein</Text>
-                    <Text style={styles.stat}> 45/80g</Text>
+                    <Text style={styles.stat}> {Math.round(nutrition.protein)}/80g</Text>
                   </View>
                 </View>
                 <View style={styles.statRow}>
@@ -274,11 +318,12 @@ const DashboardScreen = ({ navigation }) => {
                   </View>
                   <View>
                     <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Fiber</Text>
-                    <Text style={styles.stat}> 20/50g</Text>
+                    <Text style={styles.stat}> {Math.round(nutrition.fiber)}/50g</Text>
                   </View>
                 </View>
               </View>
             </View>
+
 
             {/* Middle Cards */}
             <View style={styles.row}>
@@ -288,13 +333,13 @@ const DashboardScreen = ({ navigation }) => {
               >
                 <Text style={styles.cardTitle}>Exercise</Text>
                 <SafeProgressCircle
-                  // percent={75}
+                  percent={Math.min((steps / 10000) * 100, 100)}
                   radius={55}
                   borderWidth={8}
                   color="#2ECC71"
                   bgColor="#fff"
                 >
-                  <Text style={styles.stepsNumber}>5460</Text>
+                  <Text style={styles.stepsNumber}>{steps}</Text>
                   <Text style={styles.stepsLabel}>Steps</Text>
                 </SafeProgressCircle>
               </TouchableOpacity>
@@ -303,8 +348,9 @@ const DashboardScreen = ({ navigation }) => {
                 onPress={() => navigation.navigate('Calories')}
               >
                 <Text style={styles.cardTitle}>Calories</Text>
-                <Text style={styles.kcal}>540 kcal</Text>
+                <Text style={styles.kcal}>{Math.round(nutrition.calories)} kcal</Text>
               </TouchableOpacity>
+
             </View>
 
             {/* Coaching */}
@@ -326,18 +372,34 @@ const DashboardScreen = ({ navigation }) => {
             <View style={styles.intakeRow}>
               {['Carbs', 'Protein', 'Fat', 'Fiber'].map(item => {
                 let iconName = 'nutrition-outline';
-                if (item === 'Protein') iconName = 'fish-outline';
-                if (item === 'Fat') iconName = 'flame-outline';
-                if (item === 'Fiber') iconName = 'leaf-outline';
+                let value = Math.round(nutrition.carbs);
+                let totalValue = 140;
+
+                if (item === 'Protein') {
+                  iconName = 'fish-outline';
+                  value = Math.round(nutrition.protein);
+                  totalValue = 80;
+                }
+                if (item === 'Fat') {
+                  iconName = 'flame-outline';
+                  value = Math.round(nutrition.fat);
+                  totalValue = 65;
+                }
+                if (item === 'Fiber') {
+                  iconName = 'leaf-outline';
+                  value = Math.round(nutrition.fiber);
+                  totalValue = 50;
+                }
                 return (
                   <View key={item} style={styles.intake}>
                     <Ionicons name={iconName} size={18} color="#fff" />
                     <Text style={styles.intakeText}>{item}</Text>
-                    <Text style={styles.intakeSub}>50/65g</Text>
+                    <Text style={styles.intakeSub}>{value}/{totalValue}g</Text>
                   </View>
                 );
               })}
             </View>
+
 
             <TouchableOpacity onPress={() => setActiveTab('Marketplace')}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
