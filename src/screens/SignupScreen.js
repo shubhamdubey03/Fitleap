@@ -97,6 +97,13 @@ const SignupScreen = ({ navigation }) => {
       return;
     }
 
+    // Phone validation: exactly 10 digits
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(trimmedPhone)) {
+      alert('Mobile number must be exactly 10 digits.');
+      return;
+    }
+
     if (role === 'user' && !isEmailVerified) {
       alert('Please verify your email address before signing up.');
       return;
@@ -105,7 +112,7 @@ const SignupScreen = ({ navigation }) => {
     // Name validation: Only alphabets and spaces allowed
     const nameRegex = /^[A-Za-z\s]+$/;
     if (!nameRegex.test(trimmedName)) {
-      alert('Name must only contain alphbets (no numbers or special characters allowed).');
+      alert('Name must only contain alphabets (no numbers or special characters allowed).');
       return;
     }
 
@@ -113,6 +120,11 @@ const SignupScreen = ({ navigation }) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmedEmail)) {
       alert('Please provide a valid email address.');
+      return;
+    }
+
+    if (!trimmedEmail.endsWith('@gmail.com') && !trimmedEmail.endsWith('.edu')) {
+      alert('Only @gmail.com and .edu email addresses are allowed.');
       return;
     }
 
@@ -161,10 +173,22 @@ const SignupScreen = ({ navigation }) => {
       // Coach Role - FormData
       const trimmedBankName = bankName.trim();
       const trimmedBankAccNo = bankAccountNo.trim();
+      const trimmedReBankAccNo = reEnterBankAccountNo.trim();
       const trimmedIfsc = ifscCode.trim();
 
-      if (!trimmedBankName || !trimmedBankAccNo || !trimmedIfsc) {
+      if (!trimmedBankName || !trimmedBankAccNo || !trimmedReBankAccNo || !trimmedIfsc) {
         alert('Please fill all coach details');
+        return;
+      }
+
+      // Bank Name validation: alphabets and spaces only
+      const bankNameRegex = /^[A-Za-z\s]+$/;
+      if (!bankNameRegex.test(trimmedBankName)) {
+        alert('Bank Name must only contain alphabets (no numbers or special characters allowed).');
+        return;
+      }
+      if (trimmedBankAccNo !== trimmedReBankAccNo) {
+        alert('Bank Account Number and Re-enter Account Number must match.');
         return;
       }
 
@@ -286,6 +310,11 @@ const SignupScreen = ({ navigation }) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmedEmail)) {
       alert('Please enter a valid email address first.');
+      return;
+    }
+
+    if (!trimmedEmail.endsWith('@gmail.com') && !trimmedEmail.endsWith('.edu')) {
+      alert('Only @gmail.com and .edu email addresses are allowed.');
       return;
     }
 
