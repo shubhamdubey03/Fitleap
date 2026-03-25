@@ -329,9 +329,9 @@ const DashboardScreen = ({ navigation }) => {
             <View style={styles.row}>
               <TouchableOpacity
                 style={styles.progressCircleWrapper}
-                onPress={() => {}}
+                onPress={() => { }}
               >
-                <Text style={styles.cardTitle}>Exercise</Text>
+                <Text style={styles.cardTitle}>Steps</Text>
                 <SafeProgressCircle
                   percent={Math.min((steps / 10000) * 100, 100)}
                   radius={55}
@@ -343,13 +343,12 @@ const DashboardScreen = ({ navigation }) => {
                   <Text style={styles.stepsLabel}>Steps</Text>
                 </SafeProgressCircle>
               </TouchableOpacity>
-              <TouchableOpacity
+              <View
                 style={styles.smallCard}
-                onPress={() => navigation.navigate('Calories')}
               >
                 <Text style={styles.cardTitle}>Calories</Text>
                 <Text style={styles.kcal}>{Math.round(nutrition.calories)} kcal</Text>
-              </TouchableOpacity>
+              </View>
 
             </View>
 

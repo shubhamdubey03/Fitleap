@@ -26,7 +26,6 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import MarketplaceNavigator from './src/navigation/MarketplaceNavigator';
 import ExerciseStack from './src/navigation/ExerciseNavigator';
 import ConsultationNavigator from './src/navigation/ConsultationNavigator';
-import CaloriesScreen from './src/components/dashboard/CaloriesScreen';
 import SettingsScreen from './src/components/setting/SettingsScreen';
 import FeedbackProgressScreen from './src/components/setting/FeedbackProgressScreen';
 import EventsRewardsScreen from './src/components/setting/EventsRewardsScreen';
@@ -134,7 +133,6 @@ const MainNav = () => {
           <Stack.Screen name="Marketplace" component={MarketplaceNavigator} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
 
-          <Stack.Screen name="Calories" component={CaloriesScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="FeedbackProgressScreen" component={FeedbackProgressScreen} />
           <Stack.Screen name="EventsRewardsScreen" component={EventsRewardsScreen} />

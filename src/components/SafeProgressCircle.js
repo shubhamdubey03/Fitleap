@@ -25,9 +25,6 @@ const SafeProgressCircle = ({
       ]}
     >
       <View style={styles.inner}>{children}</View>
-      <View style={styles.percentBadge} pointerEvents="none">
-        <Text style={styles.percentText}>{Math.round(percent)}%</Text>
-      </View>
     </View>
   );
 };
