@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -18,7 +19,7 @@ import { register, registerCoach, setUser } from '../redux/authSlice';
 import axios from 'axios';
 import { AUTH_URL } from '../config/api';
 import CountryPicker from 'react-native-country-picker-modal';
-import { launchImageLibrary } from 'react-native-image-picker';
+import ImagePicker from 'react-native-image-crop-picker';
 
 const SignupScreen = ({ navigation }) => {
   const [secure, setSecure] = useState(true);
@@ -61,26 +62,58 @@ const SignupScreen = ({ navigation }) => {
   const dispatch = useDispatch();
 
   const pickDocument = (setter) => {
-    launchImageLibrary(
-      {
-        mediaType: 'photo',
-        quality: 0.8,
-        includeBase64: false,
-      },
-      (response) => {
-        if (response.didCancel) return;
-        if (response.errorCode) {
-          console.log('ImagePicker Error:', response.errorMessage);
-          return;
-        }
-
-        const asset = response.assets[0];
-        setter({
-          uri: asset.uri,
-          type: asset.type,
-          name: asset.fileName || 'document.jpg',
-        });
-      }
+    Alert.alert(
+      'Select Image Source',
+      'Choose how you want to upload the document',
+      [
+        {
+          text: 'Take Photo',
+          onPress: () => {
+            ImagePicker.openCamera({
+              width: 1200,
+              height: 1600,
+              cropping: true,
+              compressImageQuality: 0.8,
+            }).then(image => {
+              setter({
+                uri: image.path,
+                type: image.mime,
+                name: image.path.split('/').pop(),
+              });
+            }).catch(err => {
+              if (err.code !== 'E_PICKER_CANCELLED') {
+                console.log('Camera Error:', err);
+              }
+            });
+          },
+        },
+        {
+          text: 'Choose from Gallery',
+          onPress: () => {
+            ImagePicker.openPicker({
+              width: 1200,
+              height: 1600,
+              cropping: true,
+              compressImageQuality: 0.8,
+            }).then(image => {
+              setter({
+                uri: image.path,
+                type: image.mime,
+                name: image.path.split('/').pop(),
+              });
+            }).catch(err => {
+              if (err.code !== 'E_PICKER_CANCELLED') {
+                console.log('Picker Error:', err);
+              }
+            });
+          },
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ],
+      { cancelable: true }
     );
   };
 
