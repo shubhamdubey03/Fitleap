@@ -329,7 +329,7 @@ const DashboardScreen = ({ navigation }) => {
             <View style={styles.row}>
               <TouchableOpacity
                 style={styles.progressCircleWrapper}
-                onPress={() => setActiveTab('Exercise')}
+                onPress={() => {}}
               >
                 <Text style={styles.cardTitle}>Exercise</Text>
                 <SafeProgressCircle

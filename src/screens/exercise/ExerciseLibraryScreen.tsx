@@ -82,7 +82,7 @@ const ExerciseLibraryScreen = ({ navigation }: any) => {
                     Alert.alert('Subscription Required', 'Please subscribe to access workouts.');
                     return;
                 }
-                navigation.navigate('WorkoutDetails', { workout: item });
+                // navigation.navigate('WorkoutDetails', { workout: item });
             }}
         >
             <View style={styles.imageContainer}>
@@ -109,14 +109,9 @@ const ExerciseLibraryScreen = ({ navigation }: any) => {
             style={[styles.container, { paddingTop: insets.top }]}
         >
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <View style={styles.iconButton}>
-                        <Ionicons name="arrow-back" size={20} color="#fff" />
-                    </View>
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Exercise Library</Text>
-            </View>
+            {/* <View style={styles.header}>
+                <Text style={styles.headerTitle}>Library</Text>
+            </View> */}
 
             <View style={styles.content}>
                 {/* Search Bar */}
