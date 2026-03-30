@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -21,6 +22,7 @@ const StudentLogin = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otp, setOtp] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const dispatch = useDispatch();
 
   const handleLogin = async () => {
@@ -36,6 +38,7 @@ const StudentLogin = ({ navigation }) => {
       email: trimmedEmail,
       password: trimmedPassword,
     };
+    setIsLoading(true);
 
     dispatch(login(userData))
       .unwrap()
@@ -53,7 +56,8 @@ const StudentLogin = ({ navigation }) => {
       })
       .catch((error) => {
         Alert.alert('Error', typeof error === 'string' ? error : 'Login failed');
-      });
+      })
+      .finally(() => setIsLoading(false));
   };
 
   const handleVerifyOtp = async () => {
@@ -63,32 +67,41 @@ const StudentLogin = ({ navigation }) => {
     }
 
     try {
-      const response = await axios.post(`${AUTH_URL}/verify-otp`, {
+      setIsLoading(true);
+      const response = await axios.post(`${AUTH_URL}/verify-otps`, {
         email: email.trim().toLowerCase(),
         otp: otp
       });
-
-      if (response.data.token) {
-        Alert.alert('Success', 'Email verified successfully');
+      console.log(";;;;", response)
+      if (response.status === 200) {
         await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
         await AsyncStorage.setItem('USER_ROLE', response.data.role || 'student');
+        await AsyncStorage.setItem('user', JSON.stringify(response.data));
+        await AsyncStorage.setItem('authToken', response.data.token);
         dispatch(setUser(response.data));
-        navigation.replace('Dashboard');
+
+        Alert.alert(
+          'Success',
+          'Email verified successfully',
+          [{ text: 'OK', onPress: () => navigation.replace('Dashboard') }]
+        );
       }
     } catch (error) {
       console.log('OTP Verification Error:', error);
       Alert.alert('Error', error.response?.data?.message || 'Verification failed');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // ... existing code
+
   const handleResendOtp = async () => {
-    try {
-      await axios.post(`${AUTH_URL}/send-otp`, { email: email.trim().toLowerCase() });
-      Alert.alert('Success', 'OTP resent successfully');
-    } catch (error) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to resend OTP');
-    }
+    // Simply call the same handleLogin function to trigger fresh OTP generation
+    await handleLogin();
   };
+
+
 
   return (
     <LinearGradient
@@ -119,8 +132,12 @@ const StudentLogin = ({ navigation }) => {
               />
             </View>
 
-            <TouchableOpacity style={styles.loginBtn} onPress={handleVerifyOtp}>
-              <Text style={styles.loginText}>Verify OTP</Text>
+            <TouchableOpacity style={styles.loginBtn} onPress={handleVerifyOtp} disabled={isLoading}>
+              {isLoading ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.loginText}>Verify OTP</Text>
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity onPress={handleResendOtp}>
@@ -162,8 +179,12 @@ const StudentLogin = ({ navigation }) => {
             </View>
 
             {/* Login Button */}
-            <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-              <Text style={styles.loginText}>Login</Text>
+            <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} disabled={isLoading}>
+              {isLoading ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.loginText}>Login</Text>
+              )}
             </TouchableOpacity>
 
             {/* Signup */}
