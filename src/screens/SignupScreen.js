@@ -366,6 +366,7 @@ const SignupScreen = ({ navigation }) => {
     }
   };
 
+
   const handleVerifyEmailFieldOtp = async () => {
     if (!emailOtp || emailOtp.length !== 6) {
       alert('Please enter a valid 6-digit OTP');
@@ -373,7 +374,7 @@ const SignupScreen = ({ navigation }) => {
     }
     setVerifyingEmail(true);
     try {
-      const response = await axios.post(`${AUTH_URL}/verify-otps`, {
+      const response = await axios.post(`${AUTH_URL}/verify-otp`, {
         email: email.trim().toLowerCase(),
         otp: emailOtp
       });
