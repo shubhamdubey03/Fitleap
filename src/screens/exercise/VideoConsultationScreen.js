@@ -24,7 +24,7 @@ const MONTHS = [
 ];
 
 const VideoConsultationScreen = ({ navigation, route }) => {
-    const { coachId } = route.params || {};
+    const coachId = route?.params?.coachId;
     const insets = useSafeAreaInsets();
     const { user } = useSelector((state) => state.auth);
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -37,15 +37,16 @@ const VideoConsultationScreen = ({ navigation, route }) => {
     const [slotsLoading, setSlotsLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState(null);
+    console.log("Coach ID:", coachId);
 
     const fetchData = useCallback(async () => {
+        if (!user?.token) return;
         try {
             setLoading(true);
             // 1. Get Subscription to find Coach
             const subRes = await axios.get(`${API_BASE_URL}/v1/subscriptions/`, {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
-            console.log("subRes.data", JSON.stringify(subRes.data));
 
             if (subRes.data && subRes.data.length > 0) {
                 if (coachId) {
@@ -71,25 +72,27 @@ const VideoConsultationScreen = ({ navigation, route }) => {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [user.token]);
+    }, [user?.token]);
 
     const fetchSlots = useCallback(async (date) => {
-        if (!coach) return;
+        if (coach) return;
         setSlotsLoading(true);
-        setSelectedSlot(null); // Reset selection when date changes
+        // setSelectedSlot(null);
         try {
+            console.log("coach.id---000----8888888888------");
             const dateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${date.toString().padStart(2, '0')}`;
-            const response = await axios.get(`${API_BASE_URL}/v1/coaches/${coach.id}/slots?date=${dateStr}`, {
+            const response = await axios.get(`${API_BASE_URL}/v1/coaches/${coachId}/slots?date=${dateStr}`, {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
             setAvailableSlots(response.data.available_slots || []);
+            console.log("responsessssssss", response)
         } catch (error) {
             console.error('Fetch slots error:', error);
             setAvailableSlots([]);
         } finally {
             setSlotsLoading(false);
         }
-    }, [coach, currentDate, user.token]);
+    }, [coach, currentDate, user?.token]);
 
     useEffect(() => {
         fetchData();
@@ -100,19 +103,23 @@ const VideoConsultationScreen = ({ navigation, route }) => {
     }, [selectedDate, fetchSlots]);
 
     const handleBookSession = async () => {
+        console.log("selectedSlot", selectedSlot)
         if (!selectedSlot) {
             Alert.alert('Selection Required', 'Please select a time slot first');
             return;
         }
+        console.log("=====================")
         try {
+            console.log("ppppp", coachId)
             const dateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${selectedDate.toString().padStart(2, '0')}`;
-            await axios.post(`${API_BASE_URL}/v1/appointments`, {
-                coach_id: coach.id,
+            const data = await axios.post(`${API_BASE_URL}/v1/appointments/`, {
+                coach_id: coachId,
                 appointment_date: dateStr,
                 start_time: selectedSlot
             }, {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
+            console.log("data", data)
             Alert.alert('Success', 'Consultation Request Sent!');
             setSelectedSlot(null);
             fetchData(); // Refresh list

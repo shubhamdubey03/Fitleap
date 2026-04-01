@@ -9,6 +9,8 @@ import {
     StatusBar,
     Alert,
     ActivityIndicator,
+    Image,
+    FlatList,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -17,45 +19,72 @@ import axios from 'axios';
 import { useSelector, useDispatch } from 'react-redux';
 import { getProfile } from '../../redux/authSlice';
 import { API_BASE_URL } from '../../config/api';
+import { useNavigation } from '@react-navigation/native';
 
-const SubscriptionScreen = ({ navigation, route }) => {
+const SubscriptionScreen = ({ route }) => {
     const { user } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
     const coachId = route?.params?.coachId || null;
     const [loading, setLoading] = useState(false);
     const [activeSubscription, setActiveSubscription] = useState(null);
+    const [upcomingSubscription, setUpcomingSubscription] = useState(null);
     const [plans, setPlans] = useState([]);
+    const [coaches, setCoaches] = useState([]);
+    const [selectedCoachId, setSelectedCoachId] = useState(coachId);
+    const [history, setHistory] = useState([]);
+    const navigation = useNavigation()
 
     useEffect(() => {
         fetchCurrentSubscription();
-        fetchCoachPlans();
-        if (coachId) {
-            fetchCoachPlans();
+        fetchAllCoaches();
+    }, []);
+
+    useEffect(() => {
+        fetchCoachPlans(selectedCoachId);
+    }, [selectedCoachId]);
+
+    const fetchAllCoaches = async () => {
+        if (!user?.token) return;
+        try {
+            const res = await axios.get(`${API_BASE_URL}/admin/coaches?is_approved=true`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            setCoaches(res.data.data);
+        } catch (e) {
+            console.error("Fetch coaches error:", e);
         }
-    }, [coachId]);
+    };
 
     const fetchCurrentSubscription = async () => {
+        if (!user?.token) return;
         try {
-            const res = await axios.get(`${API_BASE_URL}/v1/subscriptions`, {
+            const res = await axios.get(`${API_BASE_URL}/v1/subscriptions/`, {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
 
-            console.log("==========", res)
+            setHistory(res.data || []);
             const active = res.data.find(s => s.status === 'active');
-            if (active) setActiveSubscription(active);
+            const upcoming = res.data.find(s => s.status === 'pending');
+
+            setActiveSubscription(active || null);
+            setUpcomingSubscription(upcoming || null);
+
         } catch (e) {
             console.error("Fetch sub error:", e);
         }
     };
 
-    const fetchCoachPlans = async () => {
+    const fetchCoachPlans = async (cid) => {
+        if (!user?.token) return;
+        setLoading(true);
         try {
-            const url = coachId
-                ? `${API_BASE_URL}/v1/subscriptions/${coachId}/plans`
+            const url = cid
+                ? `${API_BASE_URL}/v1/subscriptions/${cid}/plans`
                 : `${API_BASE_URL}/v1/subscriptions/plans/all`;
 
-            console.log("Fetching plans from:", url);
-            const res = await axios.get(url);
+            const res = await axios.get(url, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
 
             if (res.data.success && res.data.data) {
                 const dynamicPlans = res.data.data.map(p => ({
@@ -63,13 +92,16 @@ const SubscriptionScreen = ({ navigation, route }) => {
                     name: p.plan_name,
                     price: p.price,
                     months: p.duration_days ? Math.round(p.duration_days / 30) : 1,
+                    duration_days: p.duration_days,
                     features: Array.isArray(p.features) ? p.features : []
                 }));
                 setPlans(dynamicPlans);
-                console.log("Loaded plans:", dynamicPlans);
             }
         } catch (e) {
             console.error("Fetch plans error:", e);
+            setPlans([]);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -80,15 +112,23 @@ const SubscriptionScreen = ({ navigation, route }) => {
             return;
         }
 
+        if (!selectedCoachId) {
+            Alert.alert("Selection Required", "Please first select a coach to subscribe to their plan.");
+            return;
+        }
+
         setLoading(true);
         try {
             const res = await axios.post(`${API_BASE_URL}/v1/subscriptions`, {
-                coach_id: coachId,
+                coach_id: selectedCoachId,
                 months: plan.months,
                 amount: plan.price,
                 plan_id: plan.id
             }, {
-                headers: { Authorization: `Bearer ${user.token}` }
+                headers: {
+                    Authorization: `Bearer ${user.token}`,
+                    'Content-Type': 'application/json'
+                }
             });
 
             const { order, subscription_id, key } = res.data;
@@ -177,7 +217,9 @@ const SubscriptionScreen = ({ navigation, route }) => {
                                 {activeSubscription ? `Premium (${activeSubscription.plan_type || 'Active'})` : 'Free Tier'}
                             </Text>
                             <Text style={styles.planExpiry}>
-                                {activeSubscription ? `Expires on ${new Date(activeSubscription.end_date).toLocaleDateString()}` : 'Subscribe to unlock all features'}
+                                {activeSubscription
+                                    ? `₹${activeSubscription.plan_price || 0} • Expires on ${new Date(activeSubscription.end_date).toLocaleDateString()}`
+                                    : 'Subscribe to unlock all features'}
                             </Text>
                         </View>
                         {/* {activeSubscription && (
@@ -192,6 +234,60 @@ const SubscriptionScreen = ({ navigation, route }) => {
                             </TouchableOpacity>
                         )} */}
                     </View>
+
+                    {upcomingSubscription && (
+                        <>
+                            <Text style={styles.sectionTitle}>Upcoming Plan</Text>
+                            <View style={styles.currentPlanCard}>
+                                <View style={styles.planIconBox}>
+                                    <Ionicons name="time" size={24} color="#FFD700" />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.planName}>
+                                        Upcoming Plan
+                                    </Text>
+                                    <Text style={styles.planExpiry}>
+                                        {`₹${upcomingSubscription.plan_price || 0} • Starts on ${new Date(upcomingSubscription.start_date).toLocaleDateString()}`}
+                                    </Text>
+                                </View>
+                            </View>
+                        </>
+                    )}
+
+                    {/* Coach Selection */}
+                    <Text style={styles.sectionTitle}>Select Your Coach</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.coachList}>
+                        <TouchableOpacity
+                            style={[styles.coachItem, !selectedCoachId && styles.selectedCoach]}
+                            onPress={() => setSelectedCoachId(null)}
+                        >
+                            <View style={styles.coachAvatarPlaceholder}>
+                                <Ionicons name="apps" size={24} color="#fff" />
+                            </View>
+                            <Text style={styles.coachName}>None</Text>
+                        </TouchableOpacity>
+
+                        {coaches.map((c) => (
+                            <TouchableOpacity
+                                key={c.id}
+                                style={[styles.coachItem, selectedCoachId === c.user_id && styles.selectedCoach]}
+                                onPress={() => setSelectedCoachId(c.user_id)}
+                            >
+                                <View style={styles.coachAvatarContainer}>
+                                    {c.users?.profile_image ? (
+                                        <Image source={{ uri: c.users.profile_image }} style={styles.coachAvatar} />
+                                    ) : (
+                                        <View style={styles.coachAvatarPlaceholder}>
+                                            <Ionicons name="person" size={24} color="#fff" />
+                                        </View>
+                                    )}
+                                </View>
+                                <Text style={styles.coachName} numberOfLines={1}>
+                                    {c.users?.name?.split(' ')[0] || 'Coach'}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
 
                     {/* Upgrade Your Plan */}
                     <Text style={styles.sectionTitle}>Upgrade Your Plan</Text>
@@ -212,7 +308,7 @@ const SubscriptionScreen = ({ navigation, route }) => {
                                     </View>
                                     <View style={styles.priceRow}>
                                         <Text style={styles.price}>₹{p.price}</Text>
-                                        <Text style={styles.perPeriod}>/{p.id === 'monthly' ? 'month' : 'year'}</Text>
+                                        <Text style={styles.perPeriod}>/{p.duration_days ? `${p.duration_days} days` : (p.id === 'monthly' ? 'month' : 'year')}</Text>
                                     </View>
                                 </View>
 
@@ -233,17 +329,19 @@ const SubscriptionScreen = ({ navigation, route }) => {
                         ))
                     )}
 
-                    {/* Billing History (Optional placeholder) */}
+                    {/* Billing History */}
                     <Text style={styles.sectionTitle}>Billing History</Text>
                     <View style={styles.billingList}>
-                        {activeSubscription && (
-                            <BillingItem
-                                title={`Premium ${activeSubscription.plan_type}`}
-                                date={new Date(activeSubscription.created_at).toLocaleDateString()}
-                                price={`₹${activeSubscription.amount}`}
-                            />
-                        )}
-                        {!activeSubscription && (
+                        {history.length > 0 ? (
+                            history.map((item) => (
+                                <BillingItem
+                                    key={item.id}
+                                    title={item.plan?.plan_name || `Premium ${item.plan_type || 'Plan'}`}
+                                    date={new Date(item.created_at).toLocaleDateString()}
+                                    price={`₹${item.plan_price || 0}`}
+                                />
+                            ))
+                        ) : (
                             <Text style={{ color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>No billing history found.</Text>
                         )}
                     </View>
@@ -449,7 +547,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 15,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255,255,255,0.1)',
     },
     billingTitle: {
         color: '#fff',
@@ -457,14 +557,59 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     billingDate: {
-        color: 'rgba(255,255,255,0.6)',
+        color: 'rgba(255,255,255,0.5)',
         fontSize: 12,
         marginTop: 2,
     },
     billingPrice: {
         color: '#fff',
         fontSize: 14,
+        fontWeight: '600',
+    },
+    // Coach Selector Styles
+    coachList: {
+        marginBottom: 20,
+        paddingHorizontal: 5,
+    },
+    coachItem: {
+        alignItems: 'center',
+        marginRight: 20,
+        padding: 5,
+        borderRadius: 15,
+        borderWidth: 2,
+        borderColor: 'transparent',
+        width: 80,
+    },
+    selectedCoach: {
+        borderColor: '#FFD700',
+        backgroundColor: 'rgba(255,215,0,0.1)',
+    },
+    coachAvatarContainer: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        overflow: 'hidden',
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        marginBottom: 4,
+    },
+    coachAvatar: {
+        width: '100%',
+        height: '100%',
+    },
+    coachAvatarPlaceholder: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    coachName: {
+        color: '#fff',
+        fontSize: 12,
         fontWeight: '500',
+        textAlign: 'center',
     },
     feedbackIconBtn: {
         width: 36,

@@ -31,6 +31,7 @@ const CoachingScreen = ({ navigation }) => {
     const [refreshing, setRefreshing] = useState(false);
 
     const fetchData = useCallback(async () => {
+        if (!user?.token) return;
         try {
             setLoading(true);
             console.log("Fetching subscriptions...");
@@ -58,7 +59,7 @@ const CoachingScreen = ({ navigation }) => {
                     }
                 });
                 setAllCoaches(uniqueCoaches);
-                console.log("All Coaches:", uniqueCoaches);
+                console.log("All Coachesrrrrr:", uniqueCoaches);
 
                 if (uniqueCoaches.length > 0) {
                     const targetCoachId = selectedCoachId || uniqueCoaches[0].id;
@@ -83,11 +84,11 @@ const CoachingScreen = ({ navigation }) => {
                 const coachesRes = await axios.get(`${API_BASE_URL}/admin/coaches`, {
                     headers: { Authorization: `Bearer ${user.token}` }
                 });
-                console.log("Potentialsssssssssssss Coaches:", coachesRes);
+
                 // Backend returns { data: [...] }
                 const coachesData = coachesRes.data.data || [];
                 setPotentialCoaches(coachesData);
-                console.log("Potentialsssssssssssss Coaches:", coachesData);
+                console.log("", coachesData)
             } catch (e) {
                 console.error("Failed to fetch all coaches:", e);
             }
@@ -102,7 +103,7 @@ const CoachingScreen = ({ navigation }) => {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [user.token, selectedCoachId]);
+    }, [user?.token, selectedCoachId]);
 
     useEffect(() => {
         fetchData();
@@ -231,7 +232,7 @@ const CoachingScreen = ({ navigation }) => {
                                             </TouchableOpacity>
                                             <TouchableOpacity
                                                 style={styles.videoCallBtn}
-                                                onPress={() => navigation.navigate('VideoConsultation', { coachId: c.user_id })}
+                                                onPress={() => navigation.navigate('VideoConsultation', { coachId: c.id })}
                                             >
                                                 <Text style={styles.videoCallText}>Book Call</Text>
                                             </TouchableOpacity>

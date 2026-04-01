@@ -39,9 +39,24 @@ const CoachDashboardScreen = ({ navigation }) => {
     const [foodName, setFoodName] = useState('');
     const [foodType, setFoodType] = useState('');
     const [dietLoading, setDietLoading] = useState(false);
+    const [students, setStudents] = useState([]);
 
     const user = useSelector(state => state.auth.user);
+    console.log("user", user)
     const dispatch = useDispatch();
+
+    const fetchSubscribers = useCallback(async () => {
+        if (!user?.token) return;
+        try {
+            const response = await axios.get(`${API_BASE_URL}/v1/appointments/students/me/subscriptions`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            console.log("Subscribers (Active Students) fetched", response.data)
+            setStudents(response.data.students || []);
+        } catch (error) {
+            console.error('Fetch subscribers error:', error);
+        }
+    }, [user?.token]);
 
     const fetchAppointments = useCallback(async () => {
         if (!user?.token) return;
@@ -93,15 +108,15 @@ const CoachDashboardScreen = ({ navigation }) => {
         useCallback(() => {
             fetchUnreadCount();
             fetchUserProfile();
-        }, [fetchUnreadCount, fetchUserProfile])
+            fetchSubscribers();
+        }, [fetchUnreadCount, fetchUserProfile, fetchSubscribers])
     );
-
-    console.log("appointmentslllllllll", appointments);
 
     useEffect(() => {
         const checkAuth = async () => {
             if (user?.token) {
                 fetchAppointments();
+                fetchSubscribers();
                 return;
             }
 
@@ -110,20 +125,20 @@ const CoachDashboardScreen = ({ navigation }) => {
                 const parsedUser = JSON.parse(storedUser);
                 if (parsedUser.token) {
                     fetchAppointments();
+                    fetchSubscribers();
                     return;
                 }
             }
-
-            console.log('No token found in CoachDashboard, redirecting to Login');
             navigation.replace('Login');
         };
 
         checkAuth();
-    }, [user, navigation, fetchAppointments]);
+    }, [user, navigation, fetchAppointments, fetchSubscribers]);
 
     const onRefresh = () => {
         setRefreshing(true);
         fetchAppointments();
+        fetchSubscribers();
         fetchUnreadCount();
         fetchUserProfile();
     };
@@ -203,20 +218,25 @@ const CoachDashboardScreen = ({ navigation }) => {
     };
 
     const handleAddDiet = async () => {
-        if (!foodName || !foodType) {
-            Alert.alert('Error', 'Please fill all fields');
+        if (!foodName || !foodType || !selectedStudent) {
+            Alert.alert('Error', 'Please fill all fields and select a student');
             return;
         }
 
         setDietLoading(true);
+
         try {
-            const response = await axios.post(`${API_BASE_URL}/diet/add`, {
-                user_id: selectedStudent.user?.id || selectedStudent.user_id,
+            const data = {
+                user_id: selectedStudent.id,
                 coach_id: user.id,
                 food_name: foodName,
                 food_type: foodType
-            }, {
-                headers: { Authorization: `Bearer ${user.token}` }
+            };
+
+            const response = await axios.post(`${API_BASE_URL}/diet/add`, data, {
+                headers: {
+                    Authorization: `Bearer ${user.token}`
+                }
             });
 
             if (response.data.success) {
@@ -224,10 +244,11 @@ const CoachDashboardScreen = ({ navigation }) => {
                 setSelectedStudent(null);
                 setFoodName('');
                 setFoodType('');
+                setIsDietModalVisible(false);
             }
         } catch (error) {
             console.error('Add diet error:', error);
-            Alert.alert('Error', error.response?.data?.message || 'Failed to add diet. User might not have an active subscription.');
+            Alert.alert('Error', error.response?.data?.message || 'Failed to add diet');
         } finally {
             setDietLoading(false);
         }
@@ -335,16 +356,16 @@ const CoachDashboardScreen = ({ navigation }) => {
                 {/* Stats Row */}
                 <View style={styles.statsRow}>
                     <View style={styles.statCard}>
-                        <Text style={styles.statNumber}>{appointments.length}</Text>
-                        <Text style={styles.statLabel}>Total</Text>
+                        <Text style={styles.statNumber}>{students.length}</Text>
+                        <Text style={styles.statLabel}>Total Students</Text>
                     </View>
                     <View style={styles.statCard}>
                         <Text style={styles.statNumber}>{requested.length}</Text>
-                        <Text style={styles.statLabel}>Requested</Text>
+                        <Text style={styles.statLabel}>Session Requests</Text>
                     </View>
                     <View style={styles.statCard}>
-                        <Text style={styles.statNumber}>{accepted.length}</Text>
-                        <Text style={styles.statLabel}>Approved</Text>
+                        <Text style={styles.statNumber}>{students.length}</Text>
+                        <Text style={styles.statLabel}>Active Subscriptions</Text>
                     </View>
                 </View>
 
@@ -419,27 +440,27 @@ const CoachDashboardScreen = ({ navigation }) => {
                             <View style={styles.inputGroup}>
                                 <Text style={styles.label}>Select Student</Text>
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.studentSelector}>
-                                    {Array.from(new Set(appointments.map(a => a.user?.id)))
-                                        .map(userId => appointments.find(a => a.user?.id === userId))
-                                        .filter(Boolean)
-                                        .map(appt => (
+                                    {students.length > 0 ? (
+                                        students.map((student) => (
                                             <TouchableOpacity
-                                                key={appt.user.id}
-                                                onPress={() => setSelectedStudent(appt)}
+                                                key={student.id}
+                                                onPress={() => setSelectedStudent(student)}
                                                 style={[
                                                     styles.studentSelectorItem,
-                                                    selectedStudent?.user?.id === appt.user.id && styles.studentSelectorItemActive
+                                                    selectedStudent?.id === student.id && styles.studentSelectorItemActive
                                                 ]}
                                             >
                                                 <Text style={[
                                                     styles.studentSelectorText,
-                                                    selectedStudent?.user?.id === appt.user.id && styles.studentSelectorTextActive
+                                                    selectedStudent?.id === student.id && styles.studentSelectorTextActive
                                                 ]}>
-                                                    {appt.user.name}
+                                                    {student.name || 'Student'}
                                                 </Text>
                                             </TouchableOpacity>
                                         ))
-                                    }
+                                    ) : (
+                                        <Text style={{ color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', fontSize: 12 }}>No subscribed students found.</Text>
+                                    )}
                                 </ScrollView>
                                 {!selectedStudent && (
                                     <Text style={{ color: '#E74C3C', fontSize: 12, marginTop: 5 }}>

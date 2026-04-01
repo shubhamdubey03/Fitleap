@@ -68,7 +68,7 @@ const CollegeStudentLogin = ({ navigation }) => {
 
     try {
       setIsLoading(true);
-      const response = await axios.post(`${AUTH_URL}/verify-otp`, {
+      const response = await axios.post(`${AUTH_URL}/verify-otps`, {
         email: email.trim().toLowerCase(),
         otp: otp
       });
