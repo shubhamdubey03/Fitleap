@@ -26,6 +26,7 @@ const CollegeStudentLogin = ({ navigation }) => {
   const dispatch = useDispatch();
 
   const handleLogin = async () => {
+    if (isLoading) return;
     const trimmedEmail = email?.trim().toLowerCase();
     const trimmedPassword = password?.trim();
 
@@ -140,8 +141,8 @@ const CollegeStudentLogin = ({ navigation }) => {
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={handleResendOtp}>
-              <Text style={styles.resendText}>Resend OTP</Text>
+            <TouchableOpacity onPress={handleResendOtp} disabled={isLoading}>
+              <Text style={[styles.resendText, isLoading && { opacity: 0.5 }]}>Resend OTP</Text>
             </TouchableOpacity>
           </>
         ) : (
@@ -188,7 +189,7 @@ const CollegeStudentLogin = ({ navigation }) => {
             </TouchableOpacity>
 
             {/* Signup */}
-            <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+            <TouchableOpacity onPress={() => navigation.navigate('SignUp')} disabled={isLoading}>
               <Text style={styles.signupText}>Don’t have an account? Sign up</Text>
             </TouchableOpacity>
           </>

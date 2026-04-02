@@ -64,7 +64,7 @@ const SubscriptionScreen = ({ route }) => {
 
             setHistory(res.data || []);
             const active = res.data.find(s => s.status === 'active');
-            const upcoming = res.data.find(s => s.status === 'pending');
+            const upcoming = res.data.find(s => s.status === 'active');
 
             setActiveSubscription(active || null);
             setUpcomingSubscription(upcoming || null);
