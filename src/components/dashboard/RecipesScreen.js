@@ -134,10 +134,25 @@ const RecipesScreen = ({ navigation }) => {
                 ) : (filteredRecipes.length > 0) ? (
                     <View>
                         {!isSubscribed && (
-                            <View style={{ marginBottom: 20, padding: 15, backgroundColor: 'rgba(243, 156, 18, 0.15)', borderRadius: 12, borderWidth: 1, borderColor: '#F39C12' }}>
-                                <Text style={{ color: '#F39C12', fontWeight: 'bold', fontSize: 14 }}>Free Sample Diets</Text>
-                                <Text style={{ color: '#ccc', fontSize: 12, marginTop: 4 }}>You are viewing free diets provided by your coach. Subscribe for personal meal plans.</Text>
-                            </View>
+                            <TouchableOpacity 
+                                style={{
+                                    marginBottom: 20, padding: 15, backgroundColor: 'rgba(243, 156, 18, 0.15)',
+                                    borderRadius: 12, borderWidth: 1, borderColor: '#F39C12',
+                                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'
+                                }}
+                                onPress={() => navigation.navigate('SubscriptionScreen')}
+                            >
+                                <View style={{ flex: 1, paddingRight: 10 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                        <Ionicons name="star" size={16} color="#F39C12" />
+                                        <Text style={{ color: '#F39C12', fontWeight: 'bold', fontSize: 14 }}>Upgrade to Premium</Text>
+                                    </View>
+                                    <Text style={{ color: '#ccc', fontSize: 12, marginTop: 4 }}>
+                                        You are viewing free sample diets. Subscribe to get personalized meal plans.
+                                    </Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={24} color="#F39C12" />
+                            </TouchableOpacity>
                         )}
                         {filteredRecipes.map(item => (
                             <TouchableOpacity
