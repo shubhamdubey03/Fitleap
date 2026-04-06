@@ -34,6 +34,7 @@ const RecipesScreen = ({ navigation }) => {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [recipes, setRecipes] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isSubscribed, setIsSubscribed] = useState(true); // Default to true to avoid flicker
 
     useFocusEffect(
         React.useCallback(() => {
@@ -47,27 +48,41 @@ const RecipesScreen = ({ navigation }) => {
             const token = user?.token || user?.access_token;
             if (!token) return;
 
+            // Fetch user-specific diets (includes free ones assigned to this user)
             const response = await axios.get(`${API_BASE_URL}/diet/diet/${user.id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            if (response.data.success) {
-                // Map the user_diet fields to the UI expected fields
-                const mappedRecipes = response.data.data.map(item => ({
-                    id: item.id.toString(),
-                    title: item.food_name,
-                    description: `Assigned on ${new Date(item.created_at).toLocaleDateString()}`,
-                    image: DEFAULT_IMAGES[item.food_type] || DEFAULT_IMAGES.default,
-                    category: item.food_type
-                }));
-                setRecipes(mappedRecipes);
-            }
+            // Fetch global free diets (no specific user, visible to all)
+            const freeResponse = await axios.get(`${API_BASE_URL}/diet/free`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            const mapDiet = item => ({
+                id: item.id.toString(),
+                title: item.food_name,
+                description: `Assigned on ${new Date(item.created_at).toLocaleDateString()}`,
+                image: DEFAULT_IMAGES[item.food_type] || DEFAULT_IMAGES.default,
+                category: item.food_type,
+                is_free: item.is_free
+            });
+
+            const userDiets = response.data.success ? response.data.data.map(mapDiet) : [];
+            const globalFreeDiets = freeResponse.data.success ? freeResponse.data.data.map(mapDiet) : [];
+
+            // Merge and deduplicate by id
+            const dietMap = new Map();
+            [...userDiets, ...globalFreeDiets].forEach(d => dietMap.set(d.id, d));
+
+            setRecipes(Array.from(dietMap.values()));
+            setIsSubscribed(response.data.is_subscribed ?? true);
         } catch (error) {
             console.error('Fetch diet error:', error);
         } finally {
             setLoading(false);
         }
     };
+
 
     const filteredRecipes = selectedCategory === 'All'
         ? recipes
@@ -116,7 +131,36 @@ const RecipesScreen = ({ navigation }) => {
             <ScrollView contentContainerStyle={styles.listContent}>
                 {loading ? (
                     <ActivityIndicator size="large" color="#fff" style={{ marginTop: 50 }} />
-                ) : !user?.is_subscribed ? (
+                ) : (filteredRecipes.length > 0) ? (
+                    <View>
+                        {!isSubscribed && (
+                            <View style={{ marginBottom: 20, padding: 15, backgroundColor: 'rgba(243, 156, 18, 0.15)', borderRadius: 12, borderWidth: 1, borderColor: '#F39C12' }}>
+                                <Text style={{ color: '#F39C12', fontWeight: 'bold', fontSize: 14 }}>Free Sample Diets</Text>
+                                <Text style={{ color: '#ccc', fontSize: 12, marginTop: 4 }}>You are viewing free diets provided by your coach. Subscribe for personal meal plans.</Text>
+                            </View>
+                        )}
+                        {filteredRecipes.map(item => (
+                            <TouchableOpacity
+                                key={item.id}
+                                style={styles.card}
+                                onPress={() => navigation.navigate('MealDetails', { recipe: item })}
+                            >
+                                <View style={styles.textContainer}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                        <Text style={styles.recipeTitle}>{item.title}</Text>
+                                        {item.is_free && (
+                                            <View style={{ backgroundColor: '#2ECC71', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                                <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>FREE</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <Text style={styles.recipeDesc}>{item.description}</Text>
+                                </View>
+                                <Image source={{ uri: item.image }} style={styles.recipeImage} />
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                ) : !isSubscribed ? (
                     <View style={styles.subscribeContainer}>
                         <Ionicons name="lock-closed" size={60} color="rgba(255,255,255,0.3)" />
                         <Text style={styles.subscribeTitle}>Personalized Diet Plans</Text>
@@ -135,20 +179,6 @@ const RecipesScreen = ({ navigation }) => {
                             </LinearGradient>
                         </TouchableOpacity>
                     </View>
-                ) : filteredRecipes.length > 0 ? (
-                    filteredRecipes.map(item => (
-                        <TouchableOpacity
-                            key={item.id}
-                            style={styles.card}
-                            onPress={() => navigation.navigate('MealDetails', { recipe: item })}
-                        >
-                            <View style={styles.textContainer}>
-                                <Text style={styles.recipeTitle}>{item.title}</Text>
-                                <Text style={styles.recipeDesc}>{item.description}</Text>
-                            </View>
-                            <Image source={{ uri: item.image }} style={styles.recipeImage} />
-                        </TouchableOpacity>
-                    ))
                 ) : (
                     <View style={styles.emptyContainer}>
                         <Text style={styles.emptyText}>No diet plans assigned yet.</Text>

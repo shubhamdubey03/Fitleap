@@ -39,6 +39,7 @@ const CoachDashboardScreen = ({ navigation }) => {
     const [foodName, setFoodName] = useState('');
     const [foodType, setFoodType] = useState('');
     const [dietLoading, setDietLoading] = useState(false);
+    const [isFree, setIsFree] = useState(false);
     const [students, setStudents] = useState([]);
 
     const user = useSelector(state => state.auth.user);
@@ -218,34 +219,51 @@ const CoachDashboardScreen = ({ navigation }) => {
     };
 
     const handleAddDiet = async () => {
-        if (!foodName || !foodType || !selectedStudent) {
-            Alert.alert('Error', 'Please fill all fields and select a student');
+        if (!foodName || !foodType) {
+            Alert.alert('Error', 'Please fill all fields (Food Name and Food Type)');
+            return;
+        }
+
+        // Paid diets require a student to be selected
+        if (!isFree && !selectedStudent) {
+            Alert.alert('Error', 'Please select a student for a paid diet plan');
             return;
         }
 
         setDietLoading(true);
 
         try {
-            const data = {
-                user_id: selectedStudent.id,
-                coach_id: user.id,
-                food_name: foodName,
-                food_type: foodType
-            };
-
-            const response = await axios.post(`${API_BASE_URL}/diet/add`, data, {
-                headers: {
-                    Authorization: `Bearer ${user.token}`
-                }
-            });
-
-            if (response.data.success) {
-                Alert.alert('Success', 'Diet added successfully');
-                setSelectedStudent(null);
-                setFoodName('');
-                setFoodType('');
-                setIsDietModalVisible(false);
+            if (isFree && !selectedStudent) {
+                // 🌐 Global free diet — no user_id, visible to ALL users
+                await axios.post(`${API_BASE_URL}/diet/add`, {
+                    user_id: null,
+                    coach_id: user.id,
+                    food_name: foodName,
+                    food_type: foodType,
+                    is_free: true
+                }, {
+                    headers: { Authorization: `Bearer ${user.token}` }
+                });
+                Alert.alert('Success', '🎉 Free diet added! All users can now see it.');
+            } else {
+                // 👤 Specific student diet
+                await axios.post(`${API_BASE_URL}/diet/add`, {
+                    user_id: selectedStudent.id,
+                    coach_id: user.id,
+                    food_name: foodName,
+                    food_type: foodType,
+                    is_free: isFree
+                }, {
+                    headers: { Authorization: `Bearer ${user.token}` }
+                });
+                Alert.alert('Success', 'Diet added successfully!');
             }
+
+            setSelectedStudent(null);
+            setFoodName('');
+            setFoodType('');
+            setIsFree(false);
+            setIsDietModalVisible(false);
         } catch (error) {
             console.error('Add diet error:', error);
             Alert.alert('Error', error.response?.data?.message || 'Failed to add diet');
@@ -253,6 +271,7 @@ const CoachDashboardScreen = ({ navigation }) => {
             setDietLoading(false);
         }
     };
+
 
     const requested = appointments.filter(a => a.status === 'requested');
     const accepted = appointments.filter(a => a.status === 'accepted');
@@ -459,12 +478,17 @@ const CoachDashboardScreen = ({ navigation }) => {
                                             </TouchableOpacity>
                                         ))
                                     ) : (
-                                        <Text style={{ color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', fontSize: 12 }}>No subscribed students found.</Text>
+                                        <Text style={{ color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', fontSize: 12 }}>No students found (Requires at least one appointment request).</Text>
                                     )}
                                 </ScrollView>
-                                {!selectedStudent && (
+                                {!selectedStudent && !isFree && (
                                     <Text style={{ color: '#E74C3C', fontSize: 12, marginTop: 5 }}>
                                         Please select a student first
+                                    </Text>
+                                )}
+                                {!selectedStudent && isFree && (
+                                    <Text style={{ color: '#2ECC71', fontSize: 12, marginTop: 5 }}>
+                                        ✓ Will be sent to all your students
                                     </Text>
                                 )}
                             </View>
@@ -482,19 +506,56 @@ const CoachDashboardScreen = ({ navigation }) => {
 
                             <View style={styles.inputGroup}>
                                 <Text style={styles.label}>Food Type</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    value={foodType}
-                                    onChangeText={setFoodType}
-                                    placeholder="e.g. Lunch / High Protein"
-                                    placeholderTextColor="rgba(255,255,255,0.4)"
-                                />
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 5 }}>
+                                    {['breakfast', 'lunch', 'dinner', 'snacks'].map(type => (
+                                        <TouchableOpacity
+                                            key={type}
+                                            onPress={() => setFoodType(type)}
+                                            style={[
+                                                styles.studentSelectorItem,
+                                                foodType === type && styles.studentSelectorItemActive
+                                            ]}
+                                        >
+                                            <Text style={[
+                                                styles.studentSelectorText,
+                                                foodType === type && styles.studentSelectorTextActive
+                                            ]}>
+                                                {type.charAt(0).toUpperCase() + type.slice(1)}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                                {!foodType && (
+                                    <Text style={{ color: '#E74C3C', fontSize: 12, marginTop: 5 }}>
+                                        Please select a food type
+                                    </Text>
+                                )}
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Text style={styles.label}>Mark as Free Diet</Text>
+                                    <TouchableOpacity
+                                        onPress={() => setIsFree(!isFree)}
+                                        style={[
+                                            { paddingHorizontal: 15, paddingVertical: 5, borderRadius: 10 },
+                                            isFree ? { backgroundColor: '#2ECC71' } : { backgroundColor: 'rgba(255,255,255,0.1)' }
+                                        ]}
+                                    >
+                                        <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>
+                                            {isFree ? 'FREE' : 'PAID'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, marginTop: 5 }}>
+                                    Free diets do not require the user to have an active subscription.
+                                </Text>
                             </View>
 
                             <TouchableOpacity
-                                style={[styles.submitBtn, (dietLoading || !selectedStudent) && { opacity: 0.7 }]}
+                                style={[styles.submitBtn, (dietLoading || (!selectedStudent && !isFree)) && { opacity: 0.7 }]}
                                 onPress={handleAddDiet}
-                                disabled={dietLoading || !selectedStudent}
+                                disabled={dietLoading || (!selectedStudent && !isFree)}
                             >
                                 {dietLoading ? (
                                     <ActivityIndicator color="#fff" />
