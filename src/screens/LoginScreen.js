@@ -6,13 +6,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
-  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDispatch, useSelector } from 'react-redux';
 import { login } from '../redux/authSlice';
+import GIFLoader from '../components/common/GIFLoader';
 
 const LoginScreen = ({ route, navigation }) => {
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -130,8 +130,10 @@ const LoginScreen = ({ route, navigation }) => {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={isLoading}>
-          {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginText}>Login</Text>}
+          <Text style={styles.loginText}>Login</Text>
         </TouchableOpacity>
+
+        <GIFLoader visible={isLoading} />
 
         {/* Cancel */}
         <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.replace('Home')}>

@@ -56,6 +56,8 @@ import { initNotifications } from './src/services/Notifications';
 import CoachFeedbackScreen from './src/screens/CoachFeedbackScreen';
 import ProgramActiveScreen from './src/screens/ProgramActiveScreen';
 import ProgramSubscriptionPlansScreen from './src/screens/ProgramSubscriptionPlansScreen';
+import WaterIntakeScreen from './src/components/dashboard/WaterIntakeScreen';
+
 
 
 
@@ -164,6 +166,8 @@ const MainNav = () => {
           {/* <Stack.Screen name="CoachAvailability" component={CoachAvailabilityScreen} /> */}
           <Stack.Screen name="VideoConsultation" component={VideoConsultationScreen} />
           <Stack.Screen name="CoachFeedback" component={CoachFeedbackScreen} />
+          <Stack.Screen name="WaterIntake" component={WaterIntakeScreen} />
+
 
         </Stack.Navigator>
       </NavigationContainer>

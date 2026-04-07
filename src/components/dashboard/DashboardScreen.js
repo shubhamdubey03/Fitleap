@@ -81,6 +81,8 @@ const DashboardScreen = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('Home'); // SPA tab state
   const [steps, setSteps] = useState(0);
   const [nutrition, setNutrition] = useState({ carbs: 0, protein: 0, fiber: 0, calories: 0, fat: 0 });
+  const [waterIntake, setWaterIntake] = useState(0);
+
 
 
   const fetchProducts = async () => {
@@ -155,16 +157,30 @@ const DashboardScreen = ({ navigation }) => {
   };
 
 
+  const fetchWaterIntake = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const key = `water_intake_${today}`;
+      const saved = await AsyncStorage.getItem(key);
+      setWaterIntake(saved !== null ? parseInt(saved) : 0);
+    } catch (e) {
+      console.error("Failed to fetch water intake:", e);
+    }
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       dispatch(getProfile());
+
       fetchProducts();
       fetchNotificationCount();
       // Only fetch health data if health is ready, otherwise fetch data will init it
       fetchSteps();
       fetchNutritionData();
+      fetchWaterIntake();
     }, [dispatch]),
   );
+
 
 
   useFocusEffect(
@@ -208,7 +224,7 @@ const DashboardScreen = ({ navigation }) => {
             />
           </TouchableOpacity>
           <View>
-            <Text style={styles.hello}>Hello {user?.name || 'User'}</Text>
+            <Text style={styles.hello}>Jai Hind {user?.name || 'User'}</Text>
             <Text style={styles.title}>Let's Explore</Text>
           </View>
         </View>
@@ -349,10 +365,32 @@ const DashboardScreen = ({ navigation }) => {
                 <Text style={styles.cardTitle}>Calories</Text>
                 <Text style={styles.kcal}>{Math.round(nutrition.calories)} kcal</Text>
               </View>
-
             </View>
 
+            {/* Water Intake Card */}
+            <TouchableOpacity 
+              style={[styles.card, { paddingVertical: 12, backgroundColor: '#2196F3' }]}
+              onPress={() => navigation.navigate('WaterIntake')}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                   <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: 8, borderRadius: 10 }}>
+                      <Ionicons name="water" size={24} color="#fff" />
+                   </View>
+                   <View>
+                      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Water Intake</Text>
+                      <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>Keep your body hydrated</Text>
+                   </View>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                   <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>{waterIntake} / 10</Text>
+                   <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10 }}>Glasses today</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+
             {/* Coaching */}
+
             <TouchableOpacity
               style={styles.coachCard}
               onPress={() => setActiveTab('Consultation')}

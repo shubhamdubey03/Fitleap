@@ -1,6 +1,6 @@
 import messaging from '@react-native-firebase/messaging';
 import { PermissionsAndroid, Platform } from 'react-native';
-import notifee, { AndroidImportance } from '@notifee/react-native';
+import notifee, { AndroidImportance, TriggerType } from '@notifee/react-native';
 
 // Import Store and Action
 import { store } from '../redux/store';
@@ -117,3 +117,46 @@ export const initNotifications = async () => {
         return null;
     }
 };
+
+// ✅ Schedule Water Reminder
+export const scheduleWaterReminder = async (intervalMinutes = 1) => {
+    try {
+        const trigger = {
+            type: TriggerType.TIMESTAMP,
+            timestamp: Date.now() + (intervalMinutes * 60 * 1000), // Fire in X minutes
+            alarmManager: true, // Enables exact alarms (requires permission we added)
+        };
+
+
+        const channelId = await notifee.createChannel({
+            id: 'water-reminder',
+            name: 'Water Reminder',
+            importance: AndroidImportance.HIGH,
+        });
+
+        await notifee.createTriggerNotification(
+            {
+                id: 'water-reminder-id',
+                title: '💧 Hydration Time!',
+                body: 'Time to drink some water and stay healthy!',
+                android: {
+                    channelId,
+                    smallIcon: 'ic_launcher',
+                    pressAction: {
+                        id: 'default',
+                    },
+                },
+            },
+            trigger,
+
+        );
+        console.log(`Water reminder scheduled in ${intervalMinutes} minute(s).`);
+    } catch (error) {
+        console.error('Error scheduling water reminder:', error);
+    }
+};
+
+export const cancelWaterReminders = async () => {
+    await notifee.cancelNotification('water-reminder-id');
+};
+

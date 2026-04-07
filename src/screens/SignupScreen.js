@@ -11,11 +11,13 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Linking,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useDispatch } from 'react-redux';
 import { register, registerCoach, setUser } from '../redux/authSlice';
+import GIFLoader from '../components/common/GIFLoader';
 import axios from 'axios';
 import { AUTH_URL } from '../config/api';
 import CountryPicker from 'react-native-country-picker-modal';
@@ -278,7 +280,24 @@ const SignupScreen = ({ navigation }) => {
       await AsyncStorage.setItem('authToken', response.token);
       dispatch(setUser(response));
       setLoading(false);
-      navigation.replace('Dashboard');
+      setTimeout(() => {
+        Alert.alert(
+          'Action Required',
+          'To access all features (like step tracking), please install Health Connect and Google Fit from the Play Store.',
+          [
+            { 
+              text: 'Install Health Connect', 
+              onPress: () => Linking.openURL('https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata') 
+            },
+            { 
+              text: 'Install Google Fit', 
+              onPress: () => Linking.openURL('https://play.google.com/store/apps/details?id=com.google.android.apps.fitness') 
+            },
+            { text: 'Done', onPress: () => navigation.replace('Dashboard') }
+          ]
+        );
+      }, 300);
+
       return;
     }
 
@@ -312,8 +331,24 @@ const SignupScreen = ({ navigation }) => {
         await AsyncStorage.setItem('authToken', response.data.token);
         dispatch(setUser(response.data));
         setLoading(false);
-        alert('Email verified successfully!');
-        navigation.replace('Dashboard');
+        setTimeout(() => {
+          Alert.alert(
+            'Action Required',
+            'To access all features (like step tracking), please install Health Connect and Google Fit from the Play Store.',
+            [
+              { 
+                text: 'Install Health Connect', 
+                onPress: () => Linking.openURL('https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata') 
+              },
+              { 
+                text: 'Install Google Fit', 
+                onPress: () => Linking.openURL('https://play.google.com/store/apps/details?id=com.google.android.apps.fitness') 
+              },
+              { text: 'Done', onPress: () => navigation.replace('Dashboard') }
+            ]
+          );
+        }, 300);
+
       }
     } catch (error) {
       setLoading(false);
@@ -422,11 +457,7 @@ const SignupScreen = ({ navigation }) => {
                 />
               </View>
               <TouchableOpacity style={styles.nextBtn} onPress={handleVerifyOtp} disabled={loading}>
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.nextText}>Verify OTP</Text>
-                )}
+                <Text style={styles.nextText}>Verify OTP</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleResendOtp}>
                 <Text style={styles.resendText}>Resend Code</Text>
@@ -434,6 +465,8 @@ const SignupScreen = ({ navigation }) => {
               <TouchableOpacity onPress={() => setShowOtpInput(false)}>
                 <Text style={styles.cancel}>Back to Signup</Text>
               </TouchableOpacity>
+
+              <GIFLoader visible={loading} />
             </View>
           ) : (
             <>
@@ -647,16 +680,14 @@ const SignupScreen = ({ navigation }) => {
               )}
 
               <TouchableOpacity style={styles.nextBtn} onPress={handleSignup} disabled={loading}>
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.nextText}>{role === 'coach' ? 'Submit Application' : 'Next'}</Text>
-                )}
+                <Text style={styles.nextText}>{role === 'coach' ? 'Submit Application' : 'Next'}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity onPress={() => navigation.replace('Home')}>
                 <Text style={styles.cancel}>Cancel</Text>
               </TouchableOpacity>
+
+              <GIFLoader visible={loading} />
             </>
           )}
         </ScrollView>
