@@ -301,7 +301,7 @@ const DashboardScreen = ({ navigation }) => {
             <View style={styles.card}>
               <View style={styles.progressCircleContainer}>
                 <View style={styles.progressCircle}>
-                  <Text style={styles.percent}>{Math.round(Math.min((nutrition.calories / 2000) * 100, 100))}%</Text>
+                  <Text style={styles.percent}>{Math.round(Math.min((nutrition.calories / 2420) * 100, 100))}%</Text>
                   <Text style={styles.label}>Calories</Text>
                 </View>
               </View>
@@ -313,7 +313,7 @@ const DashboardScreen = ({ navigation }) => {
                   </View>
                   <View>
                     <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Carbs</Text>
-                    <Text style={styles.stat}> {Math.round(nutrition.carbs)}/140g</Text>
+                    <Text style={styles.stat}> {Math.round(nutrition.carbs)}/{Math.round((2420 * 0.4) / 4)}g</Text>
                   </View>
                 </View>
                 <View style={styles.statRow}>
@@ -322,7 +322,7 @@ const DashboardScreen = ({ navigation }) => {
                   </View>
                   <View>
                     <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Protein</Text>
-                    <Text style={styles.stat}> {Math.round(nutrition.protein)}/80g</Text>
+                    <Text style={styles.stat}> {Math.round(nutrition.protein)}/{Math.round((2420 * 0.3) / 4)}g</Text>
                   </View>
                 </View>
                 <View style={styles.statRow}>
@@ -334,7 +334,7 @@ const DashboardScreen = ({ navigation }) => {
                   </View>
                   <View>
                     <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Fiber</Text>
-                    <Text style={styles.stat}> {Math.round(nutrition.fiber)}/50g</Text>
+                    <Text style={styles.stat}> {Math.round(nutrition.fiber)}/{Math.round((2420 / 1000) * 14)}g</Text>
                   </View>
                 </View>
               </View>
@@ -410,22 +410,23 @@ const DashboardScreen = ({ navigation }) => {
               {['Carbs', 'Protein', 'Fat', 'Fiber'].map(item => {
                 let iconName = 'nutrition-outline';
                 let value = Math.round(nutrition.carbs);
-                let totalValue = 140;
+                let calorieGoal = 2420;
+                let totalValue = Math.round((calorieGoal * 0.4) / 4);
 
                 if (item === 'Protein') {
                   iconName = 'fish-outline';
                   value = Math.round(nutrition.protein);
-                  totalValue = 80;
+                  totalValue = Math.round((calorieGoal * 0.3) / 4);
                 }
                 if (item === 'Fat') {
                   iconName = 'flame-outline';
                   value = Math.round(nutrition.fat);
-                  totalValue = 65;
+                  totalValue = Math.round((calorieGoal * 0.3) / 9);
                 }
                 if (item === 'Fiber') {
                   iconName = 'leaf-outline';
                   value = Math.round(nutrition.fiber);
-                  totalValue = 50;
+                  totalValue = Math.round((calorieGoal / 1000) * 14);
                 }
                 return (
                   <View key={item} style={styles.intake}>

@@ -11,7 +11,12 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { scheduleWaterReminder, cancelWaterReminders } from '../../services/Notifications';
+import { 
+    scheduleWaterReminder, 
+    cancelWaterReminders,
+    syncWaterReminderStatus 
+} from '../../services/Notifications';
+import { useSelector } from 'react-redux';
 
 const { width } = Dimensions.get('window');
 
@@ -20,6 +25,8 @@ const WaterIntakeScreen = ({ navigation }) => {
     const [goal, setGoal] = useState(10);
     const [reminderEnabled, setReminderEnabled] = useState(false);
     const [selectedDay, setSelectedDay] = useState('Today'); // 'Today' or 'Tomorrow'
+    const { user } = useSelector((state) => state.auth);
+    const userId = user?.id || user?._id;
 
     useEffect(() => {
         loadData();
@@ -63,6 +70,12 @@ const WaterIntakeScreen = ({ navigation }) => {
         const newState = !reminderEnabled;
         setReminderEnabled(newState);
         await AsyncStorage.setItem('water_reminder_enabled', newState.toString());
+        
+        // 👉 Sync setting to Database for Backend Cron
+        if (userId) {
+            await syncWaterReminderStatus(userId, newState);
+        }
+
         if (newState) {
             await scheduleWaterReminder(2); // Every 2 hours
         } else {

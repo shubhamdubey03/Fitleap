@@ -63,6 +63,14 @@ export const getTodayNutrition = async () => {
       fat += nutrients.totalFat?.inGrams || 0;
     });
 
+    // If no nutrition records found, estimate based on totalCalories (user formulas)
+    if (carbs === 0 && protein === 0 && fat === 0 && totalCalories > 0) {
+      protein = (totalCalories * 0.30) / 4;
+      carbs = (totalCalories * 0.40) / 4;
+      fat = (totalCalories * 0.30) / 9;
+      fiber = (totalCalories / 1000) * 14; 
+    }
+
     console.log("🔥 FINAL DATA:", {
       calories: totalCalories,
       carbs,

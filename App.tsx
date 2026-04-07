@@ -72,8 +72,13 @@ const MainNav = () => {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
 
   useEffect(() => {
-    initNotifications();
-  }, []);
+    // If user is already logged in, sync their notifications with their user ID
+    if (user?.id || user?._id) {
+        initNotifications(user.id || user._id);
+    } else {
+        initNotifications();
+    }
+  }, [user]);
 
   useEffect(() => {
     dispatch(loadUser() as any);

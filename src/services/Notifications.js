@@ -39,6 +39,41 @@ export const getFcmToken = async () => {
     }
 };
 
+// ✅ Save Token to Backend
+import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
+
+export const saveTokenToBackend = async (userId, token) => {
+    try {
+        if (!userId || !token) return;
+        
+        await axios.post(`${API_BASE_URL}/notifications/save-token`, {
+            userId: userId,
+            token: token,
+            title: "Welcome!",
+            body: "Notifications are active."
+        });
+        console.log("✅ FCM Token successfully synced with backend.");
+    } catch (error) {
+        console.error("❌ Failed to sync FCM token:", error.message);
+    }
+};
+
+// ✅ Sync Water Reminder Status
+export const syncWaterReminderStatus = async (userId, isEnabled) => {
+    try {
+        if (!userId) return;
+        
+        await axios.post(`${API_BASE_URL}/notifications/save-token`, {
+            userId: userId,
+            water_reminder_enabled: isEnabled,
+        });
+        console.log(`✅ Water reminder status synced: ${isEnabled ? 'ENABLED' : 'DISABLED'}`);
+    } catch (error) {
+        console.error("❌ Failed to sync reminder status:", error.message);
+    }
+};
+
 
 // ✅ Listen notifications
 export const listenToNotifications = () => {
@@ -96,18 +131,24 @@ export const listenToNotifications = () => {
 
 
 // ✅ MAIN INIT FUNCTION
-export const initNotifications = async () => {
+export const initNotifications = async (userId = null) => {
     try {
         await requestNotificationPermission();
-        console.log("permission granted")
+        console.log("Permission granted");
 
         const token = await getFcmToken();
         if (token) {
-            console.log("token", token)
+            console.log("Token retrieved:", token);
+            
             // Subscribe to topic
             await messaging().subscribeToTopic('all_users')
                 .then(() => console.log('Subscribed to topic: all_users'))
                 .catch(e => console.log('Error subscribing to topic:', e));
+
+            // Sync with backend if user is logged in
+            if (userId) {
+                await saveTokenToBackend(userId, token);
+            }
         }
 
         listenToNotifications();
