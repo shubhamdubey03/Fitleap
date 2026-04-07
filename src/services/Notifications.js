@@ -29,10 +29,14 @@ export const requestNotificationPermission = async () => {
 
 // ✅ Get FCM Token
 export const getFcmToken = async () => {
-    const token = await messaging().getToken();
-    console.log('FCM TOKEN:', token);
-
-    return token; // send this to backend
+    try {
+        const token = await messaging().getToken();
+        console.log('FCM TOKEN:', token);
+        return token;
+    } catch (error) {
+        console.error('Error getting FCM token:', error);
+        return null;
+    }
 };
 
 
@@ -93,18 +97,23 @@ export const listenToNotifications = () => {
 
 // ✅ MAIN INIT FUNCTION
 export const initNotifications = async () => {
-    await requestNotificationPermission();
-    console.log("permission granted")
+    try {
+        await requestNotificationPermission();
+        console.log("permission granted")
 
-    const token = await getFcmToken();
-    console.log("token", token)
+        const token = await getFcmToken();
+        if (token) {
+            console.log("token", token)
+            // Subscribe to topic
+            await messaging().subscribeToTopic('all_users')
+                .then(() => console.log('Subscribed to topic: all_users'))
+                .catch(e => console.log('Error subscribing to topic:', e));
+        }
 
-    // Subscribe to topic
-    await messaging().subscribeToTopic('all_users')
-        .then(() => console.log('Subscribed to topic: all_users'))
-        .catch(e => console.log('Error subscribing to topic:', e));
-
-    listenToNotifications();
-
-    return token;
+        listenToNotifications();
+        return token;
+    } catch (error) {
+        console.error('Failed to initialize notifications:', error);
+        return null;
+    }
 };
