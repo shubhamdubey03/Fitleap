@@ -159,8 +159,10 @@ const DashboardScreen = ({ navigation }) => {
 
   const fetchWaterIntake = async () => {
     try {
+      const userId = user?.id || user?._id;
       const today = new Date().toISOString().split('T')[0];
-      const key = `water_intake_${today}`;
+      const userPrefix = userId ? `${userId}_` : '';
+      const key = `${userPrefix}water_intake_${today}`;
       const saved = await AsyncStorage.getItem(key);
       setWaterIntake(saved !== null ? parseInt(saved) : 0);
     } catch (e) {
@@ -178,7 +180,7 @@ const DashboardScreen = ({ navigation }) => {
       fetchSteps();
       fetchNutritionData();
       fetchWaterIntake();
-    }, [dispatch]),
+    }, [dispatch, user]),
   );
 
 

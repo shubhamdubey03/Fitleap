@@ -63,26 +63,20 @@ const OrdersScreen = ({ navigation }: { navigation: any }) => {
         }
     };
 
-    const downloadInvoice = (url) => {
+    const downloadInvoice = (url: string) => {
         if (!url) {
-            Alert.alert("Invoice not available yet");
+            Alert.alert("Info", "Invoice not available for this order.");
             return;
         }
 
-        const { dirs } = RNFetchBlob.fs;
+        const fullUrl = url.startsWith('http')
+            ? url
+            : `${API_BASE_URL.replace('/api', '')}${url.startsWith('/') ? '' : '/'}${url}`;
 
-        RNFetchBlob.config({
-            fileCache: true,
-            path: `${dirs.DownloadDir}/invoice-${Date.now()}.pdf`
-        })
-            .fetch('GET', url)
-            .then(() => {
-                Alert.alert("Success", "Invoice downloaded");
-            })
-            .catch(err => {
-                console.log(err);
-                Alert.alert("Download failed");
-            });
+        Linking.openURL(fullUrl).catch(err => {
+            console.error("Couldn't open URL", err);
+            Alert.alert("Error", "Unable to open invoice link.");
+        });
     };
     const getStatusColor = (status: string) => {
         switch (status?.toLowerCase()) {
@@ -122,7 +116,7 @@ const OrdersScreen = ({ navigation }: { navigation: any }) => {
                 >
                     <Image source={{ uri: productImage }} style={styles.orderImage} />
                     <View style={styles.orderDetails}>
-                        <Text style={styles.orderNumber}>Order ID: <Text style={styles.orderNumberBold}>{item.id.substring(0, 8)}</Text></Text>
+                        <Text style={styles.orderNumber}>Order ID: <Text style={styles.orderNumberBold}>{item.id?.toString().substring(0, 8).toUpperCase()}</Text></Text>
                         <Text style={styles.orderDate}>Date: {new Date(item.created_at).toLocaleDateString()}</Text>
                         <Text style={styles.orderTotal}>Total: Rs {item.total_price}</Text>
 

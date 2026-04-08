@@ -58,7 +58,7 @@ const DashboardSidebar = ({ visible, onClose, navigation }) => {
             navigation.navigate('SubscriptionScreen');
         } else if (item.title === 'Logout') {
             try {
-                dispatch(logout());
+                await dispatch(logout()).unwrap();
                 await AsyncStorage.removeItem('authToken');
                 navigation.reset({
                     index: 0,

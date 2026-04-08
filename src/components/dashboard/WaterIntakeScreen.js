@@ -30,14 +30,15 @@ const WaterIntakeScreen = ({ navigation }) => {
 
     useEffect(() => {
         loadData();
-    }, [selectedDay]);
+    }, [selectedDay, userId]);
 
     const getDateKey = (day) => {
         const date = new Date();
         if (day === 'Tomorrow') {
             date.setDate(date.getDate() + 1);
         }
-        return `water_intake_${date.toISOString().split('T')[0]}`;
+        const userPrefix = userId ? `${userId}_` : '';
+        return `${userPrefix}water_intake_${date.toISOString().split('T')[0]}`;
     };
 
     const loadData = async () => {
@@ -46,7 +47,8 @@ const WaterIntakeScreen = ({ navigation }) => {
             const savedGlasses = await AsyncStorage.getItem(key);
             setGlasses(savedGlasses !== null ? parseInt(savedGlasses) : 0);
             
-            const savedReminder = await AsyncStorage.getItem('water_reminder_enabled');
+            const reminderKey = userId ? `${userId}_water_reminder_enabled` : 'water_reminder_enabled';
+            const savedReminder = await AsyncStorage.getItem(reminderKey);
             setReminderEnabled(savedReminder === 'true');
         } catch (e) {
             console.error(e);
@@ -69,7 +71,8 @@ const WaterIntakeScreen = ({ navigation }) => {
     const toggleReminder = async () => {
         const newState = !reminderEnabled;
         setReminderEnabled(newState);
-        await AsyncStorage.setItem('water_reminder_enabled', newState.toString());
+        const reminderKey = userId ? `${userId}_water_reminder_enabled` : 'water_reminder_enabled';
+        await AsyncStorage.setItem(reminderKey, newState.toString());
         
         // 👉 Sync setting to Database for Backend Cron
         if (userId) {

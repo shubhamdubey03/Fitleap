@@ -27,44 +27,58 @@ const HomeScreen = ({ navigation }) => {
       offlineAccess: true,
       forceCodeForRefreshToken: true, // often needed to get idToken reliably
     });
-  }, []);
+
+    // When user lands on Home, forcefully delete any stale token data 
+    // to prevent unwanted auto-login bugs from lingering sessions
+    const clearStaleAuth = async () => {
+      try {
+        await AsyncStorage.removeItem('token');
+        dispatch(reset());
+      } catch (e) {
+        console.log("Cleanup error:", e);
+      }
+    };
+    clearStaleAuth();
+  }, [dispatch]);
 
   const isFocused = useIsFocused();
 
-  React.useEffect(() => {
-    if (isError && isFocused) {
-      Alert.alert('Error', message);
-      dispatch(reset());
-    }
+  // React.useEffect(() => {
+  //   if (isError && isFocused) {
+  //     Alert.alert('Error', message);
+  //     dispatch(reset());
+  //   }
 
-    if (isSuccess && user && isFocused) {
-      if (user.token) {
-        const handleSuccess = async () => {
-          Alert.alert('Login Successful', `Welcome ${user.name}`);
-          await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
-          await AsyncStorage.setItem('USER_ROLE', user.role);
 
-          if (user.role === 'vendor' || user.role === 'Vendor') {
-            const vendorName = user.name || 'Vendor';
-            await AsyncStorage.setItem('VENDOR_NAME', vendorName);
-            navigation.replace('VendorDashboard');
-          } else if (user.role === 'coach' || user.role === 'Coach') {
-            const coachName = user.name || 'Coach';
-            await AsyncStorage.setItem('COACH_NAME', coachName);
-            navigation.replace('CoachDashboard');
-          } else {
-            navigation.replace('Dashboard');
-          }
-          dispatch(reset());
-        };
-        handleSuccess();
-      } else {
-        // Successful signup/action but no token (e.g., pending approval)
-        // Reset state so we don't trigger this again on focus
-        dispatch(reset());
-      }
-    }
-  }, [isError, isSuccess, user, message, navigation, dispatch, isFocused]);
+
+  //   if (isSuccess && user && isFocused) {
+  //     if (user.token) {
+  //       const handleSuccess = async () => {
+  //         Alert.alert('Login Successful', `Welcome ${user.name}`);
+  //         await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
+  //         await AsyncStorage.setItem('USER_ROLE', user.role);
+
+  //         if (user.role === 'vendor' || user.role === 'Vendor') {
+  //           const vendorName = user.name || 'Vendor';
+  //           await AsyncStorage.setItem('VENDOR_NAME', vendorName);
+  //           navigation.replace('VendorDashboard');
+  //         } else if (user.role === 'coach' || user.role === 'Coach') {
+  //           const coachName = user.name || 'Coach';
+  //           await AsyncStorage.setItem('COACH_NAME', coachName);
+  //           navigation.replace('CoachDashboard');
+  //         } else {
+  //           navigation.replace('Dashboard');
+  //         }
+  //         dispatch(reset());
+  //       };
+  //       handleSuccess();
+  //     } else {
+  //       // Successful signup/action but no token (e.g., pending approval)
+  //       // Reset state so we don't trigger this again on focus
+  //       dispatch(reset());
+  //     }
+  //   }
+  // }, [isError, isSuccess, user, message, navigation, dispatch, isFocused]);
 
   const handleGoogleLogin = async () => {
     try {

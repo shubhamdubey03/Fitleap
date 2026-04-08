@@ -66,7 +66,7 @@ const ProfileScreen = ({ hideBack }) => {
 
     const handleLogout = async () => {
         try {
-            dispatch(logout());
+            await dispatch(logout()).unwrap();
 
             navigation.reset({
                 index: 0,
