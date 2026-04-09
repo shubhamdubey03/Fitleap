@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -118,83 +119,88 @@ const StudentLogin = ({ navigation }) => {
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
-        {showOtpInput ? (
-          <>
-            <View style={styles.inputBox}>
-              <TextInput
-                placeholder="Enter 6-digit OTP"
-                placeholderTextColor="#ccc"
-                style={styles.input}
-                value={otp}
-                onChangeText={setOtp}
-                keyboardType="numeric"
-                maxLength={6}
-              />
-            </View>
-
-            <TouchableOpacity style={styles.loginBtn} onPress={handleVerifyOtp} disabled={isLoading}>
-              {isLoading ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <Text style={styles.loginText}>Verify OTP</Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={handleResendOtp} disabled={isLoading}>
-              <Text style={[styles.resendText, isLoading && { opacity: 0.5 }]}>Resend OTP</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <View style={styles.inputBox}>
-              <TextInput
-                placeholder="School Email"
-                placeholderTextColor="#ccc"
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-            </View>
-
-            {/* Password */}
-            <View style={styles.inputBox}>
-              <TextInput
-                placeholder="Password"
-                placeholderTextColor="#ccc"
-                secureTextEntry={secure}
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-              />
-              <TouchableOpacity onPress={() => setSecure(!secure)}>
-                <Ionicons
-                  name={secure ? 'eye-off-outline' : 'eye-outline'}
-                  size={22}
-                  color="#fff"
-                  style={styles.cameraIcon}
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.content}>
+          {showOtpInput ? (
+            <>
+              <View style={styles.inputBox}>
+                <TextInput
+                  placeholder="Enter 6-digit OTP"
+                  placeholderTextColor="#ccc"
+                  style={styles.input}
+                  value={otp}
+                  onChangeText={setOtp}
+                  keyboardType="numeric"
+                  maxLength={6}
                 />
+              </View>
+
+              <TouchableOpacity style={styles.loginBtn} onPress={handleVerifyOtp} disabled={isLoading}>
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.loginText}>Verify OTP</Text>
+                )}
               </TouchableOpacity>
-            </View>
 
-            {/* Login Button */}
-            <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} disabled={isLoading}>
-              {isLoading ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <Text style={styles.loginText}>Login</Text>
-              )}
-            </TouchableOpacity>
+              <TouchableOpacity onPress={handleResendOtp} disabled={isLoading}>
+                <Text style={[styles.resendText, isLoading && { opacity: 0.5 }]}>Resend OTP</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <View style={styles.inputBox}>
+                <TextInput
+                  placeholder="School Email"
+                  placeholderTextColor="#ccc"
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+              </View>
 
-            {/* Signup */}
-            <TouchableOpacity onPress={() => navigation.navigate('SignUp')} disabled={isLoading}>
-              <Text style={styles.signupText}>Don’t have an account? Sign up</Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
+              {/* Password */}
+              <View style={styles.inputBox}>
+                <TextInput
+                  placeholder="Password"
+                  placeholderTextColor="#ccc"
+                  secureTextEntry={secure}
+                  style={styles.input}
+                  value={password}
+                  onChangeText={setPassword}
+                />
+                <TouchableOpacity onPress={() => setSecure(!secure)}>
+                  <Ionicons
+                    name={secure ? 'eye-off-outline' : 'eye-outline'}
+                    size={22}
+                    color="#fff"
+                    style={styles.cameraIcon}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {/* Login Button */}
+              <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} disabled={isLoading}>
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.loginText}>Login</Text>
+                )}
+              </TouchableOpacity>
+
+              {/* Signup */}
+              <TouchableOpacity onPress={() => navigation.navigate('SignUp')} disabled={isLoading}>
+                <Text style={styles.signupText}>Don’t have an account? Sign up</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </ScrollView>
     </LinearGradient>
   );
 };
@@ -260,7 +266,10 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   content: {
-    marginTop: 140,
+    marginTop: 60,
+  },
+  scrollContent: {
+    paddingBottom: 40,
   },
   cameraIcon: {
     width: 24,

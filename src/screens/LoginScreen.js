@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -27,7 +28,7 @@ const LoginScreen = ({ route, navigation }) => {
     const trimmedPassword = password?.trim();
 
     if (!trimmedEmail || !trimmedPassword) {
-      alert('Please fill all fields');
+      Alert.alert('Error', 'Please fill all fields');
       return;
     }
 
@@ -54,29 +55,35 @@ const LoginScreen = ({ route, navigation }) => {
 
     } catch (error) {
       console.log("LOGIN ERROR:", error);
-      alert(error.message || error);
+      Alert.alert('Login Failed', error.message || String(error));
     }
   };
 
 
 
   const handleLoginSuccess = async (user) => {
-    alert('Login successful');
-    // Persist Login State Locally
+    // Persist Login State Locally FIRST before showing alert to avoid race conditions
     await AsyncStorage.setItem('IS_LOGGED_IN', 'true');
     await AsyncStorage.setItem('USER_ROLE', user.role);
 
-    if (user.role === 'vendor' || user.role === 'Vendor') {
-      const vendorName = user.name || 'Vendor';
-      await AsyncStorage.setItem('VENDOR_NAME', vendorName);
-      navigation.replace('VendorDashboard');
-    } else if (user.role === 'coach' || user.role === 'Coach') {
-      const coachName = user.name || 'Coach';
-      await AsyncStorage.setItem('COACH_NAME', coachName);
-      navigation.replace('CoachDashboard');
-    } else {
-      navigation.replace('Dashboard');
-    }
+    Alert.alert('Success', 'Login successful', [
+      {
+        text: 'OK',
+        onPress: async () => {
+          if (user.role === 'vendor' || user.role === 'Vendor') {
+            const vendorName = user.name || 'Vendor';
+            await AsyncStorage.setItem('VENDOR_NAME', vendorName);
+            navigation.replace('VendorDashboard');
+          } else if (user.role === 'coach' || user.role === 'Coach') {
+            const coachName = user.name || 'Coach';
+            await AsyncStorage.setItem('COACH_NAME', coachName);
+            navigation.replace('CoachDashboard');
+          } else {
+            navigation.replace('Dashboard');
+          }
+        }
+      }
+    ]);
   };
 
   return (

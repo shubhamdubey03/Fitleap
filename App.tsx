@@ -70,16 +70,18 @@ const MainNav = () => {
   // Fix: Explicitly type state as 'any' or define RootState interface
   const { user } = useSelector((state: any) => state.auth);
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
+  const [isNotificationInit, setIsNotificationInit] = useState(false);
 
   useEffect(() => {
-    // If user is already logged in, sync their notifications with their user ID
-    if (user?.id || user?._id) {
+    if (!isNotificationInit) {
+      if (user?.id || user?._id) {
         initNotifications(user.id || user._id);
-    } else {
+      } else {
         initNotifications();
+      }
+      setIsNotificationInit(true);
     }
   }, [user]);
-
   useEffect(() => {
     dispatch(loadUser() as any);
   }, []);

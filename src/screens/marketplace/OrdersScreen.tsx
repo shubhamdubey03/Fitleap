@@ -15,7 +15,7 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { API_BASE_URL } from '../../config/api';
 import { Linking } from 'react-native';
-import RNFetchBlob from 'rn-fetch-blob';
+import RNFetchBlob from 'react-native-blob-util';
 import { Alert } from 'react-native';
 
 
@@ -63,20 +63,33 @@ const OrdersScreen = ({ navigation }: { navigation: any }) => {
         }
     };
 
-    const downloadInvoice = (url: string) => {
+    const downloadInvoice = async (url) => {
         if (!url) {
-            Alert.alert("Info", "Invoice not available for this order.");
+            Alert.alert("No invoice available");
             return;
         }
 
-        const fullUrl = url.startsWith('http')
-            ? url
-            : `${API_BASE_URL.replace('/api', '')}${url.startsWith('/') ? '' : '/'}${url}`;
+        try {
+            const { dirs } = RNFetchBlob.fs;
+            const path = `${dirs.DownloadDir}/invoice-${Date.now()}.pdf`;
 
-        Linking.openURL(fullUrl).catch(err => {
-            console.error("Couldn't open URL", err);
-            Alert.alert("Error", "Unable to open invoice link.");
-        });
+            await RNFetchBlob.config({
+                fileCache: true,
+                path,
+                addAndroidDownloads: {
+                    useDownloadManager: true,
+                    notification: true,
+                    path,
+                    description: 'Downloading invoice'
+                }
+            }).fetch('GET', url);
+
+            Alert.alert("Downloaded", "Invoice saved to Downloads");
+
+        } catch (err) {
+            console.log(err);
+            Alert.alert("Error", "Download failed");
+        }
     };
     const getStatusColor = (status: string) => {
         switch (status?.toLowerCase()) {
@@ -116,7 +129,7 @@ const OrdersScreen = ({ navigation }: { navigation: any }) => {
                 >
                     <Image source={{ uri: productImage }} style={styles.orderImage} />
                     <View style={styles.orderDetails}>
-                        <Text style={styles.orderNumber}>Order ID: <Text style={styles.orderNumberBold}>{item.id?.toString().substring(0, 8).toUpperCase()}</Text></Text>
+                        <Text style={styles.orderNumber}>Order ID: <Text style={styles.orderNumberBold}>{item.id.substring(0, 8)}</Text></Text>
                         <Text style={styles.orderDate}>Date: {new Date(item.created_at).toLocaleDateString()}</Text>
                         <Text style={styles.orderTotal}>Total: Rs {item.total_price}</Text>
 

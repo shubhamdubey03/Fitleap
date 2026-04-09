@@ -126,7 +126,7 @@ const HomeScreen = ({ navigation }) => {
         <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleLogin}>
           <View style={styles.googleCircle}>
             <Image
-              source={require('../assets/images/google.png')}
+              source={{ uri: 'https://brandlogos.net/wp-content/uploads/2015/09/google_favicon-logo_brandlogos.net_cgzfg-512x524.png' }}
               style={styles.googleIcon}
             />
           </View>
@@ -139,7 +139,7 @@ const HomeScreen = ({ navigation }) => {
           onPress={() => navigation.navigate('StudentLogin')}
         >
           <View style={styles.googleCircle}>
-            <Ionicons name="school-outline" size={22} color="#fff" />
+            <Ionicons name="school-outline" size={22} color="#FFC107" />
           </View>
           <Text style={styles.btnText}>Continue as School Student</Text>
         </TouchableOpacity>
@@ -149,7 +149,7 @@ const HomeScreen = ({ navigation }) => {
           onPress={() => navigation.navigate('CollegeStudentLogin')}
         >
           <View style={styles.googleCircle}>
-            <Ionicons name="business-outline" size={22} color="#fff" />
+            <Ionicons name="business-outline" size={22} color="#2196F3" />
           </View>
           <Text style={styles.btnText}>Continue as College Student</Text>
         </TouchableOpacity>
@@ -287,7 +287,6 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     resizeMode: 'contain',
-    tintColor: '#fff',
   },
 });
 

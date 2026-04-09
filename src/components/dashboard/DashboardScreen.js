@@ -30,6 +30,8 @@ import ProfileScreen from '../../screens/ProfileScreen';
 import ProgramsAndChallengesScreen from '../../screens/ProgramsAndChallengesScreen';
 import { initHealth, getTodaySteps, requestStepsPermission } from '../../services/readSteps';
 import { getTodayNutrition, requestNutritionPermission } from '../../services/readNutrition';
+import ActivityRings from './ActivityRings';
+import SimpleLineChart from './SimpleLineChart';
 
 
 const CoinIcon = ({ size = 26, style }) => (
@@ -105,6 +107,7 @@ const DashboardScreen = ({ navigation }) => {
     }
   };
 
+
   const fetchNotificationCount = async () => {
     try {
       const token = user?.token || user?.access_token;
@@ -127,16 +130,29 @@ const DashboardScreen = ({ navigation }) => {
   const fetchSteps = async () => {
     try {
       const success = await initHealth();
+
       if (success) {
         // ✅ Explicitly request permission before fetching steps
         await requestStepsPermission();
 
         const stepCount = await getTodaySteps();
+        console.log(stepCount, "stepCount")
         setSteps(stepCount || 0);
       }
     } catch (error) {
       console.error("Failed to fetch steps:", error);
     }
+  };
+
+  const calorieGoal = user?.daily_calorie_goal || 2420;
+  const stepGoal = user?.step_goal || 10000;
+
+  const metrics = {
+    carbs: { value: Math.round(nutrition.carbs), goal: Math.round((calorieGoal * 0.4) / 4) },
+    protein: { value: Math.round(nutrition.protein), goal: Math.round((calorieGoal * 0.3) / 4) },
+    fat: { value: Math.round(nutrition.fat), goal: Math.round((calorieGoal * 0.3) / 9) },
+    fiber: { value: Math.round(nutrition.fiber), goal: Math.round((calorieGoal / 1000) * 14) },
+    calories: { value: Math.round(nutrition.calories), goal: calorieGoal }
   };
 
   const fetchNutritionData = async () => {
@@ -172,7 +188,6 @@ const DashboardScreen = ({ navigation }) => {
 
   useFocusEffect(
     React.useCallback(() => {
-      dispatch(getProfile());
 
       fetchProducts();
       fetchNotificationCount();
@@ -180,10 +195,12 @@ const DashboardScreen = ({ navigation }) => {
       fetchSteps();
       fetchNutritionData();
       fetchWaterIntake();
-    }, [dispatch, user]),
+    }, [dispatch]),
   );
 
-
+  useEffect(() => {
+    dispatch(getProfile());
+  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -299,145 +316,163 @@ const DashboardScreen = ({ navigation }) => {
         {/* HOME COMPONENT CONTENT */}
         <View style={{ flex: 1, display: activeTab === 'Home' ? 'flex' : 'none' }}>
           <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Progress Card */}
-            <View style={styles.card}>
-              <View style={styles.progressCircleContainer}>
-                <View style={styles.progressCircle}>
-                  <Text style={styles.percent}>{Math.round(Math.min((nutrition.calories / 2420) * 100, 100))}%</Text>
-                  <Text style={styles.label}>Calories</Text>
+            {/* Top Activity Card */}
+            <View style={[styles.card, { padding: 10, minHeight: 180 }]}>
+              <View style={styles.activityRingsContainer}>
+                <ActivityRings
+                  size={140}
+                  rings={[
+                    { progress: Math.min((steps / stepGoal) * 100, 100), color: '#FF6B3D' }, // Steps (Orange)
+                    { progress: Math.min((metrics.calories.value / metrics.calories.goal) * 100, 100), color: '#9C27B0' }, // Calories (Purple)
+                    { progress: Math.min((metrics.fat.value / metrics.fat.goal) * 100, 100), color: '#00E676' }, // Fat (Green)
+                  ]}
+                />
+                <View style={styles.activityCenterText}>
+                  <Text style={styles.activityPercentText}>{Math.round(Math.min((metrics.calories.value / metrics.calories.goal) * 100, 100))}%</Text>
+                </View>
+
+                {/* Ring Labels */}
+                <View style={[styles.ringLabel, { top: 35, left: -5 }]}>
+                  <Text style={[styles.ringLabelText, { color: '#FF6B3D' }]}>Steps</Text>
+                </View>
+                <View style={[styles.ringLabel, { bottom: 10, left: 45 }]}>
+                  <Text style={[styles.ringLabelText, { color: '#9C27B0' }]}>Calories</Text>
+                </View>
+                <View style={[styles.ringLabel, { top: 35, right: -5 }]}>
+                  <Text style={[styles.ringLabelText, { color: '#00E676' }]}>Fat</Text>
                 </View>
               </View>
 
-              <View style={styles.statsContainer}>
-                <View style={styles.statRow}>
-                  <View style={{ marginTop: 14 }}>
-                    <Ionicons name="nutrition-outline" size={26} color="#2F80ED" />
+              <View style={styles.activityStatsSide}>
+                <View style={styles.sideStatItem}>
+                  <View style={styles.sideStatHeader}>
+                    <Text style={styles.sideStatLabel}>Carbs</Text>
+                    <Ionicons name="nutrition-outline" size={20} color="#2196F3" />
                   </View>
-                  <View>
-                    <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Carbs</Text>
-                    <Text style={styles.stat}> {Math.round(nutrition.carbs)}/{Math.round((2420 * 0.4) / 4)}g</Text>
-                  </View>
+                  <Text style={styles.sideStatValue}>{metrics.carbs.value}/{metrics.carbs.goal}g</Text>
                 </View>
-                <View style={styles.statRow}>
-                  <View style={{ marginTop: 14 }}>
-                    <Ionicons name="fish-outline" size={26} color="#FF6B3D" />
+
+                <View style={styles.sideStatItem}>
+                  <View style={styles.sideStatHeader}>
+                    <Text style={styles.sideStatLabel}>Protein</Text>
+                    <Ionicons name="fish-outline" size={20} color="#FF6B3D" />
                   </View>
-                  <View>
-                    <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Protein</Text>
-                    <Text style={styles.stat}> {Math.round(nutrition.protein)}/{Math.round((2420 * 0.3) / 4)}g</Text>
-                  </View>
+                  <Text style={styles.sideStatValue}>{metrics.protein.value}/{metrics.protein.goal}g</Text>
                 </View>
-                <View style={styles.statRow}>
-                  <View style={{ marginTop: 14 }}>
-                    <Image
-                      source={require('../../assets/images/flower.png')}
-                      style={styles.flowerIcon}
-                    />
+
+                <View style={styles.sideStatItem}>
+                  <View style={styles.sideStatHeader}>
+                    <Text style={styles.sideStatLabel}>Fiber</Text>
+                    <Image source={require('../../assets/images/flower.png')} style={[styles.flowerIcon, { width: 18, height: 18, marginRight: 0 }]} />
                   </View>
-                  <View>
-                    <Text style={[styles.stat, { textAlign: 'center', color: '#7a7a7aff' }]}>Fiber</Text>
-                    <Text style={styles.stat}> {Math.round(nutrition.fiber)}/{Math.round((2420 / 1000) * 14)}g</Text>
-                  </View>
+                  <Text style={styles.sideStatValue}>{metrics.fiber.value}/{metrics.fiber.goal}g</Text>
                 </View>
               </View>
             </View>
 
 
-            {/* Middle Cards */}
+            {/* Middle Cards Row */}
             <View style={styles.row}>
-              <TouchableOpacity
-                style={styles.progressCircleWrapper}
-                onPress={() => { }}
-              >
-                <Text style={styles.cardTitle}>Steps</Text>
-                <SafeProgressCircle
-                  percent={Math.min((steps / 10000) * 100, 100)}
-                  radius={55}
-                  borderWidth={8}
-                  color="#2ECC71"
-                  bgColor="#fff"
-                >
-                  <Text style={styles.stepsNumber}>{steps}</Text>
-                  <Text style={styles.stepsLabel}>Steps</Text>
-                </SafeProgressCircle>
-              </TouchableOpacity>
-              <View
-                style={styles.smallCard}
-              >
-                <Text style={styles.cardTitle}>Calories</Text>
-                <Text style={styles.kcal}>{Math.round(nutrition.calories)} kcal</Text>
+              <View style={styles.mediumCard}>
+                <View style={styles.cardHeaderRow}>
+                  <Text style={styles.mediumCardTitle}>Exercise</Text>
+                  <Ionicons name="walk-outline" size={18} color="#FF6B3D" />
+                </View>
+                <View style={{ marginTop: 10, alignItems: 'center' }}>
+                  <SafeProgressCircle
+                    percent={Math.min((steps / stepGoal) * 100, 100)}
+                    radius={45}
+                    borderWidth={6}
+                    color="#FF6B3D"
+                    bgColor="transparent"
+                  >
+                    <Text style={styles.mainStepsText}>{steps}</Text>
+                    <Text style={styles.mainStepsLabel}>Steps</Text>
+                  </SafeProgressCircle>
+                </View>
+              </View>
+
+              <View style={styles.mediumCard}>
+                <View style={styles.cardHeaderRow}>
+                  <Text style={styles.mediumCardTitle}>Calories</Text>
+                  <Ionicons name="flame-outline" size={18} color="#FF6B3D" />
+                </View>
+                <View style={{ marginTop: 20 }}>
+                  <SimpleLineChart width={140} height={50} />
+                </View>
+                <View style={{ marginTop: 10 }}>
+                  <Text style={styles.mediumCardValue}>{metrics.calories.value} Kcal</Text>
+                </View>
               </View>
             </View>
 
-            {/* Water Intake Card */}
-            <TouchableOpacity 
-              style={[styles.card, { paddingVertical: 12, backgroundColor: '#2196F3' }]}
-              onPress={() => navigation.navigate('WaterIntake')}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                   <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: 8, borderRadius: 10 }}>
-                      <Ionicons name="water" size={24} color="#fff" />
-                   </View>
-                   <View>
-                      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Water Intake</Text>
-                      <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>Keep your body hydrated</Text>
-                   </View>
+            {/* Bottom row: Caching and something else */}
+            <View style={styles.row}>
+              <View style={styles.mediumCard}>
+                <View style={styles.cardHeaderRow}>
+                  <Text style={styles.mediumCardTitle}>Caching</Text>
+                  <Ionicons name="bed-outline" size={18} color="#FF6B3D" />
                 </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                   <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>{waterIntake} / 10</Text>
-                   <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10 }}>Glasses today</Text>
+                <View style={{ marginTop: 25 }}>
+                  <Text style={styles.coachNameText}>{user?.coach_name || 'Coach'}</Text>
                 </View>
               </View>
-            </TouchableOpacity>
 
-            {/* Coaching */}
+              <TouchableOpacity
+                style={[styles.mediumCard, { backgroundColor: '#2196F3' }]}
+                onPress={() => navigation.navigate('WaterIntake')}
+              >
+                <View style={styles.cardHeaderRow}>
+                  <Text style={[styles.mediumCardTitle, { color: '#fff' }]}>Water</Text>
+                  <Ionicons name="water-outline" size={18} color="#fff" />
+                </View>
+                <View style={{ marginTop: 15, alignItems: 'center' }}>
+                  <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold' }}>{waterIntake}/10</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 10 }}>Glasses</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
 
-            <TouchableOpacity
-              style={styles.coachCard}
-              onPress={() => setActiveTab('Consultation')}
-            >
-              <Text style={styles.cardTitle}>Coaching</Text>
-              <Text style={styles.coach}>{user?.coach_name || 'No Coach Assigned'}</Text>
-            </TouchableOpacity>
-
-            {/* Daily Intake */}
+            {/* Daily Intake Section */}
             <TouchableOpacity onPress={() => navigation.navigate('Recipes')}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
                 <Text style={styles.section}>Daily Intake</Text>
                 <Ionicons name="chevron-forward" size={20} color="#fff" />
               </View>
             </TouchableOpacity>
-            <View style={styles.intakeRow}>
-              {['Carbs', 'Protein', 'Fat', 'Fiber'].map(item => {
-                let iconName = 'nutrition-outline';
-                let value = Math.round(nutrition.carbs);
-                let calorieGoal = 2420;
-                let totalValue = Math.round((calorieGoal * 0.4) / 4);
 
-                if (item === 'Protein') {
-                  iconName = 'fish-outline';
-                  value = Math.round(nutrition.protein);
-                  totalValue = Math.round((calorieGoal * 0.3) / 4);
-                }
-                if (item === 'Fat') {
-                  iconName = 'flame-outline';
-                  value = Math.round(nutrition.fat);
-                  totalValue = Math.round((calorieGoal * 0.3) / 9);
-                }
-                if (item === 'Fiber') {
-                  iconName = 'leaf-outline';
-                  value = Math.round(nutrition.fiber);
-                  totalValue = Math.round((calorieGoal / 1000) * 14);
-                }
-                return (
-                  <View key={item} style={styles.intake}>
-                    <Ionicons name={iconName} size={18} color="#fff" />
-                    <Text style={styles.intakeText}>{item}</Text>
-                    <Text style={styles.intakeSub}>{value}/{totalValue}g</Text>
-                  </View>
-                );
-              })}
+            <View style={styles.intakeBubbleRow}>
+              <View style={styles.intakeBubbleContainer}>
+                <View style={[styles.intakeBubble, { backgroundColor: 'rgba(33, 150, 243, 0.2)' }]}>
+                  <Ionicons name="nutrition" size={24} color="#2196F3" />
+                </View>
+                <Text style={styles.intakeBubbleTitle}>Carbs</Text>
+                <Text style={styles.intakeBubbleValue}>{metrics.carbs.value}/{metrics.carbs.goal}g</Text>
+              </View>
+
+              <View style={styles.intakeBubbleContainer}>
+                <View style={[styles.intakeBubble, { backgroundColor: 'rgba(255, 107, 61, 0.2)' }]}>
+                  <Ionicons name="fish" size={24} color="#FF6B3D" />
+                </View>
+                <Text style={styles.intakeBubbleTitle}>Protein</Text>
+                <Text style={styles.intakeBubbleValue}>{metrics.protein.value}/{metrics.protein.goal}g</Text>
+              </View>
+
+              <View style={styles.intakeBubbleContainer}>
+                <View style={[styles.intakeBubble, { backgroundColor: 'rgba(156, 39, 176, 0.2)' }]}>
+                  <Ionicons name="flame" size={24} color="#9C27B0" />
+                </View>
+                <Text style={styles.intakeBubbleTitle}>Fat</Text>
+                <Text style={styles.intakeBubbleValue}>{metrics.fat.value}/{metrics.fat.goal}g</Text>
+              </View>
+
+              <View style={styles.intakeBubbleContainer}>
+                <View style={[styles.intakeBubble, { backgroundColor: 'rgba(0, 230, 118, 0.2)' }]}>
+                  <Ionicons name="leaf" size={24} color="#00E676" />
+                </View>
+                <Text style={styles.intakeBubbleTitle}>Fiber</Text>
+                <Text style={styles.intakeBubbleValue}>{metrics.fiber.value}/{metrics.fiber.goal}g</Text>
+              </View>
             </View>
 
 
@@ -596,6 +631,119 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  mediumCard: {
+    backgroundColor: '#fff',
+    width: '48%',
+    borderRadius: 16,
+    padding: 16,
+    minHeight: 150,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  mediumCardTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  mediumCardValue: {
+    fontSize: 14,
+    color: '#FF6B3D',
+    fontWeight: 'bold',
+  },
+  coachNameText: {
+    fontSize: 14,
+    color: '#FF6B3D',
+    fontWeight: '600',
+  },
+  activityRingsContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 140,
+    height: 140,
+  },
+  activityCenterText: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activityPercentText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FF6B3D',
+  },
+  activityStatsSide: {
+    flex: 1,
+    paddingLeft: 20,
+    justifyContent: 'center',
+    gap: 10,
+  },
+  sideStatItem: {
+    marginBottom: 5,
+  },
+  sideStatHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  sideStatLabel: {
+    fontSize: 12,
+    color: '#7a7a7a',
+    fontWeight: '500',
+  },
+  sideStatValue: {
+    fontSize: 13,
+    color: '#333',
+    fontWeight: 'bold',
+  },
+  ringLabel: {
+    position: 'absolute',
+  },
+  ringLabelText: {
+    fontSize: 9,
+    color: '#333',
+    fontWeight: 'bold',
+  },
+  mainStepsText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  mainStepsLabel: {
+    fontSize: 10,
+    color: '#7a7a7a',
+  },
+  intakeBubbleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+    marginBottom: 20,
+  },
+  intakeBubbleContainer: {
+    alignItems: 'center',
+    width: '23%',
+  },
+  intakeBubble: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  intakeBubbleTitle: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  intakeBubbleValue: {
+    color: '#ccc',
+    fontSize: 10,
   },
   smallCard: {
     backgroundColor: '#fff',

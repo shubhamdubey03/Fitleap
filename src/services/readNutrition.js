@@ -68,7 +68,7 @@ export const getTodayNutrition = async () => {
       protein = (totalCalories * 0.30) / 4;
       carbs = (totalCalories * 0.40) / 4;
       fat = (totalCalories * 0.30) / 9;
-      fiber = (totalCalories / 1000) * 14; 
+      fiber = (totalCalories / 1000) * 14;
     }
 
     console.log("🔥 FINAL DATA:", {
