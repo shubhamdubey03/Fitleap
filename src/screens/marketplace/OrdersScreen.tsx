@@ -9,6 +9,7 @@ import {
     Image,
     FlatList,
     TouchableOpacity,
+    StatusBar,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -45,6 +46,11 @@ const OrdersScreen = ({ navigation }: { navigation: any }) => {
                 console.log("No token found, skipping fetch.");
                 setLoading(false);
                 return;
+            }
+
+            // Only show loading on initial fetch to prevent flicker on refresh
+            if (orders.length === 0) {
+                setLoading(true);
             }
 
             console.log("Fetching orders...");
@@ -112,11 +118,9 @@ const OrdersScreen = ({ navigation }: { navigation: any }) => {
     };
 
     const filteredOrders = orders; // For now show all, can implement status filter later
-    console.log("orders", orders);
     const renderOrder = ({ item }: { item: any }) => {
         // Prioritize delivery_status for fulfillment stages
         const currentDeliveryStatus = item.delivery_status || item.status;
-        console.log("item", item)
         // Match backend structure (products is an object)
         const productTitle = item.products?.name || 'Order Item';
         const productImage = item.products?.image_url || 'https://images.unsplash.com/photo-1624456729094-1a938c5d1e2e';
@@ -164,6 +168,7 @@ const OrdersScreen = ({ navigation }: { navigation: any }) => {
             colors={['#1a0033', '#3b014f', '#5a015a']}
             style={[styles.container, { paddingTop: insets.top }]}
         >
+            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.navigate('MarketplaceHome')}>
                     <View style={styles.iconButton}>
@@ -186,7 +191,7 @@ const OrdersScreen = ({ navigation }: { navigation: any }) => {
             <FlatList
                 data={filteredOrders}
                 renderItem={renderOrder}
-                keyExtractor={item => item.id ? item.id.toString() : Math.random().toString()}
+                keyExtractor={item => item.id ? item.id.toString() : `order-${Math.random()}`}
                 contentContainerStyle={styles.listContent}
                 ListEmptyComponent={
                     <Text style={{ color: '#ccc', textAlign: 'center', marginTop: 50 }}>No orders found.</Text>

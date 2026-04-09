@@ -96,7 +96,7 @@ const InvoiceHistoryScreen = ({ navigation }) => {
                     <View style={{ width: 40 }} />
                 </View>
 
-                {loading ? (
+                {loading && invoices.length === 0 ? (
                     <View style={styles.centerContainer}>
                         <ActivityIndicator size="large" color="#fff" />
                     </View>
